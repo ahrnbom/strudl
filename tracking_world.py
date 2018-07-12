@@ -125,19 +125,29 @@ class WorldTrackingConfig(object):
         'some_setting': {'default': 5, 'car_bicycle': 10}
     Note that 'car_bicycle' is not the same as 'bicycle_car', so you may need to define both.
     
-"""          
+"""       
+   
 default_config = {
-    'time_drop_thresh': 2.5, # in seconds
-    'time_region_check_thresh': 0.5, # in seconds
-    'creation_too_close_thresh': 4, # in meters
-    'is_too_close_thresh': {'default': 2, 'bicycle_bicycle': 0.1}, # in metres
-    'incorrect_class_cost': {'default': 123456789123456789, 'bicycle_person': 5,
-                             'person_bicycle': 5}, # unitless? Compared with WorldTrack.cost output
-    'cost_thresh': {'default':10, 'bicycle':15}, # unitless? Compared with WorldTrack.cost output
-    'mask_margin': 10, # in pixels, how close to the borders of the interesting region a track can be
-    'cost_dist_weight': 1,
-    'cost_dir_weight': 0.5,
-                 }
+  "cost_dir_weight": 1.0147354311670724, # unitless
+  "cost_dist_weight": 0.7620318412899034, # unitless
+  "cost_thresh": {
+    "bicycle": 20.304379446321803, # unitless? Compared with WorldTrack.cost output
+    "default": 24.97096037057736 # unitless? Compared with WorldTrack.cost output
+  },
+  "creation_too_close_thresh": 2.712930167098239, # in meters
+  "incorrect_class_cost": {
+    "bicycle_person": 7.120520923545521, # unitless? Compared with WorldTrack.cost output
+    "default": 5.485065801218582e+16, # unitless? Compared with WorldTrack.cost output
+    "person_bicycle": 12.85008107267443 # unitless? Compared with WorldTrack.cost output
+  },
+  "is_too_close_thresh": {
+    "bicycle_bicycle": 0.495536116573809, # in meters
+    "default": 2.2825837807261196 # in meters
+  },
+  "mask_margin": 1.8100215477938848, # in pixels, how close to the borders of the interesting region a track can be
+  "time_drop_thresh": 3.986878079720841, # in seconds
+  "time_region_check_thresh": 0.3676807524471706 # in seconds
+}
 
 class WorldTrack(object):
     id_maker = count()

@@ -53,4 +53,22 @@ A `.pklz` file containing a list of `DetTrack` objects (from the `tracking.py` m
 
 #### World coordinates track format
 
-... to be continued!
+A `.pklz` file containing a list of `WorldTrack` objects (from the `tracking_world.py` module). They store their tracks in the `.history` attribute, which is a list of tuples of format `(FRAMENUMBER, TIME, X, Y, DELTAX, DELTAY, SPEED, BY_UPDATE)` where the coordinates are in world coordinates (metres, and metres/second) and `BY_UPDATE` is `False` if this frame's psoition was extrapolated and `True` if an detection caused the track's position.
+
+#### Export track formats
+
+When tracks are exported, they are stored in text formats. Currently there is one format available called "custom_text" which has the following format:
+
+```
+Track ID: _TRACKID_, class: _CLASSNAME_
+  fn: _FRAMENUMBER_, t: _TIME_, x: _X_, y: _Y_, dx: _DX_, dy: _DY_, sp: _SPEED_ 
+  fn: _FRAMENUMBER_, t: _TIME_, x: _X_, y: _Y_, dx: _DX_, dy: _DY_, sp: _SPEED_
+  fn: _FRAMENUMBER_, t: _TIME_, x: _X_, y: _Y_, dx: _DX_, dy: _DY_, sp: _SPEED_
+  
+Track ID: _TRACKID_, class: _CLASSNAME_
+  fn: _FRAMENUMBER_, t: _TIME_, x: _X_, y: _Y_, dx: _DX_, dy: _DY_, sp: _SPEED_ 
+  fn: _FRAMENUMBER_, t: _TIME_, x: _X_, y: _Y_, dx: _DX_, dy: _DY_, sp: _SPEED_
+  fn: _FRAMENUMBER_, t: _TIME_, x: _X_, y: _Y_, dx: _DX_, dy: _DY_, sp: _SPEED_  
+```
+
+If some other format is desired, modify `tracks_format.py` (add a new function similar to `convert_track_custom_text` and make sure it is used in `format_tracks_from_file`) and `strudl.yaml` (change the `tracksFormat` parameter to have your new format in the enum).
