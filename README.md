@@ -1,5 +1,7 @@
 # STRUDL: Surveillance Tracking Using Deep Learning
 
+## Note: This framework is still under development, and is not properly tested yet! Please be patient.
+
 STRUDL is an open-source and free framework for tracking objects in videos filmed by static surveillance cameras. It uses a deep learining object detector, camera calibration and tracking to create trajectories of e.g. road users, in world coordinates. It was designed to faciliate traffic safety analysis, using modern computer vision and deep learning, rather than the traditional methods commonly used despite their many flaws. By creating trajectories in world coordinates, truly meaningful metrics and safety measures can be computed. The paper behind this research will hopefully be released soon!
 
 It provides a Web UI that attempts to make it easy to use, even without too much knowledge in computer vision and deep learning. It uses [Docker](https://www.docker.com/) for sandboxing and handling dependencies, to make installation easier.
