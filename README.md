@@ -33,13 +33,15 @@ Got any issues with this software? Feel free to [open an issue, if there isn't o
 
 1. A Linux computer with a powerful, modern NVidia GPU
 2. [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
+3. git
 
 ### Installation
 Note: This has not been quite tested yet!
 
-1. Clone this repo
-2. Create a folder called `data` right next to the `strudl` folder
-3. `cd` into the `strudl` folder, and run `sudo ./run_docker.sh`
+1. In a terminal, navigate to some folder where you want to store STRUDL and its data, e.g. `mkdir ~/strudl && cd ~/strudl/`
+1. Clone this repo via `git clone https://github.com/ahrnbom/strudl.git`
+2. Create a folder called `data` right next to the `strudl` folder, e.g. `mkdir data`
+3. Navigate into the `strudl` folder, and run `run_docker.sh`, which requires sudo-privileges (because docker does), e.g. `cd strudl` and `sudo ./run_docker.sh`
 4. If everything works as expected, you should now be inside the docker container, in a folder called `/code`. You should be able to access the `data` folder you created at `/data`.
 5. To start the web server, run `python server.py`
 6. Visit port 8080 of the host computer via a web browser to see the Web UI and interact with it

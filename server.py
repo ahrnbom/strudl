@@ -704,9 +704,12 @@ def post_world_calibration(dataset_name, calib_text):
             return (NoContent, 400)
 
 if __name__ == '__main__':
+    
+    # Allows the host computer to remain responsive even while long-running and heavy processes are started by server
     import os
     os.nice(10)
-
+    
+    # Start server based on YAML specification
     app = connexion.App(__name__, specification_dir='./')
     app.add_api('strudl.yaml')
     app.run(port=8080)
