@@ -2,9 +2,9 @@
 
 STRUDL is an open-source and free framework for tracking objects visible from static surveillance cameras. It uses a deep learining object detector, camera calibration and tracking to create trajectories of e.g. road users, in world coordinates. It provides a Web UI that attempts to make it easy to use, even without too much knowledge in computer vision and deep learning. It uses [Docker](https://www.docker.com/) for sandboxing and handling dependencies, to make installation easier.
 
-The code is designed to be modular, so that new features can be added fairly easily without destroying everything else. 
+The code is designed to be modular, so that new features can be added fairly easily without destroying everything else. It uses [Swagger](https://swagger.io/) and [Connexion](https://github.com/zalando/connexion) to provide a REST API and Web UI. 
 
-More information about how STRUDL works can be found [here](details.md).
+Some more information about how STRUDL works internally can be found [here](details.md).
 
 ### Workflow
 1. Import videos
@@ -30,7 +30,7 @@ Note: This has not been quite tested yet!
 6. Visit port 8080 of the host computer via a web browser to see the Web UI and interact with it
 
 ### Security notice
-This software has not been designed with maximum security in mind. It is recommended to run it in a local network behind a firewall. While docker does provide sandboxing, this code is not "battle tested" and it should not be assumed to be safe. Leaving the port open to the internet could compromise your computer.
+This software has not been designed with maximum security in mind. It is recommended to run it in a local network behind a firewall. While docker does provide some sandboxing, this code is not "battle tested" and it should not be assumed to be safe. Leaving the port open to the internet could compromise your computer. The most obvious security flaw is that your computer's `/media` folder is being made available in the docker container, to simplify importing videos via e.g. USB. This can be changed by modifying `run_docker.sh`.
 
 ### Future work
 There's always more to do! On our priority list are, among other things, the following:
