@@ -4,6 +4,9 @@
 
 STRUDL is an open-source and free framework for tracking objects in videos filmed by static surveillance cameras. It uses a deep learining object detector, camera calibration and tracking to create trajectories of e.g. road users, in world coordinates. It was designed to faciliate traffic safety analysis, using modern computer vision and deep learning, rather than the traditional methods commonly used despite their many flaws. By creating trajectories in world coordinates, truly meaningful metrics and safety measures can be computed. The paper behind this research will hopefully be released soon!
 
+STRUDL was developed as a part of the [InDeV project](https://www.indev-project.eu). 
+![InDeV Logo](https://www.indev-project.eu/SiteGlobals/StyleBundles/CSS/screen/InDeV/indevSub_logo.jpg?__blob=normal&v=10)
+
 It provides a Web UI that attempts to make it easy to use, even without too much knowledge in computer vision and deep learning. It uses [Docker](https://www.docker.com/) for sandboxing and handling dependencies, to make installation easier.
 
 The code is designed to be modular, so that new features can be added fairly easily without destroying everything else. It uses [Swagger](https://swagger.io/) and [Connexion](https://github.com/zalando/connexion) to provide a REST API and Web UI. 
