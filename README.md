@@ -6,6 +6,8 @@ The code is designed to be modular, so that new features can be added fairly eas
 
 Some more information about how STRUDL works internally can be found [here](details.md).
 
+Got any issues with this software? Feel free to [open an issue, if there isn't one already for your problem](issues)!
+
 ### Workflow
 1. Import videos
 2. Annotate images
