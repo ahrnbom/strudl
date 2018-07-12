@@ -4,6 +4,8 @@ STRUDL is an open-source and free framework for tracking objects visible from st
 
 The code is designed to be modular, so that new features can be added fairly easily without destroying everything else. 
 
+More information about how STRUDL works can be found [here](details.md).
+
 ### Workflow
 1. Import videos
 2. Annotate images
