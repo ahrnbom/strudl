@@ -1,0 +1,979 @@
+swagger: '2.0'
+info:
+  version: '0.1'
+  title: 'The STRUDL API'
+  description: >
+    An API for using the STRUDL (Surveillance TRacking Using Deep Learning) framework, letting users control executions of the various routines used for generating object tracks from videos. 
+    
+    
+       
+    ###Intended workflow
+    
+    - Create a new dataset with `/datasets/post`
+    
+    - Specify a mask image with `/datasets/masks/post`
+    
+    - Specify a dataset configuration with `/datasets/config/post`
+    
+    - Begin importing videos from e.g. a USB device with `/jobs/import_videos/post`
+    
+    - Prepare annotations with `/jobs/prepare_annotation/post` 
+    
+    - Start generating point tracks with `runs/point_tracks/post`
+    
+    - Do annotations by visiting `/annotate` in a web browser (this can be done while point tracks are being generated, for example)
+    
+    - Define a training run with `/runs/config/post`
+    
+    - Download weights from https://mega.nz/#F!7RowVLCL!q3cEVRK9jyOSB9el3SssIA (not the _old one) and submit via `pretrained_weights/post`
+    
+    - Start training a detector with `/jobs/train_detector/post`
+    
+    - Start generating videos to evaluate the detector with `/jobs/visualize_detections/post`
+    
+    - Post a TSAI calibration with `/world/calibration/post`
+    
+    - Convert detections to world coordinates with `/jobs/detections_to_world_coordinates/post`
+    
+    - Optimize world coordinates tracker with `/jobs/optimize_tracking_world_coordinates/post` or submit tracking parameters with `/world/tracking_config/post`
+    
+    - Start performing tracking with `/jobs/tracking_world_coordinates/post`
+    
+    - Make a .zip file with all the tracks with `/jobs/all_tracks_as_zip/post`
+    
+    - Download .zip file from `/tracks/all`
+
+schemes:
+ - http
+     
+paths:
+  /progress:
+    get:
+      summary: Get general progress
+      description: Gives a JSON object explaining what tasks are run and what tasks aren't for a given dataset+run combo. If no run is created yet, any input on the run name is fine.
+      operationId: server.get_progress
+      produces:
+        - application/json
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+      responses:
+        200:
+          description: Progress found and obtained
+        404:
+          description: No dataset with that name exists (run does not have to exist to get output here)
+  
+  /:
+    get:
+      summary: The main web page
+      operationId: server.index_page
+      produces:
+        - text/html
+      responses:
+        200:
+          description: Web page exists
+        404:
+          description: Web page does not exist
+  
+  /annotate:
+    get: 
+      summary: The annotation web page
+      description: Provides the annotation HTML/JS web page
+      operationId: server.annotation_page
+      produces:
+        - text/html
+      responses:
+        200:
+          description: Web page exists
+        404:
+          description: Web page does not exist
+  
+  /annotate/slideshow:
+    get:
+      summary: Get a slideshow video of existing annotations
+      operationId: server.get_annotation_slideshow
+      produces:
+        - video/mp4
+      parameters:
+        - $ref: "#/parameters/datasetName"
+      responses:
+        200:
+          description: Slideshow generated and shown
+        404:
+          description: Dataset does not exist, or no annotation images were found
+        500:
+          description: Something else went wrong
+  
+  /annotate/images:
+    get:
+      summary: Get a list of all images that can be annotated
+      description: Get a list of all images that can be annotated, as a list of lists with the format `[video_name, image_number, not_annotated/already_annotated]`
+      operationId: server.get_list_of_annotation_images
+      produces:
+        - application/json
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - name: annotation_set
+          in: query
+          type: string
+          enum: [train,test]
+          required: true
+      responses:
+        200:
+          description: Images were found
+        404:
+          description: No images were found. Has `jobs/prepare_annotation/post` run?
+        500:
+          description: Something else went wrong
+  
+  /annotate/data:
+    get:
+      summary: Gets data useful for annotation
+      description: Gets a some data that the annotation Web UI uses, like the classes and associated colors and progress statistics
+      operationId: server.get_annotation_data
+      parameters:
+        - $ref: "#/parameters/datasetName"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Success
+        404:
+          description: Dataset does not exist
+        500:
+          description: Something else went wrong
+          
+  /annotate/image:
+    get:
+      summary: Obtains an image to annotate
+      description: Make sure to first call `annotate/images/get` to get a list of all annotation images. Then use this command to get the actual images.
+      operationId: server.get_annotation_image
+      produces:
+        - image/jpeg       
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - name: video_name
+          in: query
+          type: string
+          description: One of the video names provided by `annotate/images/get`
+          required: true
+        - name: image_number
+          in: query
+          type: integer
+          description: The image number, between 1 and the `images_to_annotate_per_video` parameter in the DatasetConfig
+          required: true
+        - name: annotation_set
+          in: query
+          type: string
+          enum: [train,test]
+          required: true
+      responses:
+        200: 
+          description: Image exists and is returned
+        404: 
+          description: Image does not exist
+        500:
+          description: Something else went wrong
+  
+  /annotate/annotation:
+    parameters:
+      - $ref: "#/parameters/datasetName"
+      - name: video_name
+        in: query
+        type: string
+        description: One of the video names provided by `annotate/images/get`
+        required: true
+      - name: image_number
+        in: query
+        type: integer
+        description: The image number, between 1 and the `images_to_annotate_per_video` parameter in the DatasetConfig
+        required: true
+      - name: annotation_set
+        in: query
+        type: string
+        enum: [train,test]
+        required: true
+    get:
+      summary: Obtains an image annotation
+      description: Make sure to first call `annotate/images/get` to get a list of all annotation images. Then use this command to get the actual annotations of those images that have already been annotated.
+      operationId: server.get_annotation_annotation
+      parameters:
+        - name: output_format
+          in: query
+          type: string
+          enum: [plain,json]
+          required: true
+      produces:
+        - text/plain
+        - application/json
+      responses:
+        200: 
+          description: Annotation exists and is returned
+        400:
+          description: Incorrect `output_format` (shouldn't be possible)
+        404: 
+          description: Annotation does not exist
+        500:
+          description: Something else went wrong
+    post:
+      summary: Posts an image annotation
+      description: Posts an image annotation as plaintext generated by the Web UI. Note that no validation of the actual text happens in this method!
+      operationId: server.post_annotation_annotation
+      consumes:
+        - text/plain; charset=utf-8
+      parameters:
+        - name: annotation_text
+          in: body
+          schema: 
+            type: string
+          description: A text of the annotation
+          required: true
+      responses:
+        200:
+          description: Annotation accepted and saved
+        404:
+          description: Folder in which annotation should be saved does not exist. This means there is an error in your parameters.
+        400:
+          description: The text data for the annotation is not formatted correctly
+        500:
+          description: Something went wrong
+  
+  /access:
+    get:
+      operationId: server.give_access_to_data
+      summary: Gives all local users access to the `/data/` folder
+      description: Use this for deleting datasets, runs etc.
+      responses:
+        200:
+          description: Successfully provided access to the data folder
+        500:
+          description: Something went wrong
+          
+  /pretrained_weights:
+    post: 
+      operationId: server.post_pretrained_weights
+      summary: Submits pre-trained weights
+      description: Download the weight file from https://mega.nz/#F!7RowVLCL!q3cEVRK9jyOSB9el3SssIA
+      consumes:
+        - application/x-hdf5
+      parameters:
+        - name: weights_file
+          in: formData
+          type: file
+          description: A .hdf5 file containing pre-trained weights
+          required: true
+      responses:
+        200:
+          description: Upload successfull.
+        400:
+          description: File rejected, probably due to incorrect md5 checksum. If you are certain that the file is correct, you will have to change `validation.py`
+          
+  /datasets:
+    post:
+      operationId: server.post_dataset
+      summary: Creates a new dataset
+      description: Creates a new dataset. A unique dataset name must be submitted. Create one dataset per set of videos. The videos should come from one camera angle, if masks are to be used. 
+      
+        Each dataset must also have a list of class names provided, as a string where the classes are separated by commas. Avoid unusual characters and don't use spaces, underlines. Just use small letters. No spaces between the class names. 
+      parameters: 
+        - $ref: "#/parameters/datasetName"
+        - name: class_names
+          in: query
+          type: string
+          description: List of names of object classes for this dataset, like 'car,pedestrian,bike,other'
+          default: car,pedestrian,bicycle,motorbike,bus,other
+          required: true
+      responses:
+        200:
+          description: Dataset creation was successful.
+        500:
+          description: Dataset creation did not succeed. Is the dataset name already in use? Could there be file permission issues? 
+    
+    get:
+      operationId: server.get_datasets
+      summary: Get list of all existing datasets
+      description: Get the names of all existing datasets.
+      produces:
+        - application/json
+      responses:
+        200: 
+          description: Could obtain list
+        500:
+          description: Could not obtain list of datasets. This could indicate some file system error.
+          
+  /datasets/masks:
+    post:
+      operationId: server.post_mask
+      summary: Upload a new mask image for a dataset
+      description: Upload a new mask image for an existing dataset. The image should specify which regions should be ignored. The image should be of the same size as specified as `video_resolution` in the dataset configuration. It should be transparent where the pixels should be used, and black where they should be ignored. The image should be in the `.png` format. Do not use MS Paint for creating this mask image as it does not support transparancy.
+      consumes: 
+        - multipart/form-data
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - name: mask_image_file
+          in: formData
+          type: file
+          description: A .png file of the mask
+          required: true
+      responses:
+        200:
+          description: Mask image file upload and storage successful
+        500: 
+          description: Mask image file upload did not succeed for some reason. Could be a file system or permissions issue. Could also be that the image does not have a transparency channel, or that it is not a `.png` file.
+    get:
+      operationId: server.get_mask
+      summary: Get the current mask image for a dataset
+      description: For a given dataset, get the currently used mask image, if one exists
+      parameters: 
+        - $ref: "#/parameters/datasetName"
+      produces: 
+        - image/png
+      responses:
+        200:
+          description: File exists and is successfully returned
+        500:
+          description: For some reason, mask image could not be returned. It might not exist.
+          
+  /datasets/config:
+    get:
+      operationId: server.get_dataset_config
+      summary: Gets the config for a dataset
+      description: Gets the dataset configuration for a dataset specified by name
+      parameters:
+        - $ref: "#/parameters/datasetName"
+      responses:
+        200:
+          description: Dataset configuration successfully found
+          schema:
+            $ref: '#/definitions/DatasetConfig'
+        404:
+          description: This dataset is not configured
+        500:
+          description: Something else went wrong. Does a dataset with this name exist?
+    post:
+      operationId: server.post_dataset_config
+      summary: Sets the config for a dataset
+      parameters: 
+        - $ref: "#/parameters/datasetName"
+        - name: dataset_config
+          in: body
+          required: true
+          schema: 
+            $ref: "#/definitions/DatasetConfig"
+      responses: 
+        200:
+          description: Dataset configuration successfully saved
+        500: 
+          description: Something went wrong. 
+  
+  /runs:
+    get:
+      operationId: server.get_list_of_runs
+      summary: Gets all runs of a dataset
+      parameters: 
+        - $ref: "#/parameters/datasetName"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Successfully gets all runs
+        404:
+          description: Dataset does not exist, or no runs exist
+  
+  /runs/config:
+    get:
+      operationId: server.get_run_config
+      summary: Get the config for a run
+      description: Get the configuration for a training run for a dataset
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+      responses:
+        200:
+          description: Run configuration successfully found
+          schema:
+            $ref: '#/definitions/RunConfig'
+        404:
+          description: This run is not configured
+        500:
+          description: Something else went wrong. Does a dataset with this name exist? 
+    post:
+      operationId: server.post_run_config
+      summary: Sets the config for a run
+      description: Specifies the configuration for a training run. This should be done before creating a train_detector job, and defines a run, if it doesn't already exist. If a run already exists, this overwrites the configuration.
+      parameters: 
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - name: run_config
+          in: body
+          required: true
+          schema: 
+            $ref: "#/definitions/RunConfig"
+      responses: 
+        200:
+          description: Run configuration successfully saved
+        500: 
+          description: Something went wrong. 
+          
+  /jobs:
+    get:
+      operationId: server.get_job_ids
+      summary: Get list of jobs
+      description: When `jobs_type` is 'all', literally all jobs will be presented (both jobs that have run in the past and those that are currently running and those in the queue). When `jobs_type` is 'running', only currently running jobs are shown. When `jobs_type` is 'recent', any jobs started since the web server started are shown. When `jobs_type` is 'queued', jobs that are queued (and not yet running) are shown.
+      produces: 
+        - application/json
+      parameters: 
+        - name: jobs_type
+          in: query
+          type: string
+          default: all
+          enum: [all, running, recent, queued]
+          required: true
+      responses:
+        200: 
+          description: A list of currently running jobs was found and will be displayed
+        500:
+          description: For some reason, it was impossible to get a list of running jobs
+          
+  /jobs/{job_id}:
+    parameters: 
+      - name: job_id
+        description: Each job's unique identification number
+        in: path
+        type: string
+        required: true
+    get:
+      operationId: server.get_job_by_id
+      summary: Get log file about a single job
+      description: Get the log file for a job, given a job ID number, or the special string 'running' to get the log for currently running job, or the special string 'last' to get the log for either the currently running or latest run job.
+      produces: 
+        - text/plain
+      responses:
+        200:
+          description: Successfully get information about a job
+        404: 
+          description: Could not find job. It probably doesn't exist.
+    delete:
+      operationId: server.delete_job_by_id
+      summary: Kills a running job
+      description: Given a job ID, if such a job is currently running, it will be stopped by force.
+      responses:
+        200:
+          description: Successfully stopped job
+        404: 
+          description: No such job exists
+        500:
+          description: Something else went wrong
+  
+  /jobs/import_videos:
+    post:
+      operationId: server.post_import_videos_job
+      summary: Imports videos from a USB device
+      description: Takes videos from a path, typically pointing to a USB device, and imports them to a dataset. The path can contain wildcards, for example `/media/somefolder/*.mkv`. Make sure a dataset configuration is set before running this job!
+      parameters: 
+        - $ref: "#/parameters/datasetName"
+        - name: path
+          in: query
+          type: string 
+          required: true
+        - name: method
+          in: query
+          type: string
+          enum: [imageio, handbrake]
+          required: true
+        - name: logs_path
+          in: query
+          type: string
+          required: false
+          description: Folder in which log files are stored. Do not use wildcards here. If omitted, log files are assumed to be in the same folder as the video files, but this only works if wildcards are used only at the very end of the `path`, like `/path/to/some/videos/*.mkv`. A path to a folder should always end with a `/`.
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        404:
+          description: Dataset configuration does not exist  
+        500:
+          description: For some reason, job could not start. Is the path correct? Is the filesystem configured correctly? Is the folder and/or USB-drive mounted into the Docker image?
+        503:
+          description: Device is busy
+  
+  /jobs/point_tracks:
+    post:
+      operationId: server.post_point_tracks_job
+      summary: Computes point tracks for videos
+      description: Computes point tracks for all videos in a dataset. This is independent of any runs. 
+      parameters: 
+        - $ref: "#/parameters/datasetName"
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start. 
+        503:
+          description: Device is busy
+        404:
+          description: A dataset configuration does not exist
+          
+  /jobs/prepare_annotation:
+    post:
+      operationId: server.post_prepare_annotations_job
+      summary: Prepares images to annotate
+      description: Samples images from the videos to annotate. Make sure videos are imported, and the dataset config is correct.
+      parameters:
+        - $ref: "#/parameters/datasetName"
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start. 
+        503:
+          description: Device is busy
+        404:
+          description: A dataset configuration does not exist
+  
+  /jobs/train_detector:
+    post:
+      operationId: server.post_train_detector_job
+      summary: Trains an object detector 
+      description: Trains an SSD object detector on training data which the user has already annotated. Make sure both a dataset configuration and run configuration are set before running this.
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start.
+        503:
+          description: Device is busy
+        404:
+          description: No run configuration exists for this dataset and run
+  
+  /jobs/detect_objects: 
+    post:
+      operationId: server.post_detect_objects_job
+      summary: Perfoms object detection on videos
+      description: Uses a trained object detector to detect objects in all the videos in the dataset. These detections are stored and can then be visualized, used for tracking or studied as they are. Make sure the detector is trained before running this!
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start.
+        503:
+          description: Device is busy
+        404:
+          description: No run configuration exists for this dataset and run
+        
+  /jobs/visualize_detections: 
+    post:
+      operationId: server.post_visualize_detections_job
+      summary: Visualizes object detections
+      description: Assuming object detections have been computed for this dataset and run, those detections are visualized by being drawn on top of the videos. The visualization videos can be obtained by the operation /detection_visualizations/ once this job finishes. Make sure objects are detected before running this!
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - $ref: "#/parameters/confThresh"
+        - $ref: "#/parameters/tracksCoords"
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start.
+        503:
+          description: Device is busy
+        404:
+          description: No run configuration exists for this dataset and run
+  
+  /jobs/detections_to_world_coordinates:
+    post:
+      operationId: server.post_detections_to_world_coordinates_job
+      summary: Converts detections to world coordinates
+      description: This requires both detections and point tracks
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - name: make_videos
+          in: query
+          type: boolean
+          required: true
+          default: false
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        404:
+          description: Dataset/run does not exist
+          
+  /jobs/optimize_tracking_world_coordinates:
+    post: 
+      operationId: server.post_optimize_tracking_world_coordinates_job
+      summary: Optimizes tracking in world coordinates
+      description: Using a .csv file from T-Analyst where every object track has been annotated for some short sequence, parameters for tracking in world coordinates is optimized. Note that multiple jobs of this type with different .csv files cannot be queued, only the latest will be used! 
+      consumes:
+        - text/csv; charset=utf-8
+      parameters:
+        - name: csv_ground_truth_file
+          in: body
+          schema: 
+            type: string
+          description: A .csv file exported from T-Analyst
+          required: true
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - name: date
+          in: query
+          type: string
+          required: true
+          description: Date for which the ground truth comes from
+          default: "2017-05-16"
+        - name: detection_id
+          in: query
+          type: integer
+          required: true
+          description: What T-Analyst calls a detection ID. The .csv file can contain information about multiple 'detections' and only the one with this ID will be used.
+          default: 476
+        - name: class_name_conversion
+          in: query
+          type: string
+          description: In case the class names are inconsistent between T-Analyst and STRUDL, this can be fixed with a JSON formatted table
+          required: false
+          default: '{"pedestrian": "person"}'
+        - name: visualize
+          in: query
+          type: boolean
+          description: If True, a visualization video of the tracking results will be generated and can be obtained via `/visualization/get`
+          required: true
+        - name: patience
+          in: query
+          type: integer
+          description: Number of iterations without improvement that goes before optimization stops
+          required: true
+          default: 20
+        - name: per_iteration
+          type: integer
+          in: query
+          description: Number of different values tested in each iteration
+          default: 4
+          required: true
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        400:
+          description: Input error, like incorrect .csv file encoding
+        404:
+          description: Dataset/run does not exist
+  
+  /jobs/tracking_world_coordinates: 
+    post:
+      operationId: server.post_tracking_world_coordinates_job
+      summary: Uses object detection to perform tracking in world coordinates
+      description: Make sure objects are detected and transformed to world coordinates before running this! It is also a good idea to optimize world coordinate tracking using ground truth tracks before running. If this cannot be done, use `/world/tracking_config/post` to post parameters.
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - $ref: "#/parameters/confThresh"
+        - name: make_videos
+          in: query
+          type: boolean
+          required: true
+          description: If true, videos will be generated which can be obtained via `/visualization/get`. These videos show the tracks with track IDs and class labels. If false, they will not, which makes the process faster.
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start.
+        503:
+          description: Device is busy
+        404:
+          description: No dataset or run configuration exists for this dataset and run
+            
+  /jobs/tracking_pixel_coordinates:
+    post:
+      operationId: server.post_tracking_pixel_coordinates_job
+      summary: Uses object detections to perform tracking
+      description: Make sure objects are detected before running this! Note that this job uses default parameters, you will have to make changes in the code to change those. World coordinates are recommended.
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - $ref: "#/parameters/confThresh"
+        - name: make_videos
+          in: query
+          type: boolean
+          required: true
+          description: If true, videos will be generated which can be obtained via `/visualization/get`. These videos show the tracks as bounding boxes with track IDs and classes. If false, they will not, which makes the process faster.
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start.
+        503:
+          description: Device is busy
+        404:
+          description: No run configuration exists for this dataset and run
+  
+  /jobs/all_tracks_as_zip:
+    post:
+      operationId: server.post_all_tracks_as_zip_job
+      summary: Makes a .zip file of all tracks
+      description: Make sure tracking is performed before running this!
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - $ref: "#/parameters/tracksFormat"
+        - $ref: "#/parameters/tracksCoords"
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start.
+        503:
+          description: Device is busy
+  
+  /visualization:
+    get:
+      operationId: server.get_visualization
+      summary: Gets a previously created visualization video
+      description: Gets a video file created by the methods `/jobs/visualize_detections/post` and `/jobs/tracking_pixel_coordinates/post`
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - name: video_type
+          in: query
+          type: string
+          enum: [detections,tracks,point_tracks,world_tracking_optimization]
+          required: true
+        - name: video_name
+          in: query
+          type: string
+          required: true
+          default: 20170516_124029_DCD0
+      produces: 
+        - video/mp4
+      responses:
+        200:
+          description: Video exists and is successfully returned
+        404:
+          description: Video does not exist. Has the video creating job been executed?
+        500:
+          description: For some reason, video could not be served. 
+          
+  /tracks:
+    get:
+      operationId: server.get_tracks
+      summary: Gets previously created tracks
+      description: Gets tracks from a single video generated by `/jobs/tracking_pixel_coordinates/post`. They can be obtained in multiple formats.
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - $ref: "#/parameters/tracksFormat"
+        - name: video_name
+          in: query
+          type: string
+          required: true
+          default: 20170516_124029_DCD0
+          required: true
+          description: Name of the video, excluding any file type suffix
+        
+      produces:
+        - text/plain
+      responses:
+        200:
+          description: Tracks exist and is successfully returned
+        404: 
+          description: Tracks do not exist.
+        500:
+          description: Something else went wrong
+
+  /tracks/all:
+    get:
+      operationId: server.get_all_tracks
+      summary: Gets all previously created tracks
+      description: Gets tracks for all videos generated by `/jobs/all_tracks_as_zip/post`. 
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - $ref: "#/parameters/tracksFormat"
+        - $ref: "#/parameters/tracksCoords"
+      produces: 
+        - application/zip
+      responses:
+        200:
+          description: Tracks obtained and presented
+        404:
+          description: No tracks .zip file exist
+      
+      
+  /videos:
+    get: 
+      operationId: server.get_list_of_videos
+      summary: Get a list of all videos for a dataset
+      description: Get a list of all videos in a dataset, typically from `/jobs/import_videos/post`
+      parameters:
+        - $ref: "#/parameters/datasetName"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Successfully found list of videos
+        404:
+          description: No videos found
+  
+  /world/tracking_config:
+    parameters: 
+      - $ref: "#/parameters/datasetName"
+      - $ref: "#/parameters/runName"
+    get:
+      operationId: server.get_world_tracking_config
+      summary: Get the world tracking config
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Config exists and is returned
+        404:
+          description: Config does not exist, or is corrupt
+    post:
+      operationId: server.post_world_tracking_config
+      consumes:
+        - application/json
+      parameters:
+        - name: world_tracking_config
+          in: body
+          schema: 
+            type: object
+          description: A JSON-formatted world tracking config object. The documentation of this is currently in `tracking_world.py`
+          required: true
+      responses:
+        200:
+          description: Config saved
+        400:
+          description: Something is wrong with the config
+  
+  /world/calibration:
+    parameters: 
+      - $ref: "#/parameters/datasetName"
+    get:
+      operationId: server.get_world_calibration
+      summary: Gets existing TSAI calibration
+      produces:
+        - text/plain
+      responses:
+        200:
+          description: Calibration exists and is returned
+        404:
+          description: Calibration does not exist
+    post:
+      operationId: server.post_world_calibration
+      summary: Posts a TSAI calibration for a dataset
+      description: The TSAI calibration should be in plain text format, with parameter name followed by a colon followed by a bunch of spaces followed by the value. The parameter names are dx,dy,Cx,Cy,Sx,f,k,Tx,Ty,Tz,r1,r2,r3,r4,r5,r6,r7,r8,r9.
+      consumes:
+        - text/plain
+      parameters:
+        - name: calib_text
+          in: body
+          schema: 
+            type: string
+          description: A TSAI calibration text 
+      responses:
+        200:
+          description: It worked
+        400:
+          description: The data was invalid
+          
+parameters:
+    tracksCoords:
+        name: coords
+        in: query
+        type: string
+        enum: [pixels,world]
+        required: true
+
+    tracksFormat:
+        name: tracks_format
+        in: query
+        type: string
+        enum: [custom_text]
+        required: true
+
+    datasetName:
+        name: dataset_name
+        in: query
+        type: string
+        description: Name of the dataset
+        required: true
+    
+    runName:
+        name: run_name
+        in: query
+        type: string
+        description: Name of the training run
+        required: true
+    
+    confThresh:
+        name: confidence_threshold
+        in: query
+        type: number
+        description: Detections with confidences below this value will not be taken into account. Should be a value between 0 and 1. It is not trivial to know what a good threshold is, it will vary for each trained detector. 0.6 could be a reasonable starting point. Note that the confidence threshold set in the RunsConfig will be used in the `detect_objects` command, and setting a lower threshold here will not be able to recreate objects with lower confidences, so setting it to 0 here means to include all the detections from `detect_objects`.
+        minimum: 0
+        maximum: 1
+        default: 0.6
+          
+definitions:
+  RunConfig:
+    properties:
+      detector_resolution:
+        type: string
+        description: Resolution that the object detector should run on, as strings like `(640,480,3)` where 640 is the width, 480 is the height and 3 is the number of channels. The number of channels should always be 3. Can be both smaller and larger than video_resolution, but having it larger is most likely a waste of compuational resources.
+        example: (640,480,3)
+      confidence_threshold: 
+        type: number
+        description: A number between 0 and 1. Object detections below this threshold are not stored. When doing tracking and visualization of detections, a higher threshold can be chosen to further filter the detected objects. Do not set it too low either, as the storage of a large number of detections can become an issue, and tracking will be slower. It is hard to know what a good level is, but 0.6 can be a decent starting point.
+        example: 0.6
+      detection_batch_size:
+        type: integer
+        description: How many images should be stored on the GPU at the same time while performing object detections. Can be higher than training batch size. For example, an NVIDIA Titan X can do a detection batch size of 32. A higher batch size significantly speeds up detections.
+        example: 32
+      detection_training_batch_size:
+        type: integer
+        example: 4
+        description: How many images should be stored on the GPU at the same time while training the detector. Make this as high as possible without the training program crashing, as a high batch size makes training both faster and more reliable.
+    required: 
+      - detector_resolution
+      - confidence_threshold
+      - detection_batch_size
+      - detection_training_batch_size
+
+  DatasetConfig:
+    properties:
+      video_fps:
+        type: integer
+        description: How many frames per second the videos are recorded with. 
+        example: 15
+      video_resolution:
+        type: string
+        description: Resolution of videos, as strings like `(640,480,3)` where 640 is the width, 480 is the height and 3 is the number of channels. The number of channels should always be 3. The width and height should be divisible by 16.
+        example: (640,480,3)
+      point_track_resolution:
+        type: string
+        description: Resolution which the videos should be resized to before running KLT point tracks. This should be low to run this quickly, and doesn't seem to take much advantage of running in high resolutions. Should be provided as strings like `(320,240)`, where 320 is width and 240 is height.
+        example: (320,240)
+      images_to_annotate:
+        type: integer
+        description: Number of images to annotate
+        example: 500
+      images_to_annotate_per_video:
+        type: integer
+        description: How many images per video to annotate. This controls the number of videos used during training.
+        example: 20
+      annotation_train_split:
+        type: number
+        description: The amount of videos used during training. If set to something lower than 1.0, for example 0.8, that would mean that 20% of the annotated videos would be kept separate as a testing set, which you know that the training has never used. Note that a validation set is made automatically for finding the optimal stopping point during training, and this has nothing to do with this split. 
+        example: 1.0
+    required: 
+      - video_fps
+      - video_resolution
+      - point_track_resolution
+      - images_to_annotate
+      - images_to_annotate_per_video
+      - annotation_train_split

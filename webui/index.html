@@ -1,0 +1,237 @@
+ <!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>STRUDL index page</title>
+<style>
+h1, h2, h3, h4, p, a {
+ color: darkbrown;
+ text-align: left;
+ font-family: calibri,"Trebuchet MS", Helvetica, sans-serif;
+}
+
+h3 {
+ margin-bottom: 1px;
+ padding-bottom: 1px;
+}
+
+p.bottomspace {
+ margin-top: 1px;
+ margin-bottom: 50px;
+}
+
+a {
+ color: brown;
+}
+
+img {
+ display: block;
+ margin-left: auto;
+ margin-right: auto;
+ margin-bottom: 1px;
+}
+
+div.allselectors {
+ flex: 1;
+}
+
+div.selector {
+
+}
+
+select {
+ display: flex;
+ padding-left: 0;
+ padding-right: 0;
+ margin-left: 5px;
+ margin-right: auto;
+ margin-top: 1px;
+ display: block;
+}
+
+</style>
+</head>
+
+<body>
+<h1>STRUDL</h1>
+
+<h2>Usage</h2>
+<p class=bottomspace>Go to <a href="ui/#/default">the Connexion User Interface</a> to do things!</p>
+
+
+<h2>Guidance</h2>
+<p>Not sure what to do? Choose a dataset (and run, if you've started one) to get hints of what to do next.</p>
+
+<div class=allselectors>
+    <div class=selector>
+        <h3>Dataset</h3>
+        <select class=selector id=dataset_selector size=5></select>
+    </div>
+    <div class=selector>
+        <h3>Run</h3>
+        <select class=selector id=run_selector size=5></select>
+    <div>
+</div>
+
+<h3 id=vistitle></h3>
+<h4 id=suggestion></h2>
+<div id=vis></div>
+
+<p id=info></p>
+
+<script>
+
+var get_json = function(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'json';
+    xhr.onload = function() {
+      var status = xhr.status;
+      if (status === 200) {
+        callback(null, xhr.response);
+      } else {
+        callback(status, xhr.response);
+      }
+    };
+    xhr.send();
+};
+
+var ds_sel = document.getElementById("dataset_selector");
+var run_sel = document.getElementById("run_selector");
+var info = document.getElementById("info");
+var vistitle = document.getElementById("vistitle");
+var vis = document.getElementById("vis");
+var sugg = document.getElementById("suggestion");
+var dataset = "";
+var run = "";
+var curr_data = "";
+
+ds_sel.onchange = function() {
+    dataset = ds_sel.value;
+    
+    get_json("/runs?dataset_name=" + dataset, function(err,data) {
+        while (run_sel.firstChild) {
+            run_sel.removeChild(run_sel.firstChild);
+        }
+        
+        var opt = document.createElement('option');
+        opt.innerHTML = "No run yet!";
+        run_sel.appendChild(opt);
+    
+        if (err !== null) {
+            //info.innerHTML = "Failed to get list of runs";    
+        } else {
+            
+            for (var i = 0; i != data.length; ++i) {
+                var text = data[i]
+                var opt = document.createElement('option');
+                opt.innerHTML = text;
+                run_sel.appendChild(opt);
+            }
+        }
+    });
+};
+
+run_sel.onchange = function() {
+    run = run_sel.value;
+    get_progress();
+};
+
+var get_progress = function() {
+    get_json("/progress?dataset_name=" + dataset + "&run_name=" + run, function(err,data) {
+        if (err !== null) {
+            info.innerHTMML = "Failed to get progress";
+        } else {
+            curr_data = data;
+            visualize();
+        }    
+    });
+};
+
+var make_suggestion = function() {
+    if (!curr_data['dataset']['has_config']) {
+        sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_dataset_config>Submit a dataset configuration!</a>";
+    } else if (!curr_data['dataset']['has_mask']) {
+        sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_mask>Make and submit a mask image!</a>";
+    } else if (curr_data['dataset']['number_of_videos'] == 0) {
+        sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_import_videos_job>Import some videos!</a>";
+    } else if (curr_data['dataset']['training_frames_to_annotate'] == 0) {
+        sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_import_videos_job>Prepare annotations!</a>";
+    } else if (curr_data['dataset']['videos_with_point_tracks_computed'] == 0) {
+        sugg.innerHTML = "Suggestion: <a href=/ui/#!/default/server_post_point_tracks_job>Generate point tracks!</a>";
+    } else if (curr_data['dataset']['training_frames_annotated'] < curr_data['dataset']['training_frames_to_annotate']) {
+        sugg.innerHTML = "Suggestion: <a href=/annotate>Annotate more images!</a>";
+    } else if (curr_data['dataset']['all_runs'].length == 0) {
+        sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_run_config>Define a run!</a>";
+    } else if (curr_data.hasOwnProperty('run')) {
+        if (!curr_data['run']['has_pretrained_weights']) {
+            sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_pretrained_weights>Upload pretrained weights!</a>";
+        } else if (curr_data['run']['stored_weight_files'] == 0) {
+            sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_train_detector_job>Train the detector!</a>";
+        } else if (!curr_data['dataset']['has_calibration']) {
+            sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_world_calibration>Submit camera calibration!</a>";
+        } else if (curr_data['run']['videos_with_detected_objects_in_world_coordinates'] < curr_data['run']['videos_with_detected_objects']) {
+            sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_detections_to_world_coordinates_job>Convert detections to world coordinates!</a>";
+        } else if (!curr_data['run']['has_optimized_world_tracking']) {
+            sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_optimize_tracking_world_coordinates_job>Optimize world coordinate tracking!</a>";
+        } else if (curr_data['run']['videos_with_world_coordinate_tracks'] < curr_data['run']['videos_with_detected_objects_in_world_coordinates']) {
+            sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_tracking_world_coordinates_job>Run world coordinate tracking!</a>";
+        } else if (curr_data['run']['track_zips'].length == 0) {
+            sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_all_tracks_as_zip_job>Turn world coordinate tracks into a .zip file!</a>";
+        } else {
+            sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_get_all_tracks>Download the tracks as a .zip file!</a>";
+        }
+    }
+};
+
+var visualize = function() {
+    vistitle.innerHTML = "Information about " + dataset + ", " + run;
+    
+    while (vis.firstChild) {
+        vis.removeChild(vis.firstChild);
+    }
+    
+    for (var key in curr_data) {
+        if (curr_data.hasOwnProperty(key)) {
+            var newNode = document.createElement('p');
+            var text = key + ": <br><ul>";
+            
+            var obj = curr_data[key];
+            for (var key2 in obj) {
+                if (obj.hasOwnProperty(key2)) {
+                    text = text + '<li>' + key2 + ' - ' + obj[key2] + '</li>';
+                }
+            }
+            
+            text = text + '</ul>';
+            newNode.innerHTML = text;
+            vis.appendChild(newNode);         
+        }
+    }
+    
+    make_suggestion();
+}
+
+get_json("/datasets", function(err,data) {
+    if (err !== null) {
+        info.innerHTML = "Failed to get list of datasets";
+    } else {
+        while (ds_sel.firstChild) {
+            ds_sel.removeChild(im_sel.firstChild);
+        }
+            
+        for (var i = 0; i != data.length; ++i) {
+            var text = data[i]
+            var opt = document.createElement('option');
+            opt.innerHTML = text;
+            ds_sel.appendChild(opt);
+        }
+    }
+    
+});
+
+</script>
+
+</body>
+
+</html> 

@@ -1,0 +1,756 @@
+ <!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Bounding box annotator</title>
+<style>
+h1, h2, h3, p, a {
+ color: DarkBlue;
+ text-align: center;
+ font-family: calibri,"Trebuchet MS", Helvetica, sans-serif;
+}
+
+div.stuff {
+ flex: 1;
+}
+
+input.slider {
+ margin-right: auto;
+ margin-left: auto;
+ display: block;
+}
+
+div.slider_div {
+ max-width: 400px;
+ margin-right: auto;
+ margin-left: auto;
+ display: block;
+}
+
+a {
+ color: DodgerBlue;
+}
+
+p.above {
+ max-width = 1000px;
+}
+
+p.below {
+ max-width: 400px;
+}
+
+p.classinfo {
+ background-color: darkslategray;
+ padding-right: 10px;
+ padding-left: 10px;
+ margin-right: auto;
+ text-align: left;
+}
+
+canvas {
+ outline: 2px solid DarkBlue;
+}
+
+div.selectblock {
+ flex: 1;
+}
+
+div.outer {
+ display: flex;
+ padding: 20px; 
+}
+
+div.canv_outer {
+ display: flex;
+}
+
+div.canv_div {
+ padding-left: 0;
+ padding-right: 0;
+ margin-left: auto;
+ margin-right: auto;
+ display: block;
+}
+
+select.selector {
+ padding-left: 0;
+ padding-right: 0;
+ margin-left: auto;
+ margin-right: auto;
+ display: block;
+}
+
+option:checked {
+  background: SlateBlue linear-gradient(0deg, SlateBlue 0%, SlateBlue 100%);
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>STRUDL annotation tool</h1>
+<div class=outer>
+
+    <div class=selectblock>
+        <h3>Dataset</h3>
+        <select id="dataset_selector" class=selector size=5>
+        </select>
+    </div>
+
+    <div class=selectblock>
+        <h3>Video</h3>
+        <select id="video_selector" class=selector size=5>
+        </select>
+    </div>    
+    
+    <div class=selectblock>
+        <h3>Image</h3>
+        <select id="image_selector" class=selector size=5>
+        </select>
+    </div>
+
+</div>
+
+<div class=stuff>
+    <div class=slider_div>
+        <h3 id="slider_h">Image scale</h3>
+        <input type="range" min="0.01" max="2" value="1" step=0.01 class="slider" id="slider">
+    </div>
+
+    <div class=stats_div>
+        <p id="stats"></p>
+    </div>
+</div>
+
+<br>
+
+<div class=canv_outer>
+    
+    <div class=canv_div>
+        <p id="instruction" class="above">Instructions should go here</p>
+        <canvas id="canv" width="720" height="512" style="border:1px solid #000000;" tabindex='1'>
+            Your browser cannot display HTML5 stuff. Get a better web browser.
+        </canvas>
+        
+        
+        <p id="info" class="below"></p>
+    </div>
+    
+    <p id="classinfo" class="classinfo">Classes will go here</p>
+</div>
+
+
+
+<script>
+
+var get_json = function(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'json';
+    xhr.onload = function() {
+      var status = xhr.status;
+      if (status === 200) {
+        callback(null, xhr.response);
+      } else {
+        callback(status, xhr.response);
+      }
+    };
+    xhr.send();
+};
+
+var c = document.getElementById("canv");
+var ctx = c.getContext("2d");
+
+var class_info = document.getElementById("classinfo");
+var slider = document.getElementById("slider");
+var slider_h = document.getElementById("slider_h");
+slider.onchange = function(e) {
+    slider_h.innerHTML = "Image scale (" + slider.value + ")";
+}
+var stats = document.getElementById("stats");
+
+var uction = document.getElementById("instruction");
+var info = document.getElementById("info");
+var next = document.getElementById("next");
+
+preDSUction = "Choose a dataset.";
+preVDUction = "Choose a video.";
+preIMUction = "Choose an image.";
+defaultUction = "Click on the <i><b>bottom</b></i> of object, or press R to remove objects. Press S button to save annotation.";
+uction.innerHTML = preDSUction;
+
+var post_url = ""; 
+var to_do = function() {};
+
+var image_number = -1;
+
+var go_to_next = function() {
+    var imnum = parseInt(image_number) + 1;
+    image_number = "" + imnum;
+}
+
+var update = function(vidname, imnum, status) {
+    uction.innerHTML = defaultUction;
+    
+    image_number = imnum;    
+    
+    im_loaded = false;
+    ms_loaded = false;
+    loaded = false;
+    
+    image = new Image;
+    mask = new Image;
+    
+    image.onload = im_load;
+    mask.onload = ms_load;    
+        
+    image.src = "annotate/image?dataset_name=" + dataset + "&video_name=" + vidname + "&image_number=" + imnum + "&annotation_set=train"
+    mask.src = "datasets/masks?dataset_name=" + dataset;
+    
+    post_url = '/annotate/annotation?dataset_name=' + dataset + '&video_name=' + vidname + '&image_number=' + imnum + '&annotation_set=train';
+    
+    if (status === "already_annotated") {
+        to_do = function() {
+            get_json(post_url + '&output_format=json', function(err, data) {
+                if (err == null) {
+                    boxes = [];
+                    for (var i = 0; i != data.length; ++i) {
+
+                        var d = data[i];
+                        var curr_box = {};
+                        curr_box.x1 = width * (d.center_x - (d.width/2));
+                        curr_box.x2 = width * (d.center_x + (d.width/2));
+                        curr_box.y1 = height * (d.center_y - (d.height/2));
+                        curr_box.y2 = height * (d.center_y + (d.height/2));
+                        curr_box.objClass = d.class_name;
+                        
+                        curr_box.px = [];
+                        curr_box.py = [];
+                        for (var ip = 0; ip != d.px.length; ++ip) {
+                            curr_box.px.push(width*d.px[ip]);
+                            curr_box.py.push(height*d.py[ip]);
+                        }
+                    
+                        boxes.push(curr_box);
+                    }
+                    
+                    drawBG();
+                    drawBoxes();
+                   
+                } else {
+                    info.innerHTML = "Failed to get existing annotation: " + err;
+                }
+            });
+        }
+    } else {
+        to_do = function() {};
+    }
+    
+    
+}
+
+var dataset = "";
+
+var chosen_video = function() {
+    image_number = -1;
+    update_ims_per_vid();
+};
+
+var get_annot_data = function(dataset) {
+    get_json("annotate/data?dataset_name=" + dataset, function(err, data) {
+        if (err !== null) {
+            info.innerHTML = "Failed to get annotation data";
+        } else {
+            classnames = data[0]
+            colors = data[1]
+            keys_list = data[2]
+            key_codes_list = data[3]
+            train_stats = data[4]
+            
+            stats.innerHTML = "Progress: " + train_stats[1] + " / " + train_stats[0] + " images";
+            
+            var class_info_html = "";
+            
+            classification_text = "Please classify the object. ";
+            for (var i = 0; i != classnames.length; ++i) {
+                var key = keys_list[i];
+                var cn = classnames[i];
+                //classification_text = classification_text + key + ": " + cn + "<br>";
+                
+                var color = colors[cn];
+                class_info_html = class_info_html + '<span style="color:' + color + '">' + key + ': ' + cn + '</span><br>';
+            }
+            
+            class_info.innerHTML = class_info_html;
+        }
+    });
+};
+
+var chosen_dataset = function(dataset) {
+    get_annot_data(dataset);
+    
+    uction.innerHTML = preVDUction;
+    
+    get_json('/annotate/images?dataset_name=' + dataset + '&annotation_set=train', function(err,data) {
+        if (err !== null) {
+            info.innerHTML = "Failed to get list of annotation images";
+        } else {
+            var already_vids = {};
+
+            // Remove previous options
+            while (im_sel.firstChild) {
+                im_sel.removeChild(im_sel.firstChild);
+            }
+            
+            while (vd_sel.firstChild) {
+                vd_sel.removeChild(vd_sel.firstChild);
+            }
+            
+            // Add video options
+            for (var i = 0; i != data.length; ++i) {
+                
+                var vidname = data[i][0]
+                
+                if (!(vidname in already_vids)) {
+                    var opt = document.createElement('option');
+                    opt.innerHTML = vidname;
+                    vd_sel.appendChild(opt);
+                    
+                    already_vids[vidname] = true; 
+                }
+
+            }
+            
+            set_video_colors(data);
+        }
+    });
+};
+
+var update_video_colors = function() {
+    get_json('/annotate/images?dataset_name=' + dataset + '&annotation_set=train', function(err,data) {
+        if (err === null) {
+            set_video_colors(data);
+        } else {
+            info.innerHTML = "Failed to update video colors";
+        }
+    });
+}
+
+var set_video_colors = function(data) {
+    var has_not_annotated = {};
+    var has_already_annotated = {};
+    
+    for (var i = 0; i != data.length; ++i) {
+                
+        var vidname = data[i][0]
+        if (data[i][2] == 'already_annotated') {
+            has_already_annotated[vidname] = true;
+        } else if (data[i][2] == 'not_annotated') {
+            has_not_annotated[vidname] = true;
+        }
+    }
+    
+    var children = vd_sel.children;
+    for (var i = 0; i != children.length; ++i) {
+        var child = children[i];
+        var vidname = child.innerHTML;
+        
+        if (vidname in has_already_annotated) {
+            child.style.backgroundColor='palegreen';
+            
+            if (vidname in has_not_annotated) {
+                child.style.backgroundColor = 'gold';
+            }
+        } else {
+            child.style.backgroundColor = 'lightsalmon';
+        }
+    }
+};
+
+var update_ims_per_vid = function() {
+    uction.innerHTML = preIMUction;
+    
+    get_json('/annotate/images?dataset_name=' + dataset + '&annotation_set=train', function(err,data) {
+        if (err !== null) {
+            info.innerHTML = "Failed to get list of annotation images for updating images per video";
+        } else {
+        
+            // Remove previous options
+            while (im_sel.firstChild) {
+                im_sel.removeChild(im_sel.firstChild);
+            }
+            
+            var to_focus = null;
+            
+            // Add video options
+            for (var i = 0; i != data.length; ++i) {
+                
+                var vidname = data[i][0]
+                if (vidname == video_name) {
+                    var text = data[i][1] + ' ' + data[i][2];
+                    var opt = document.createElement('option');
+                    opt.innerHTML = text;
+                    
+                    if (data[i][2] === 'not_annotated') {
+                        opt.style.backgroundColor = 'lightsalmon';
+                    } else if (data[i][2] == 'already_annotated') {
+                        opt.style.backgroundColor = 'palegreen';
+                    }
+                    
+                    im_sel.appendChild(opt);
+                    
+                    if (data[i][1] == image_number) {
+                        to_focus = text;
+                    }
+                }
+            }
+            
+            if (to_focus != null) {
+                im_sel.value = to_focus;
+                im_sel.onchange();
+            }
+        }
+    });
+}
+
+var ds_sel = document.getElementById("dataset_selector");
+ds_sel.onchange = function() {
+    dataset = ds_sel.value;
+    
+    chosen_dataset(dataset);
+    loaded = false;
+    
+}
+
+get_json("/datasets", function(err,data) {
+    if (err !== null) {
+        info.innerHTML = "Failed to get list of datasets";
+    } else {
+        for (var i = 0; i != data.length; ++i) {
+            var text = data[i]
+            var opt = document.createElement('option');
+            opt.innerHTML = text;
+            ds_sel.appendChild(opt);
+        }
+    }
+    
+});
+
+var im_sel = document.getElementById("image_selector");
+im_sel.onchange = function() {
+    
+    var vals = im_sel.value.split(" ");
+    update(video_name, vals[0], vals[1]);
+}
+
+var video_name = "";
+
+var vd_sel = document.getElementById("video_selector");
+vd_sel.onchange = function() {
+    video_name = vd_sel.value;
+    loaded = false;
+    chosen_video();
+}
+
+
+
+var state = "idle";
+var boxes = [];
+var currBox = {};
+
+var width = c.width;
+var height = c.height;
+
+var im_loaded = false;
+var ms_loaded = false;
+var loaded = false;
+
+var image = new Image;
+var mask = new Image;
+
+var on_loaded = function() {
+    loaded = true;
+    info.innerHTML = "";
+    
+    boxes = [];
+    drawBG();
+    drawBoxes();
+
+    to_do();
+}
+
+im_load = function() {
+    var scale = slider.value;
+
+    width = scale*image.width;
+    height = scale*image.height;
+    c.width = width;
+    c.height = height;
+    
+    im_loaded = true;
+    
+    if (im_loaded && ms_loaded) {
+        on_loaded();
+    }
+}
+
+ms_load = function() {
+    ms_loaded = true;
+    
+    if (im_loaded && ms_loaded) {
+        on_loaded();
+    }
+}
+
+var colors = {}; //{"car": "red", "bicycle":"blue", "person":"purple", "bus":"yellow", "motorbike":"pink"};
+var classnames = []; //['bicycle', 'bus', 'car', 'motorbike', 'person'];
+var keys_list = [];
+var key_codes_list = [];
+
+classification_text = "THIS TEXT SHOULD NEVER BE VISIBLE"
+
+var exportString = function() {
+    var i = 0;
+    var out = "";
+    var decimals = 5;
+    for (i = 0; i != boxes.length; ++i) {
+        var box = boxes[i];
+        var classIndex = 1 + classnames.indexOf(box.objClass);
+        var cenX = ((box.x1 + box.x2)/(2*width)).toFixed(decimals);
+        var cenY = ((box.y1 + box.y2)/(2*height)).toFixed(decimals);
+        var bw = ((box.x2 - box.x1)/width).toFixed(decimals);
+        var bh = ((box.y2 - box.y1)/height).toFixed(decimals);
+        
+        var px = box.px
+        var py = box.py
+        
+        var ii = 0;
+        for (ii = 0; ii != px.length; ++ii) {
+            px[ii] = (px[ii]/width).toFixed(decimals);
+            py[ii] = (py[ii]/height).toFixed(decimals);
+        }
+        
+        var objClass = box.objClass;
+        
+        var line = `${classIndex} ${cenX} ${cenY} ${bw} ${bh} px:${px} py:${py} ${objClass}\n`; 
+        out = out.concat(line);
+    }
+    
+    return out;
+}
+
+var drawBG = function() {
+    ctx.drawImage(image,0,0, width, height);
+    ctx.drawImage(mask,0,0, width, height);
+}
+
+var drawBox = function(box) {
+    ctx.beginPath();
+    ctx.rect(box.x1, box.y1, box.x2-box.x1, box.y2-box.y1);
+    ctx.strokeStyle = colors[box.objClass];
+    ctx.lineWidth=2;
+    ctx.stroke();
+}
+
+var drawBoxes = function() {
+    var i = 0;
+    for (i = 0; i != boxes.length; ++i) {
+        drawBox(boxes[i]);
+    }
+}
+
+ctx.font = "20p Calibri";
+
+c.addEventListener('click', function(event) { 
+    if (loaded) {
+
+        var x = event.pageX - c.offsetLeft,
+            y = event.pageY - c.offsetTop;
+        
+        var text = "x: " + x + ", y: " + y;
+        if (state != "class") {
+            if (state == "remove") {
+                var mindist = 10000000;
+                var found = -1;
+                var i = 0;
+                for (i = 0; i != boxes.length; ++i) {
+                    var box = boxes[i];
+                    var cx = (box.x2 + box.x1)/2;
+                    var cy = (box.y2 + box.y1)/2;
+                    var dist = (x-cx)*(x-cx) + (y-cy)*(y-cy);
+                    
+                    if (dist < mindist) {
+                        mindist = dist;
+                        found = i;
+                    }
+                }
+                if (found != -1) {
+                    boxes.splice(found,1);
+                    uction.innerHTML = defaultUction;
+                    
+                    drawBG()
+                    drawBoxes();
+                    
+                    state = "idle";
+                }
+            } else if (state == "idle") {
+                currBox.y2 = y;
+                
+                currBox.px = [x]
+                currBox.py = [y]
+                
+                state = "bottom";
+                
+                uction.innerHTML = "Click on the <i><b>leftmost</b></i> point on the object, or R to cancel.";
+            } else if (state == "bottom") {
+                currBox.x1 = x;
+                
+                currBox.px.push(x)
+                currBox.py.push(y)
+                
+                state = "left";
+                
+                uction.innerHTML = "Click on the <i><b>topmost</b></i> point on the object, or R to cancel.";
+            } else if (state == "left") {
+                currBox.y1 = y;
+                
+                currBox.px.push(x)
+                currBox.py.push(y)
+                
+                state = "top";
+                
+                uction.innerHTML = "Click on the <i><b>rightmost</b></i> point on the object, or R to cancel.";
+            } else if (state == "top") {
+                currBox.x2 = x;
+                
+                currBox.px.push(x)
+                currBox.py.push(y)
+                
+                state = "class";
+                
+                uction.innerHTML = classification_text
+            }
+            
+            if ((state == "top") || (state == "bottom") || (state == "left") || (state == "class")) {
+                ctx.beginPath()
+                ctx.arc(x,y,5, 0, 2*Math.PI);
+                ctx.strokeStyle = "orange";
+                ctx.lineWidth=2;
+                ctx.stroke();
+                
+            } 
+        }
+    }
+    
+}, false);
+
+var send_annot_response = function(err, text) {
+    if (err === null) {
+        info.innerHTML = "Annotation successfully saved";
+        go_to_next();
+        update_ims_per_vid();
+        get_annot_data(dataset);
+        update_video_colors();
+        
+    } else {
+        info.innerHTML = text;
+    }
+}
+
+window.addEventListener("keydown", function(event) {
+    if (loaded) {
+        key = event.keyCode;
+        
+        if (key == 83) {
+            text_data = exportString();
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", post_url, true);
+            
+            xhr.onload = function() {
+                var status = xhr.status;
+                if (status === 200) {
+                    send_annot_response(null, xhr.response);
+                } else {
+                    send_annot_response(status, xhr.response);
+                }
+            };
+            
+            xhr.send(text_data)
+            
+            info.innerHTML = "Annotation sent!";
+            
+            
+        } 
+    }
+    
+}, false);
+
+c.addEventListener("keydown", function(event) {
+    if (loaded) {
+        key = event.keyCode;
+        
+        if (state == "class") {
+            var objClass = "";
+            for (var i = 0; i != key_codes_list.length; ++i) {
+                key_code = key_codes_list[i];
+                if (key == key_code) {
+                    objClass = classnames[i]; 
+                }
+            }
+            
+            if (objClass != "") {
+                currBox.objClass = objClass;
+                
+                info.innerHTML = "";
+                uction.innerHTML = defaultUction;
+                
+                if (currBox.x1 > currBox.x2) {
+                    var tmp = currBox.x1;
+                    currBox.x1 = currBox.x2;
+                    currBox.x2 = tmp;
+                }
+                
+                if (currBox.y1 > currBox.y2) {
+                    var tmp = currBox.y1;
+                    currBox.y1 = currBox.y2;
+                    currBox.y2 = tmp;
+                }            
+                
+                boxes.push(currBox);
+                currBox = {};
+                
+                state = "idle";
+                
+                drawBG();
+                drawBoxes();
+            }
+        } 
+        if (key == 82) {
+            if (state == "idle") {
+                state = "remove";
+                info.innerHTML = "";
+                uction.innerHTML = "Click to remove the nearest object, or press R to stop removing";
+            } else if (state == "remove") {
+                state = "idle";
+                info.innerHTML = "";
+                uction.innerHTML = defaultUction;
+            } else if ((state == "bottom") || (state == "left") || (state == "top") || (state == "right") || (state == "class")) {
+                state = "idle";
+                info.innerHTML = "";
+                uction.innerHTML = defaultUction;
+                drawBG();
+                drawBoxes();
+            }
+        } 
+    }
+}, false);
+
+</script>
+<noscript>Your browser cannot run JavaScript. Get a better web browser or fix its settings.</noscript>
+
+</body>
+
+</html> 
