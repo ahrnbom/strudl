@@ -49,6 +49,12 @@ select {
  display: block;
 }
 
+.scrollable {
+    height: 200px; 
+    width: 500px;
+    overflow-y: auto;
+}
+
 </style>
 </head>
 
@@ -76,6 +82,7 @@ select {
 <h3 id=vistitle></h3>
 <h4 id=suggestion></h2>
 <div id=vis></div>
+<div id=vis2 class=scrollable></div>
 
 <p id=info></p>
 
@@ -101,10 +108,12 @@ var run_sel = document.getElementById("run_selector");
 var info = document.getElementById("info");
 var vistitle = document.getElementById("vistitle");
 var vis = document.getElementById("vis");
+var vis2 = document.getElementById("vis2");
 var sugg = document.getElementById("suggestion");
 var dataset = "";
 var run = "";
 var curr_data = "";
+var chosen_vt = "";
 
 ds_sel.onchange = function() {
     dataset = ds_sel.value;
@@ -147,6 +156,50 @@ var get_progress = function() {
         }    
     });
 };
+
+var make_visualization_list = function() {
+    var vt_sel = document.createElement('select');
+    vt_sel.size=5;
+    
+    var vis_types = ["detections_pixels","detections_world","tracks_pixels","tracks_world","point_tracks","world_tracking_optimization"];
+    for (var i = 0; i != vis_types.length; ++i) {
+        var vt = vis_types[i];
+        var opt = document.createElement('option');
+        opt.innerHTML = vt;
+        vt_sel.appendChild(opt);
+    }
+    
+    vt_sel.onchange = function() {
+        chosen_vt = vt_sel.value;
+        get_json("/visualization/list?dataset_name=" + dataset + "&run_name=" + run + "&visualization_type=" + chosen_vt, function(err, data) {
+            if (err !== null) {
+                info.innerHTML = "Failed to get list of visualization videos";
+            } else {
+                make_visualization_list2(data);
+            }
+        });
+    }
+    
+    var vis_head = document.createElement('h4');
+    vis_head.innerHTML = "Visualizations:";
+    vis.appendChild(vis_head);
+    
+    vis.appendChild(vt_sel);
+}
+
+var make_visualization_list2 = function(data) {
+    while (vis2.firstChild) {
+        vis2.removeChild(vis2.firstChild);
+    }
+    
+    for (var i = 0; i != data.length; ++i) {
+        var link = document.createElement('p');
+        link.innerHTML = "<a href=visualization?dataset_name=" + dataset + "&run_name=" + run + "&visualization_type=" + chosen_vt + "&video_name=" + data[i] + ">" + data[i] + "</a>";
+        console.log(link)
+        vis2.appendChild(link);
+        console.log(vis2);
+    }
+}
 
 var make_suggestion = function() {
     if (!curr_data['dataset']['has_config']) {
@@ -210,6 +263,7 @@ var visualize = function() {
     }
     
     make_suggestion();
+    make_visualization_list();
 }
 
 get_json("/datasets", function(err,data) {

@@ -734,20 +734,17 @@ paths:
     get:
       operationId: server.get_visualization
       summary: Gets a previously created visualization video
-      description: Gets a video file created by the methods `/jobs/visualize_detections/post` and `/jobs/tracking_pixel_coordinates/post`
+      description: Gets a video file created by methods like `/jobs/visualize_detections/post`
       parameters:
         - $ref: "#/parameters/datasetName"
         - $ref: "#/parameters/runName"
-        - name: video_type
-          in: query
-          type: string
-          enum: [detections,tracks,point_tracks,world_tracking_optimization]
-          required: true
+        - $ref: "#/parameters/visualizationType"
         - name: video_name
           in: query
           type: string
           required: true
           default: 20170516_124029_DCD0
+          description: If visualization type is `world_tracking_optimization`, any input is fine here and it will be ignored.
       produces: 
         - video/mp4
       responses:
@@ -757,7 +754,21 @@ paths:
           description: Video does not exist. Has the video creating job been executed?
         500:
           description: For some reason, video could not be served. 
-          
+  
+  /visualization/list:
+    get:
+      operationId: server.get_visualization_list
+      summary: Get list of all visualization videos
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - $ref: "#/parameters/visualizationType"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: List of visualization videos returned
+        
   /tracks:
     get:
       operationId: server.get_tracks
@@ -882,6 +893,13 @@ paths:
           description: The data was invalid
           
 parameters:
+    visualizationType:
+        name: visualization_type
+        in: query
+        type: string
+        enum: [detections_pixels,detections_world,tracks_pixels,tracks_world,point_tracks,world_tracking_optimization]
+        required: true
+
     tracksCoords:
         name: coords
         in: query

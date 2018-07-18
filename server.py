@@ -574,19 +574,56 @@ def post_all_tracks_as_zip_job(dataset_name, run_name, tracks_format, coords):
     else:
         return (NoContent, 503)
 
-def get_visualization(dataset_name, run_name, video_type, video_name):
+def get_visualization_list(dataset_name, run_name, visualization_type):
+    dataset_name = quote(dataset_name)
+    run_name = quote(run_name)
+    this_run_path = "{rp}{dn}_{rn}/".format(rp=runs_path, dn=dataset_name, rn=run_name)
+    
+    if visualization_type == "detections_pixels":
+        video_path = "{trp}detections/*.mp4".format(trp=this_run_path)
+    elif visualization_type == "detections_world":
+        video_path = "{trp}detections_world/*.mp4".format(trp=this_run_path)
+    elif visualization_type == "tracks_pixels":
+        video_path = "{trp}tracks/*_tracks.mp4".format(trp=this_run_path)
+    elif visualization_type == "point_tracks":
+        video_path = "{dsp}{dn}/klt/*_klt.mp4".format(dsp=datasets_path, dn=dataset_name)
+    elif visualization_type == "world_tracking_optimization":
+        video_path = "{trp}world_tracking_optimization.mp4".format(trp=this_run_path)
+    elif visualization_type == "tracks_world":
+        video_path = "{trp}tracks_world/*_tracks.mp4".format(trp=this_run_path)
+    else:
+        return (NoContent, 500)
+    
+    videos = glob(video_path)
+    videos.sort()
+    videos = [x.split('/')[-1][:-4] for x in videos]
+    
+    to_remove = ['_tracks', '_klt']
+    for i,v in enumerate(videos):
+        for tr in to_remove:
+            if v.endswith(tr):
+                videos[i] = v[:-len(tr)]
+    
+    
+    return (videos, 200)
+
+def get_visualization(dataset_name, run_name, visualization_type, video_name):
     dataset_name = quote(dataset_name)
     run_name = quote(run_name)
     video_name = quote(video_name)
     this_run_path = "{rp}{dn}_{rn}/".format(rp=runs_path, dn=dataset_name, rn=run_name)
-    if video_type == "detections":
+    if visualization_type == "detections_pixels":
         video_path = "{trp}detections/{vn}.mp4".format(trp=this_run_path, vn=video_name)
-    elif video_type == "tracks":
+    elif visualization_type == "detections_world":
+        video_path = "{trp}detections_world/{vn}.mp4".format(trp=this_run_path, vn=video_name)
+    elif visualization_type == "tracks_pixels":
         video_path = "{trp}tracks/{vn}_tracks.mp4".format(trp=this_run_path, vn=video_name)
-    elif video_type == "point_tracks":
+    elif visualization_type == "point_tracks":
         video_path = "{dsp}{dn}/klt/{vn}_klt.mp4".format(dsp=datasets_path, dn=dataset_name, vn=video_name)
-    elif video_type == "world_tracking_optimization":
+    elif visualization_type == "world_tracking_optimization":
         video_path = "{trp}world_tracking_optimization.mp4".format(trp=this_run_path)
+    elif visualization_type == "tracks_world":
+        video_path = "{trp}tracks_world/{vn}_tracks.mp4".format(trp=this_run_path, vn=video_name)
     else:
         return (NoContent, 500)
         
