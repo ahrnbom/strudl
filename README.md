@@ -33,8 +33,9 @@ Got any issues with this software? Feel free to [open an issue, if there isn't o
 ### Requirements
 
 1. A Linux computer with a powerful, modern NVidia GPU
-2. [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
-3. git
+2. [NVidia CUDA](https://developer.nvidia.com/cuda-downloads), STRUDL is made for CUDA 8.0 but could probably work with more modern CUDA versions with some modifications to the dockerfile
+3. [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
+4. git
 
 ### Installation
 Note: This has not been quite tested yet!
