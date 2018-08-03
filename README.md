@@ -46,7 +46,7 @@ Note: This has not been quite tested yet!
 3. Navigate into the `strudl` folder, and run `run_docker.sh`, which requires sudo-privileges (because docker does), e.g. `cd strudl` and `sudo ./run_docker.sh`
 4. If everything works as expected, you should now be inside the docker container, in a folder called `/code`. You should be able to access the `data` folder you created at `/data`.
 5. To start the web server, run `python server.py`
-6. Visit port 8080 of the host computer via a web browser to see the Web UI and interact with it. For example, if you're using the web browser on the same computer, visit `localhost:8080` in a web browser like Firefox.
+6. Visit port 8080 of the host computer via a web browser to see the Web UI and interact with it. For example, if you're using the web browser on the same computer, visit `localhost` in a web browser like Firefox.
 
 ### Security notice
 This software has not been designed with maximum security in mind. It is recommended to run it in a local network behind a firewall. While docker does provide some sandboxing, this code is not "battle tested" and it should not be assumed to be safe. Leaving the port open to the internet could compromise your computer. One possible security flaw is that your computer's `/media` folder is being made available in the docker container, to simplify importing videos via e.g. USB. This can be changed by modifying `run_docker.sh`.

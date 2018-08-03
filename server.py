@@ -8,6 +8,7 @@ import os
 import cv2
 from random import choice
 import subprocess
+import click
 
 from jobman import JobManager
 from config import DatasetConfig, RunConfig
@@ -740,8 +741,9 @@ def post_world_calibration(dataset_name, calib_text):
         else:
             return (NoContent, 400)
 
-if __name__ == '__main__':
-    
+@click.command()
+@click.option("--port", default=80, help="Port number")
+def main(port):
     # Allows the host computer to remain responsive even while long-running and heavy processes are started by server
     import os
     os.nice(10)
@@ -749,4 +751,8 @@ if __name__ == '__main__':
     # Start server based on YAML specification
     app = connexion.App(__name__, specification_dir='./')
     app.add_api('strudl.yaml')
-    app.run(port=8080)
+    app.run(port=port)
+
+if __name__ == '__main__':
+    main()
+    
