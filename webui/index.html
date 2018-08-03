@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <title>STRUDL index page</title>
 <style>
+div.everything {
+ width: 65%;
+ display: block;
+ margin-left: auto;
+ margin-right: auto;
+}
+
 h1, h2, h3, h4, p, a {
  color: darkbrown;
  text-align: left;
@@ -63,39 +70,41 @@ select {
 </head>
 
 <body>
-<h1>STRUDL</h1>
+<div class=everything>
+    <h1>STRUDL</h1>
 
-<h2>Usage</h2>
-<p class=bottomspace>Go to <a href="ui/#/default">the Connexion User Interface</a> to do things!</p>
+    <h2>Usage</h2>
+    <p class=bottomspace>Go to <a href="ui/#/default">the Connexion User Interface</a> to do things!</p>
 
-<h2>Status</h2>
-<p id=topstatus></p>
-<p id=statustext></p>
-<div class=scrollable>
-    <p id=scrollstatus class=mono></p>
-</div>
-
-<h2>Guidance</h2>
-<p>Not sure what to do? Choose a dataset (and run, if you've started one) to get hints of what to do next.</p>
-
-<div class=allselectors>
-    <div class=selector>
-        <h3>Dataset</h3>
-        <select class=selector id=dataset_selector size=5></select>
+    <h2>Status</h2>
+    <p id=topstatus></p>
+    <p id=statustext></p>
+    <div class=scrollable>
+        <p id=scrollstatus class=mono></p>
     </div>
-    <div class=selector>
-        <h3>Run</h3>
-        <select class=selector id=run_selector size=5></select>
-    <div>
+
+    <h2>Guidance</h2>
+    <p>Not sure what to do? Choose a dataset (and run, if you've started one) to get hints of what to do next.</p>
+
+    <div class=allselectors>
+        <div class=selector>
+            <h3>Dataset</h3>
+            <select class=selector id=dataset_selector size=5></select>
+        </div>
+        <div class=selector>
+            <h3>Run</h3>
+            <select class=selector id=run_selector size=5></select>
+        <div>
+    </div>
+
+    <h3 id=vistitle></h3>
+    <h4 id=suggestion></h2>
+    <div id=vis></div>
+    <br>
+    <div id=vis2 class=scrollable></div>
+
+    <p id=info></p>
 </div>
-
-<h3 id=vistitle></h3>
-<h4 id=suggestion></h2>
-<div id=vis></div>
-<div id=vis2 class=scrollable></div>
-
-<p id=info></p>
-
 <script>
 
 var get_json = function(url, callback) {
