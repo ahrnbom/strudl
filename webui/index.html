@@ -133,6 +133,8 @@ var get_status = function() {
         if (err !== null) {
             statustext.innerHTML = "Failed to get status";
         } else {
+            topstatus.innerHTML = "CPU: " + data['cpu'] + "%<br>" + "RAM: " + data['ram'] + "%<br>" + "GPU: " + data['gpu'] + "%<br>" + "VRAM: " + data['vram'] + "%";
+        
             statustext.innerHTML = "Running now: " + data['running_now'];
             if (data['latest_log']) {
                 var text = "Latest log: <br><br>";
@@ -231,7 +233,11 @@ var make_visualization_list2 = function(data) {
     
     for (var i = 0; i != data.length; ++i) {
         var link = document.createElement('p');
-        link.innerHTML = "<a href=visualization?dataset_name=" + dataset + "&run_name=" + run + "&visualization_type=" + chosen_vt + "&video_name=" + data[i] + ">" + data[i] + "</a>";
+        var run2 = run;
+        if (run2 == "No run yet!") {
+            run2 = "abcdefg";
+        }
+        link.innerHTML = "<a href=visualization?dataset_name=" + dataset + "&run_name=" + run2 + "&visualization_type=" + chosen_vt + "&video_name=" + data[i] + ">" + data[i] + "</a>";
         console.log(link)
         vis2.appendChild(link);
         console.log(vis2);

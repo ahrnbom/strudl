@@ -23,6 +23,7 @@ from validation import validate_annotation, validate_calibration, validate_pretr
 from annotation import annotation_image_list, get_annotation_path, get_annotation_object, annotation_data
 from storage import load, save
 from tracking_world import WorldTrackingConfig
+from compstatus import status
 
 jm = JobManager()
 
@@ -303,6 +304,9 @@ def get_job_status():
     obj['latest_log'] = False
     if recent_log:
         obj['latest_log'] = recent_log.split('\n')
+    
+    cstatus = status()
+    obj['cpu'], obj['ram'], obj['gpu'], obj['vram'] = cstatus
     
     return (obj, 200)  
     
