@@ -111,11 +111,15 @@ def get_list_of_annotation_images(dataset_name, annotation_set):
     else:  
         return (out, 200)        
 
-def get_annotation_annotation(dataset_name, image_number, video_name, annotation_set, output_format):
+def get_annotation_annotation(dataset_name, image_number, video_name, annotation_set, output_format, accept_auto=False):
+    suffixes = ['.txt']
+    if accept_auto:
+        suffixes.append('.auto')
+
     if output_format == 'plain':
-        return get_annotation(dataset_name, image_number, video_name, annotation_set, '.txt', 'text/plain')
+        return get_annotation(dataset_name, image_number, video_name, annotation_set, suffixes, 'text/plain')
     elif output_format == 'json':
-        impath = get_annotation(dataset_name, image_number, video_name, annotation_set, '.txt', 'text/plain', send=False)
+        impath = get_annotation(dataset_name, image_number, video_name, annotation_set, suffixes, 'text/plain', send=False)
         
         if not (impath is None):
             annots = get_annotation_object(impath)
@@ -132,7 +136,14 @@ def get_annotation_image(dataset_name, image_number, video_name, annotation_set)
 def get_annotation(dataset_name, image_number, video_name, annotation_set, suffix, mime, send=True):
     dataset_name, video_name, annotation_set = map(quote, (dataset_name, video_name, annotation_set))
     
-    impath = get_annotation_path(dataset_name, annotation_set, video_name=video_name, image_number=image_number, suffix=suffix)
+    if not (type(suffix) == list):
+        suffix = [suffix]
+    
+    impath = None
+    for sfx in suffix:
+        impath = get_annotation_path(dataset_name, annotation_set, video_name=video_name, image_number=image_number, suffix=sfx)
+        if not (impath is None):
+            break
     
     if send:   
         if impath is None:

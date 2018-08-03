@@ -73,15 +73,20 @@ def validate_annotation(text, dataset):
             assert(splot[5][0:3] == "px:")
             assert(splot[6][0:3] == "py:")
             
-            px = splot[5].strip('px:').split(',')
-            py = splot[6].strip('py:').split(',')
+            px = splot[5].strip('px:')
+            py = splot[6].strip('py:')
             
-            assert(len(px)==4)
-            assert(len(py)==4)
-            
-            for x,y in zip(px,py):
-                float(x)
-                float(y)
+            if not (px == 'auto'):
+                px = px.split(',')       
+                assert(len(px)==4)
+                for x in px:
+                    float(x)
+                    
+            if not (py == 'auto'):
+                py = py.split(',')
+                assert(len(py)==4)
+                for y in py:
+                    float(y)
             
             assert(splot[7] in classnames)
     except:

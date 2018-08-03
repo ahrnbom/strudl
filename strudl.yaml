@@ -195,7 +195,7 @@ paths:
         required: true
     get:
       summary: Obtains an image annotation
-      description: Make sure to first call `annotate/images/get` to get a list of all annotation images. Then use this command to get the actual annotations of those images that have already been annotated.
+      description: Make sure to first call `annotate/images/get` to get a list of all annotation images. Then use this command to get the actual annotations of those images that have already been annotated, or have been automatically annotated.
       operationId: server.get_annotation_annotation
       parameters:
         - name: output_format
@@ -203,6 +203,11 @@ paths:
           type: string
           enum: [plain,json]
           required: true
+        - name: accept_auto
+          in: query
+          required: false
+          default: false
+          type: boolean
       produces:
         - text/plain
         - application/json

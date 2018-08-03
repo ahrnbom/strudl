@@ -55,9 +55,10 @@ def get_images_to_autoannotate(dataset):
 @click.option('--image_shape', default='(300,300,3)',help='The size of the original training images')
 @click.option('--batch_size', default=4, help='The batch size of the training.')
 @click.option('--batch_size2', default=32, help='The batch size of the testing.')
-@click.option('--epochs', default=10, help='The number of epochs used to run the training.')
+@click.option('--epochs', default=50, help='The number of epochs used to run the training.')
 @click.option('--frozen_layers', default=3, help='The number of frozen layers, max 5.')
-def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epochs, frozen_layers):
+@click.option('--conf_thresh', default=0.5, help='Detections with confidences below this will be removed. Should be low, as it can be filtered in the annotation tool')
+def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epochs, frozen_layers, conf_thresh):
     soft = False
 
     input_shape = parse_resolution(input_shape)
@@ -163,14 +164,16 @@ def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epo
                 auto_path = res_path.replace('.jpg','.auto')
                 with open(auto_path, 'w') as f:
                     for det in pandas_loop(raw_detections):
-                        line = "{index} {cx} {cy} {w} {h} conf:{conf} {cn}\n".format(index=int(det['class_index']),
-                                                                                     cx = round((det['xmin']+det['xmax'])/2,4),
-                                                                                     cy = round((det['ymin']+det['ymax'])/2,4),
-                                                                                     w = round(det['xmax']-det['xmin'],4),
-                                                                                     h = round(det['ymax']-det['ymin'],4),
-                                                                                     conf=round(det['confidence'],4),
-                                                                                     cn = classes[int(det['class_index'])-1])
-                        f.write(line)
+                        conf = round(det['confidence'],4)
+                        if conf >= conf_thresh:
+                            line = "{index} {cx} {cy} {w} {h} conf:{conf} {cn}\n".format(index=int(det['class_index']),
+                                                                                         cx = round((det['xmin']+det['xmax'])/2,4),
+                                                                                         cy = round((det['ymin']+det['ymax'])/2,4),
+                                                                                         w = round(det['xmax']-det['xmin'],4),
+                                                                                         h = round(det['ymax']-det['ymin'],4),
+                                                                                         conf=conf,
+                                                                                         cn = classes[int(det['class_index'])-1])
+                            f.write(line)
                 print_flush("Wrote {}".format(auto_path))
                 
             inputs = []

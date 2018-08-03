@@ -186,6 +186,8 @@ var to_do = function() {};
 
 var image_number = -1;
 
+var conf_thresh = 0.5; // TODO: Make this user controllable!
+
 var go_to_next = function() {
     var imnum = parseInt(image_number) + 1;
     image_number = "" + imnum;
@@ -244,6 +246,34 @@ var update = function(vidname, imnum, status) {
                 }
             });
         }
+    } else if (status === "automatically_annotated") {
+        to_do = function() {
+            get_json(post_url + '&output_format=json&accept_auto=true', function(err, data) {
+                if (err == null) {
+                    boxes = [];
+                    for (var i = 0; i != data.length; ++i) {
+
+                        var d = data[i];
+                        var curr_box = {};
+                        curr_box.x1 = width * (d.center_x - (d.width/2));
+                        curr_box.x2 = width * (d.center_x + (d.width/2));
+                        curr_box.y1 = height * (d.center_y - (d.height/2));
+                        curr_box.y2 = height * (d.center_y + (d.height/2));
+                        curr_box.objClass = d.class_name;
+                        
+                        if (d.conf >= conf_thresh) {
+                            boxes.push(curr_box);
+                        }
+                    }
+                    
+                    drawBG();
+                    drawBoxes();
+                   
+                } else {
+                    info.innerHTML = "Failed to get existing annotation: " + err;
+                }
+            });
+        }    
     } else {
         to_do = function() {};
     }
@@ -349,6 +379,8 @@ var set_video_colors = function(data) {
             has_already_annotated[vidname] = true;
         } else if (data[i][2] == 'not_annotated') {
             has_not_annotated[vidname] = true;
+        } else if (data[i][2] == 'automatically_annotated') {
+            has_not_annotated[vidname] = true;
         }
     }
     
@@ -397,6 +429,8 @@ var update_ims_per_vid = function() {
                         opt.style.backgroundColor = 'lightsalmon';
                     } else if (data[i][2] == 'already_annotated') {
                         opt.style.backgroundColor = 'palegreen';
+                    } else if (data[i][2] == 'automatically_annotated') {
+                        opt.style.backgroundColor = 'yellow';
                     }
                     
                     im_sel.appendChild(opt);
@@ -504,12 +538,12 @@ ms_load = function() {
     }
 }
 
-var colors = {}; //{"car": "red", "bicycle":"blue", "person":"purple", "bus":"yellow", "motorbike":"pink"};
-var classnames = []; //['bicycle', 'bus', 'car', 'motorbike', 'person'];
+var colors = {}; 
+var classnames = [];
 var keys_list = [];
 var key_codes_list = [];
 
-classification_text = "THIS TEXT SHOULD NEVER BE VISIBLE"
+classification_text = "THIS TEXT SHOULD NEVER BE VISIBLE";
 
 var exportString = function() {
     var i = 0;
@@ -523,13 +557,17 @@ var exportString = function() {
         var bw = ((box.x2 - box.x1)/width).toFixed(decimals);
         var bh = ((box.y2 - box.y1)/height).toFixed(decimals);
         
-        var px = box.px
-        var py = box.py
-        
-        var ii = 0;
-        for (ii = 0; ii != px.length; ++ii) {
-            px[ii] = (px[ii]/width).toFixed(decimals);
-            py[ii] = (py[ii]/height).toFixed(decimals);
+        var px = "auto";
+        var py = "auto";
+        if ('px' in box) {
+            px = box.px
+            py = box.py
+            
+            var ii = 0;
+            for (ii = 0; ii != px.length; ++ii) {
+                px[ii] = (px[ii]/width).toFixed(decimals);
+                py[ii] = (py[ii]/height).toFixed(decimals);
+            }
         }
         
         var objClass = box.objClass;
@@ -656,6 +694,7 @@ var send_annot_response = function(err, text) {
         
     } else {
         info.innerHTML = text;
+        console.log(err);
     }
 }
 

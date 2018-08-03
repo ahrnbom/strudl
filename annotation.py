@@ -59,6 +59,10 @@ def annotation_image_list(dataset_name, annotation_set):
                 annotated = "not_annotated"
                 if isfile(txt):
                     annotated = "already_annotated"
+                else:
+                    auto = im.replace('.jpg','.auto')
+                    if isfile(auto):
+                        annotated = "automatically_annotated"
                     
                 out.append( (vid, imnum, annotated) )
         
@@ -81,10 +85,21 @@ def get_annotation_object(impath):
         annot['height'] = float(splot[4])
         annot['class_name'] = splot[-1]
         
-        px = splot[5].strip('px:').split(',')
-        py = splot[6].strip('py:').split(',')
-        annot['px'] = [float(x) for x in px]
-        annot['py'] = [float(x) for x in py]
+        if splot[5].startswith('px:'):
+            px = splot[5].strip('px:')
+            py = splot[6].strip('py:')
+            
+            if not (px == 'auto'):
+                px = px.split(',')
+                py = py.split(',')
+                annot['px'] = [float(x) for x in px]
+                annot['py'] = [float(x) for x in py]
+            else:
+                annot['px'] = 'auto'
+                annot['py'] = 'auto'
+                
+        elif splot[5].startswith('conf:'):
+            annot['conf'] =  float(splot[5].split(':')[1])
 
         annots.append(annot)
     
