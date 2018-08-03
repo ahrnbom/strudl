@@ -285,6 +285,26 @@ def get_mask(dataset_name):
         return (mask_file, 200)
     else:
         return (NoContent, 404)
+
+def get_job_status():
+    running = jm.get_jobs("running")
+    recent = jm.get_jobs("recent")
+    recent_log = None
+    
+    if recent:
+        recent = recent[-1]
+        recent_log = jm.get_log(recent)
+    
+    obj = dict()
+    obj['running_now'] = False
+    if running:
+        obj['running_now'] = True
+    
+    obj['latest_log'] = False
+    if recent_log:
+        obj['latest_log'] = recent_log.split('\n')
+    
+    return (obj, 200)  
     
 def get_job_ids(jobs_type):
     ids = jm.get_jobs(jobs_type)
@@ -295,7 +315,7 @@ def get_job_by_id(job_id):
         job_id = jm.get_jobs("running")
     elif job_id == "last":
         job_ids = jm.get_jobs("recent")
-        print(job_ids)
+
         if job_ids:
             job_id = job_ids[-1]
         else:
@@ -742,7 +762,7 @@ def post_world_calibration(dataset_name, calib_text):
             return (NoContent, 400)
 
 @click.command()
-@click.option("--port", default=80, help="Port number")
+@click.option("--port", default=80, help="Port number. Note that if this is changed and run from within docker, the docker run command needs to be changed to forward the correct port.")
 def main(port):
     # Allows the host computer to remain responsive even while long-running and heavy processes are started by server
     import os

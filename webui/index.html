@@ -10,6 +10,10 @@ h1, h2, h3, h4, p, a {
  font-family: calibri,"Trebuchet MS", Helvetica, sans-serif;
 }
 
+p.mono {
+ font-family: monospace
+}
+
 h3 {
  margin-bottom: 1px;
  padding-bottom: 1px;
@@ -64,6 +68,12 @@ select {
 <h2>Usage</h2>
 <p class=bottomspace>Go to <a href="ui/#/default">the Connexion User Interface</a> to do things!</p>
 
+<h2>Status</h2>
+<p id=topstatus></p>
+<p id=statustext></p>
+<div class=scrollable>
+    <p id=scrollstatus class=mono></p>
+</div>
 
 <h2>Guidance</h2>
 <p>Not sure what to do? Choose a dataset (and run, if you've started one) to get hints of what to do next.</p>
@@ -103,6 +113,9 @@ var get_json = function(url, callback) {
     xhr.send();
 };
 
+var topstatus = document.getElementById("topstatus");
+var statustext = document.getElementById("statustext");
+var scrollstatus = document.getElementById("scrollstatus");
 var ds_sel = document.getElementById("dataset_selector");
 var run_sel = document.getElementById("run_selector");
 var info = document.getElementById("info");
@@ -114,6 +127,30 @@ var dataset = "";
 var run = "";
 var curr_data = "";
 var chosen_vt = "";
+
+var get_status = function() {
+    get_json("/jobs/status", function(err, data) {
+        if (err !== null) {
+            statustext.innerHTML = "Failed to get status";
+        } else {
+            statustext.innerHTML = "Running now: " + data['running_now'];
+            if (data['latest_log']) {
+                var text = "Latest log: <br><br>";
+                var llog = data['latest_log'];
+                for (var i = 0; i != llog.length; ++i) {
+                    var line = llog[i];
+                    text = text + line + "<br>";
+                }
+                scrollstatus.innerHTML = text;
+            } else {
+                scrollstatus.innerHTML = "No latest log file to show";
+            }
+        }
+    });
+}
+
+get_status();
+setInterval(get_status, 5000);
 
 ds_sel.onchange = function() {
     dataset = ds_sel.value;

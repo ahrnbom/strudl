@@ -434,6 +434,17 @@ paths:
           description: A list of currently running jobs was found and will be displayed
         500:
           description: For some reason, it was impossible to get a list of running jobs
+  
+  /jobs/status:
+    get:
+      operationId: server.get_job_status
+      summary: Get current status
+      description: Gets an object with keys `running_now`, `latest_log` (which will be the log of the currently running job, if there is one)
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Successfully get status
           
   /jobs/{job_id}:
     parameters: 

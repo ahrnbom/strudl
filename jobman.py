@@ -109,6 +109,7 @@ class JobManager(object):
         elif job_type == 'all':
             logs = glob("{}*.log".format(jobs_path))
             job_ids = [x.split('/')[-1].strip('.log') for x in logs]
+            job_ids.sort()
             
             queue_ids = [x[0] for x in self.queue]
             job_ids.extend(queue_ids)
