@@ -541,6 +541,23 @@ paths:
         404:
           description: A dataset configuration does not exist
   
+  /jobs/autoannotate:
+    post:
+      operationId: server.post_autoannotate_job
+      summary: Uses existing annotations to automatically annotate the rest, which should then be manually inspected and fixed.
+      description: Make sure annotations are prepared, and some annotations are already made (at least 100)
+      parameters:
+        - $ref: "#/parameters/datasetName"
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start. 
+        503:
+          description: Device is busy
+        404:
+          description: A dataset configuration does not exist
+  
   /jobs/train_detector:
     post:
       operationId: server.post_train_detector_job

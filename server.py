@@ -410,6 +410,23 @@ def post_prepare_annotations_job(dataset_name):
             return (NoContent, 503)
     else:
         return (NoContent, 404)
+        
+def post_autoannotate_job(dataset_name):
+    dataset_name = quote(dataset_name)
+    dc = DatasetConfig(dataset_name)
+    if dc.exists:
+        cmd = ["python", "autoannotate.py",
+               "--dataset={}".format(dataset_name),
+               "--input_shape=(640,480,3)",
+               "--image_shape={}".format(dc.get('video_resolution'))]
+        
+        job_id = jm.run(cmd, "autoannotate")
+        if job_id:
+            return (job_id, 202)
+        else:
+            return (NoContent, 503)
+    else:
+        return (NoContent, 404)
     
 def post_train_detector_job(dataset_name, run_name):
     dataset_name = quote(dataset_name)
