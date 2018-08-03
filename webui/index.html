@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -14,7 +14,7 @@ div.everything {
 h1, h2, h3, h4, p, a {
  color: darkbrown;
  text-align: left;
- font-family: calibri,"Trebuchet MS", Helvetica, sans-serif;
+ font-family: helvetica, arial, calibri, sans-serif;
 }
 
 p.mono {
@@ -142,7 +142,7 @@ var get_status = function() {
         if (err !== null) {
             statustext.innerHTML = "Failed to get status";
         } else {
-            topstatus.innerHTML = "CPU: " + data['cpu'] + "%<br>" + "RAM: " + data['ram'] + "%<br>" + "GPU: " + data['gpu'] + "%<br>" + "VRAM: " + data['vram'] + "%";
+            topstatus.innerHTML = "CPU: " + data['cpu'] + "%<br>" + "RAM: " + data['ram'] + "%<br>" + "GPU: " + data['gpu'] + "%<br>" + "VRAM: " + data['vram'] + "%<br>" + "DISK: " + data['disk'] + "%";
         
             statustext.innerHTML = "Running now: " + data['running_now'];
             if (data['latest_log']) {

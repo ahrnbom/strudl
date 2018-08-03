@@ -1,4 +1,4 @@
-""" A module for getting the status of the host computer (CPU, RAM, GPU) """
+""" A module for getting the status of the host computer (CPU, RAM, GPU, etc.) """
 
 import psutil
 from subprocess import Popen, PIPE
@@ -18,11 +18,20 @@ def gpu():
     line = lines[0]
 
     util, tot, used = map(int, line.split(", "))
-    return util, round(100*float(used)/tot,2)
+    return util, round(100*float(used)/tot,1)
+
+def disk():
+    p = Popen(['df','/data'], stdout=PIPE)
+    output = p.stdout.read().decode('UTF-8')
+    lines = output.split('\n')
+    assert(len(lines)==3)
+    line = lines[1].split(' ')
+    
+    return int(line[-2].strip('%'))
 
 def status():
     gpu_util, gpu_mem = gpu()
-    return cpu(), ram(), gpu_util, gpu_mem
+    return cpu(), ram(), gpu_util, gpu_mem, disk()
     
 if __name__ == '__main__':
     a = status()

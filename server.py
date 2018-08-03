@@ -306,7 +306,7 @@ def get_job_status():
         obj['latest_log'] = recent_log.split('\n')
     
     cstatus = status()
-    obj['cpu'], obj['ram'], obj['gpu'], obj['vram'] = cstatus
+    obj['cpu'], obj['ram'], obj['gpu'], obj['vram'], obj['disk'] = cstatus
     
     return (obj, 200)  
     

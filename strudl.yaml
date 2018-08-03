@@ -439,7 +439,7 @@ paths:
     get:
       operationId: server.get_job_status
       summary: Get current status
-      description: Gets an object with keys `running_now`, `latest_log` (which will be the log of the currently running job, if there is one)
+      description: Gets an object with keys `running_now`, `latest_log` (which will be the log of the currently running job, if there is one), as well as `cpu`,`ram`,`gpu`,`vram` and `disk`.
       produces:
         - application/json
       responses:
