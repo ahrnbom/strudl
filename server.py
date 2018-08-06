@@ -351,7 +351,7 @@ def delete_job_by_id(job_id):
         return (NoContent, 404)
     
     
-def post_import_videos_job(dataset_name, path, method, logs_path=None):
+def post_import_videos_job(dataset_name, path, method, logs_path=None, minutes=0):
     dataset_name = quote(dataset_name)
     path = quote(path)
     
@@ -374,7 +374,8 @@ def post_import_videos_job(dataset_name, path, method, logs_path=None):
                "--resolution={}".format(resolution),
                "--method={}".format(method),
                "--fps={}".format(fps),
-               "--logs={}".format(logs_path)]
+               "--logs={}".format(logs_path),
+               "--minutes={}".format(minutes)]
        
         job_id = jm.run(cmd, "import_videos")
         if job_id:

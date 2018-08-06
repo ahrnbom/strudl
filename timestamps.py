@@ -8,6 +8,18 @@ from os.path import isfile
 
 from folder import datasets_path
 
+def line_to_datetime(line):
+    splot = line.split(' ')
+            
+    frame_number,year,month,day = map(int, splot[0:4])
+    
+    t_splot = splot[4].replace('.',':').split(':')
+    hour,minute,second,millisecond = map(int, t_splot)
+    
+    frame_time = datetime(year, month, day, hour, minute, second, millisecond*1000)
+    
+    return frame_time, frame_number
+
 class Timestamps(object):
     def __init__(self, dataset, cache_limit=16):
         self.file_cache = {}
@@ -94,18 +106,10 @@ class Timestamps(object):
         
         times = []
         for line in lines:
-            splot = line.split(' ')
-            
-            year,month,day = map(int, splot[1:4])
-            
-            t_splot = splot[4].replace('.',':').split(':')
-            hour,minute,second,millisecond = map(int, t_splot)
-            
-            frame_time = datetime(year, month, day, hour, minute, second, millisecond*1000)
+            frame_time, frame_number = line_to_datetime(line)
             
             times.append(frame_time)
             
-            frame_number = int(splot[0])
             assert(len(times)-1 == frame_number)
         
         return times

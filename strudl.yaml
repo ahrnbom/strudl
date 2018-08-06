@@ -502,6 +502,11 @@ paths:
           type: string
           required: false
           description: Folder in which log files are stored. Do not use wildcards here. If omitted, log files are assumed to be in the same folder as the video files, but this only works if wildcards are used only at the very end of the `path`, like `/path/to/some/videos/*.mkv`. A path to a folder should always end with a `/`.
+        - name: minutes
+          in: query
+          type: integer
+          required: false
+          description: If omitted, videos will be as long as the input videos. If included, videos will be this many minutes long.
       responses:
         202:
           description: Job accepted and started. A job ID is returned.
