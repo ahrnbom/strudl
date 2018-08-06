@@ -27,6 +27,7 @@ Got any issues with this software? Feel free to [open an issue, if there isn't o
 ### Some features
 1. Take advantage of modern deep learning without extensive knowledge of the technology
 1. Easily make object detection annotations via custom web interface
+1. Semi-automatic annotation process, where a detector can be trained on the currently available training data, and those detections can then be used as a starting point for annotations, speeding up the process once a critical number of images has been annotated.
 1. Tracking in world coordinates, which can optimized if the user provides ground truth tracks made by [T-Analyst](http://www.tft.lth.se/en/research/video-analysis/co-operation/software/t-analyst/)
 1. Full trajectories can be obtained as text files, which the user can then filter, sort and present, using any tools they prefer. This allows e.g. complex traffic analysis.
 
@@ -56,9 +57,8 @@ There's always more to do! On our to-do list contains, among other things, the f
 
 1. Simplification of the Web UI, to make it easier to understand what has been done and what to do next
 2. It should be possible to re-code the videos into different lengths during the importing step. This could be important for some applications as objects are currently not tracked from one video file to another.
-3. It should be possible to train the detector on some annotations, and then use that detector to make semi-automatic annotations that can be inspected and modified by humans. This should speed up the annotation process.
-4. It should be possible to import annotated images from one dataset to another during training
-5. SSD code is currently based on [this port by Rykov8](https://github.com/rykov8/ssd_keras). It might be a good idea to change to [this one instead, by Pierluigiferrari](https://github.com/pierluigiferrari/ssd_keras), which is more nicely documented and runs NMS on the GPU.
-6. Code should become more readable and better commented (this started as, and in many ways still is, experimental research code)
-7. Different tracking algorithms should be examined, possibly replacing the simplistic one currently used.
-8. More easter eggs, jokes and memes. 
+3. It should be possible to import annotated images from one dataset to another during training
+4. SSD code is currently based on [this port by Rykov8](https://github.com/rykov8/ssd_keras). It might be a good idea to change to [this one instead, by Pierluigiferrari](https://github.com/pierluigiferrari/ssd_keras), which is more nicely documented and runs NMS on the GPU.
+5. Code should become more readable and better commented (this started as, and in many ways still is, experimental research code)
+6. Different tracking algorithms should be examined, possibly replacing the simplistic one currently used.
+7. More easter eggs, jokes and memes. 
