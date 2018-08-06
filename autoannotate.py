@@ -55,10 +55,9 @@ def get_images_to_autoannotate(dataset):
 @click.option('--image_shape', default='(300,300,3)',help='The size of the original training images')
 @click.option('--batch_size', default=4, help='The batch size of the training.')
 @click.option('--batch_size2', default=32, help='The batch size of the testing.')
-@click.option('--epochs', default=50, help='The number of epochs used to run the training.')
+@click.option('--epochs', default=75, help='The number of epochs used to run the training.')
 @click.option('--frozen_layers', default=3, help='The number of frozen layers, max 5.')
-@click.option('--conf_thresh', default=0.5, help='Detections with confidences below this will be removed. Should be low, as it can be filtered in the annotation tool')
-def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epochs, frozen_layers, conf_thresh):
+def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epochs, frozen_layers):
     soft = False
 
     input_shape = parse_resolution(input_shape)
@@ -74,7 +73,7 @@ def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epo
     
     detections.index = detections.image_file
     
-    print_flush('Detection frequencies:')
+    print_flush('Ground truth object counts:')
     print_flush(detections.type.value_counts())
     
     classes = get_classnames(dataset)
@@ -143,6 +142,7 @@ def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epo
     impaths = []
     to_annotate = get_images_to_autoannotate(dataset)
     
+    # rep_last needed since we use large batches, for speed, to make sure we run on all images
     for impath in rep_last(to_annotate, batch_size2):
         im = iio.imread(impath)
         im = masker.mask(im)
@@ -162,18 +162,27 @@ def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epo
                 raw_detections = pd.DataFrame(np.vstack(result), columns=['class_index', 'confidence', 'xmin', 'ymin', 'xmax', 'ymax'])
                 
                 auto_path = res_path.replace('.jpg','.auto')
+                
+                # Sort detections by confidence, keeping the top ones
+                # This seems to be more robust than a hard-coded confidence threshold
+                # Note that a confidence threshold can be chosen in the annotation web UI
+                n = 128
+                dets = [x for x in pandas_loop(raw_detections)]
+                dets.sort(key=lambda x: 1.0-x['confidence'])
+                if len(dets) > n:
+                    dets = dets[:n]
+                
                 with open(auto_path, 'w') as f:
-                    for det in pandas_loop(raw_detections):
+                    for det in dets:
                         conf = round(det['confidence'],4)
-                        if conf >= conf_thresh:
-                            line = "{index} {cx} {cy} {w} {h} conf:{conf} {cn}\n".format(index=int(det['class_index']),
-                                                                                         cx = round((det['xmin']+det['xmax'])/2,4),
-                                                                                         cy = round((det['ymin']+det['ymax'])/2,4),
-                                                                                         w = round(det['xmax']-det['xmin'],4),
-                                                                                         h = round(det['ymax']-det['ymin'],4),
-                                                                                         conf=conf,
-                                                                                         cn = classes[int(det['class_index'])-1])
-                            f.write(line)
+                        line = "{index} {cx} {cy} {w} {h} conf:{conf} {cn}\n".format(index=int(det['class_index']),
+                                                                                     cx = round((det['xmin']+det['xmax'])/2,4),
+                                                                                     cy = round((det['ymin']+det['ymax'])/2,4),
+                                                                                     w = round(det['xmax']-det['xmin'],4),
+                                                                                     h = round(det['ymax']-det['ymin'],4),
+                                                                                     conf=conf,
+                                                                                     cn = classes[int(det['class_index'])-1])
+                        f.write(line)
                 print_flush("Wrote {}".format(auto_path))
                 
             inputs = []
