@@ -147,7 +147,9 @@ var get_status = function() {
         
             statustext.innerHTML = "Running now: " + data['running_now'];
 
-            // Set color of log scrolling field            
+            // Set color of log scrolling field
+            // Containing the line 'Done!' is chosen as a measure of if something was successfull or not, since
+            // some scripts generate error messages and warnings even when they actually work.            
             if (data['running_now']) {
                 scrollstatusfield.style.background = "lightyellow";
             } else {
@@ -291,6 +293,9 @@ var make_suggestion = function() {
         sugg.innerHTML = "Suggestion: <a href=/ui/#!/default/server_post_point_tracks_job>Generate point tracks!</a>";
     } else if (curr_data['dataset']['training_frames_annotated'] < curr_data['dataset']['training_frames_to_annotate']) {
         sugg.innerHTML = "Suggestion: <a href=/annotate>Annotate more images!</a>";
+        if (curr_data['dataset']['training_frames_annotated'] > 100) {
+            sugg.innerHTML = sugg.innerHTML + " Or perhaps <a href=ui/#!/default/server_post_autoannotate_job>auto-annotate images!</a>";
+        }
     } else if (curr_data['dataset']['all_runs'].length == 0) {
         sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_run_config>Define a run!</a>";
     } else if (curr_data.hasOwnProperty('run')) {

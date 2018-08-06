@@ -550,7 +550,7 @@ paths:
     post:
       operationId: server.post_autoannotate_job
       summary: Uses existing annotations to automatically annotate the rest, which should then be manually inspected and fixed.
-      description: Make sure annotations are prepared, and some annotations are already made (at least 100)
+      description: Make sure annotations are prepared, and some annotations are already made (at least 100, and the more the better)
       parameters:
         - $ref: "#/parameters/datasetName"
       responses:
