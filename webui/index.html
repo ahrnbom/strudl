@@ -79,7 +79,7 @@ select {
     <h2>Status</h2>
     <p id=topstatus></p>
     <p id=statustext></p>
-    <div class=scrollable>
+    <div id=scrollstatusfield class=scrollable>
         <p id=scrollstatus class=mono></p>
     </div>
 
@@ -125,6 +125,7 @@ var get_json = function(url, callback) {
 var topstatus = document.getElementById("topstatus");
 var statustext = document.getElementById("statustext");
 var scrollstatus = document.getElementById("scrollstatus");
+var scrollstatusfield = document.getElementById("scrollstatusfield");
 var ds_sel = document.getElementById("dataset_selector");
 var run_sel = document.getElementById("run_selector");
 var info = document.getElementById("info");
@@ -145,6 +146,13 @@ var get_status = function() {
             topstatus.innerHTML = "CPU: " + data['cpu'] + "%<br>" + "RAM: " + data['ram'] + "%<br>" + "GPU: " + data['gpu'] + "%<br>" + "VRAM: " + data['vram'] + "%<br>" + "DISK: " + data['disk'] + "%";
         
             statustext.innerHTML = "Running now: " + data['running_now'];
+            
+            if (data['running_now']) {
+                scrollstatusfield.style.background = "lightyellow";
+            } else {
+                scrollstatusfield.style.background = "palegreen";
+            }
+            
             if (data['latest_log']) {
                 var text = "Latest log: <br><br>";
                 var llog = data['latest_log'];

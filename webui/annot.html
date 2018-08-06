@@ -59,6 +59,7 @@ div.canv_div {
  margin-left: auto;
  margin-right: auto;
  display: block;
+ width: 65%;
 }
 
 select.selector {
@@ -71,6 +72,12 @@ select.selector {
 
 option:checked {
   background: SlateBlue linear-gradient(0deg, SlateBlue 0%, SlateBlue 100%);
+}
+
+canvas.maincanv {
+ margin-left: auto;
+ margin-right: auto;
+ display: block;
 }
 
 </style>
@@ -104,12 +111,12 @@ option:checked {
 
 <div class=outer>
     <div class=selectblock>
-        <h3 id="slider_h">Image scale (1)</h3>
+        <h3 id="slider_h">Image scale</h3>
         <input type="range" min="0.01" max="2" value="1" step=0.01 class="slider" id="slider">
     </div>
     
     <div class=selectblock>
-        <h3 id="confslider_h">Autoannotation confidence threshold (0.5)</h3>
+        <h3 id="confslider_h">Autoannotation confidence threshold</h3>
         <input type="range" min="0.01" max="1" value="0.5" step=0.01 class="slider" id="confslider">
     </div>    
 </div>
@@ -124,7 +131,7 @@ option:checked {
     
     <div class=canv_div>
         <p id="instruction" class="above">Instructions should go here</p>
-        <canvas id="canv" width="720" height="512" style="border:1px solid #000000;" tabindex='1'>
+        <canvas id="canv" class="maincanv" width="720" height="512" tabindex='1'>
             Your browser cannot display HTML5 stuff. Get a better web browser.
         </canvas>
         
