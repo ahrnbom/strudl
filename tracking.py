@@ -522,6 +522,8 @@ def main(cmd, dataset, run, vidres, ssdres, kltres, conf, make_videos):
                 print_flush("{}  video done".format(v))
             else:
                 print_flush("{}  skipping video rendering, because there were no tracks".format(v))
+    
+    print_flush("Done!")
 
 if __name__ == '__main__':
     main()

@@ -194,6 +194,8 @@ def main(cmd, dataset, imsize):
             outvidpath = datpath.replace('.pklz', '_klt.mp4')
             print_flush("{}   ->   {} & {}".format(vidpath, datpath, outvidpath))
             klt_save(vidpath, datpath, imsize, mask, outvidpath)
+        
+        print_flush("Done!")
     else:
         raise(ValueError())
             

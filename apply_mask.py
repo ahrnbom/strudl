@@ -14,6 +14,7 @@ class Masker(object):
         self.alpha_cache_limit = 4
 
     def get_mask(self, dataset):
+        # Note that klt.py has custom treatment and loading of mask images. If something is changed here, maybe it should be changed there as well!
         mask_path = "{}{}/mask.png".format(datasets_path, dataset)
         if os.path.isfile(mask_path):
             mask = cv2.imread(mask_path, -1)           

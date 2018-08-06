@@ -235,7 +235,7 @@ def main(batch_size, max_images, max_images_per_output, name, threshold,
 
     session.close()
     log('Finished TensorFlow session')
-
+    log('Done!')
 
 if __name__ == '__main__':
     main()

@@ -146,11 +146,26 @@ var get_status = function() {
             topstatus.innerHTML = "CPU: " + data['cpu'] + "%<br>" + "RAM: " + data['ram'] + "%<br>" + "GPU: " + data['gpu'] + "%<br>" + "VRAM: " + data['vram'] + "%<br>" + "DISK: " + data['disk'] + "%";
         
             statustext.innerHTML = "Running now: " + data['running_now'];
-            
+
+            // Set color of log scrolling field            
             if (data['running_now']) {
                 scrollstatusfield.style.background = "lightyellow";
             } else {
                 scrollstatusfield.style.background = "palegreen";
+                
+                if (data['latest_log']) {
+                    var found_done = false;
+                    var llog = data['latest_log'];
+                    for (var i = 0; i != llog.length; ++i) {
+                        var line = llog[i];
+                        if (line == "Done!") {
+                            found_done = true;
+                        }
+                    }
+                    if (!found_done) {
+                        scrollstatusfield.style.background = "tomato";
+                    }
+                }
             }
             
             if (data['latest_log']) {
@@ -158,9 +173,11 @@ var get_status = function() {
                 var llog = data['latest_log'];
                 for (var i = 0; i != llog.length; ++i) {
                     var line = llog[i];
+                    
                     text = text + line + "<br>";
                 }
                 scrollstatus.innerHTML = text;
+                
             } else {
                 scrollstatus.innerHTML = "No latest log file to show";
             }

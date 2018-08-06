@@ -414,7 +414,7 @@ def main(batch_size, max_images, epochs, name, frozen_layers, experiment,train_d
     cleanup(name, experiment)
     
     log('Finished TensorFlow session')
-    
+    log('Done!')
     
 
 if __name__ == '__main__':

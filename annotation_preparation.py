@@ -93,6 +93,8 @@ def main(dataset, num_ims, ims_per_vid, train_amount):
         print_flush(v)
         gen_images(testpath, v, ims_per_vid)
         
+    print_flush("Done!")
+    
 if __name__ == "__main__":
     main()
     

@@ -143,7 +143,8 @@ def detect(dataset, run, res, conf, bs):
         mins = floor((now-before)/60)
         secs = round(now-before-60*mins)
         print_flush("{}  {}% done, time: {} min {} seconds".format(vid, done_percent, mins, secs))
-        
+    
+    print_flush("Done!")
         
 if __name__ == '__main__':
     detect()
