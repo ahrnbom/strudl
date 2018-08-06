@@ -85,6 +85,7 @@ def recode_minutes_imageio(files, logs_basepath, minutes, width, height, fps, ta
         
         outvid = iio.get_writer(vidpath, fps=fps)
         outlog = []
+        out_framenum = 0
         
         first_time = curr_time
         
@@ -113,8 +114,14 @@ def recode_minutes_imageio(files, logs_basepath, minutes, width, height, fps, ta
             if rescale:
                 frame = cv2.resize(frame, (width, height))
             
+            splot = line.split(" ")
+            splot[0] = fill(out_framenum, 5)
+            line = " ".join(splot)
+            
             outvid.append_data(frame)
             outlog.append(line)
+            
+            out_framenum += 1
         
         # Close current output video/log
         outvid.close()
