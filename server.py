@@ -423,14 +423,15 @@ def post_prepare_annotations_job(dataset_name):
     else:
         return (NoContent, 404)
         
-def post_autoannotate_job(dataset_name):
+def post_autoannotate_job(dataset_name, epochs=75):
     dataset_name = quote(dataset_name)
     dc = DatasetConfig(dataset_name)
     if dc.exists:
         cmd = ["python", "autoannotate.py",
                "--dataset={}".format(dataset_name),
                "--input_shape=(640,480,3)",
-               "--image_shape={}".format(dc.get('video_resolution'))]
+               "--image_shape={}".format(dc.get('video_resolution')),
+               "--epochs={}".format(epochs)]
         
         job_id = jm.run(cmd, "autoannotate")
         if job_id:

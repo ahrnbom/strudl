@@ -555,9 +555,13 @@ paths:
     post:
       operationId: server.post_autoannotate_job
       summary: Uses existing annotations to automatically annotate the rest, which should then be manually inspected and fixed.
-      description: Make sure annotations are prepared, and some annotations are already made (at least 100, and the more the better)
+      description: Make sure annotations are prepared, and some annotations are already made (at least 100, and the more the better). If number of epochs is not provided, 75 will be used.
       parameters:
         - $ref: "#/parameters/datasetName"
+        - name: epochs
+          in: query
+          type: integer
+          required: false
       responses:
         202:
           description: Job accepted and started. A job ID is returned.
