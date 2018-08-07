@@ -32,8 +32,9 @@ import logging
 import subprocess
 
 from apply_mask import Masker
-from util import parse_resolution
+from util import parse_resolution, print_flush
 from folder import runs_path, base_path
+from ssd_cleanup import cleanup
 
 np.set_printoptions(suppress=True)
 
@@ -410,11 +411,10 @@ def main(batch_size, max_images, epochs, name, frozen_layers, experiment,train_d
     plt.savefig('{runspath}{name}_{experiment}/results.pdf'.format(runspath=runs_path, name=name, experiment=experiment))
     
     log('Cleaning up non-optimal weights...')
-    from ssd_cleanup import cleanup
     cleanup(name, experiment)
     
     log('Finished TensorFlow session')
-    log('Done!')
+    print_flush('Done!')
     
 
 if __name__ == '__main__':

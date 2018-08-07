@@ -13,6 +13,9 @@ from folder import runs_path
 @click.command()
 @click.option("--dataset", default="sweden2", help="Name of dataset")
 @click.option("--run", default="default", help="Name of training run")
+def main(dataset, run):
+    cleanup(dataset, run)
+
 def cleanup(dataset, run):
     weights_files = glob(os.path.join(runs_path, '{dataset}_{run}'.format(dataset=dataset,run=run), 'checkpoints', '*.hdf5'))
     weights_files_loss = np.array([float(wf.split('-')[-1].replace('.hdf5', '')) for wf in weights_files])
@@ -23,7 +26,7 @@ def cleanup(dataset, run):
             remove(wf)
             
 if __name__ == '__main__':
-    cleanup()
+    main()
 
 
         
