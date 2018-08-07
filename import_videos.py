@@ -5,7 +5,8 @@ import imageio as iio
 from glob import glob
 import cv2
 import subprocess
-from shutil import copy
+from shutil import copy, rmtree
+from os.path import isdir
 import random
 import string
 
@@ -41,6 +42,8 @@ def recode_minutes_imageio(files, logs_basepath, minutes, width, height, fps, ta
     """ Recodes videos such that each video is `minutes` many minutes long.
         Uses imageio to do this. Using handbrake would certainly be possible but a bit cumbersome to implement.
     """
+    
+    assert(len(files) > 0)
     
     # Build a structure of the start times of each video, to sort them
     print_flush("Structuring...")
@@ -154,6 +157,7 @@ def encode_imageio(path, target_path, width, height, fps):
 def encode_handbrake(path, target_path, width, height, fps):
     cmd = ['HandBrakeCLI', '--width', str(width), 
            '--height', str(height), '--rate', str(fps),
+           '--crop', '0:0:0:0',
            '-i', path, '-o', target_path]
         
     print_flush(' '.join(cmd))       
@@ -171,6 +175,8 @@ def encode_handbrake(path, target_path, width, height, fps):
 @click.option("--logs", help="Folder in which log files are stored")
 @click.option("--minutes", default=0, help="If a positive integer, videos are recoded to videos of this many minutes in length. If 0, videos are kept to the previous length.")
 def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes):   
+    
+    assert(suffix == '.mkv')
     
     if method == "imageio":
         encode = encode_imageio
@@ -208,7 +214,36 @@ def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes
             else:
                 raise(ValueError("Incorrect log file {}".format(src_log_path)))
     else:
-        assert(method == "imageio")
+        if method == "handbrake":
+            # Recoding videos using handbrake into new clips of different lengths, based on log files,
+            # would be cumbersome to implement. Therefore, we instead first recode every video with
+            # handbrake and then use imageio to recode the videos again into the desired length. This
+            # should still provide handbrake's robustness to strange videos, even though this solution is slow.
+            tmp_folder = "/data/tmp_import/"
+            if isdir(tmp_folder):
+                rmtree(tmp_folder)
+            mkdir(tmp_folder)
+            
+            for i,path in enumerate(files):
+                print_flush("Handbraking {} ...".format(path))
+                video_name = '.'.join(path.split('/')[-1].split('.')[0:-1])
+                src_log_path = "{l}{vn}.log".format(l=logs, vn=video_name)
+                
+                target_path = "{tmp}{i}{sx}".format(tmp=tmp_folder, i=i, sx=suffix)
+                target_log_path = "{tmp}{i}.log".format(tmp=tmp_folder, i=i)
+                
+                if validate_logfile(src_log_path):
+                    copy(src_log_path, target_log_path)
+                else:
+                    raise(ValueError("Incorrect log file {}".format(src_log_path)))
+                
+                encode(path, target_path, width, height, fps)
+            
+            files = glob("{tmp}*{sfx}".format(tmp=tmp_folder, sfx=suffix))
+            files.sort()
+            logs = tmp_folder
+            print_flush("Handbrake section complete")
+
         recode_minutes_imageio(files, logs, minutes, width, height, fps, target, logs_target, suffix)
                     
     print_flush("Done!")       
