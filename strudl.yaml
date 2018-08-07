@@ -497,6 +497,7 @@ paths:
           type: string
           enum: [imageio, handbrake]
           required: true
+          description: Handbrake is typically more robust to strangely encoded videos, while imageio will be faster is a custom video length is used. Try both if there are any issues.
         - name: logs_path
           in: query
           type: string

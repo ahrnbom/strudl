@@ -171,7 +171,7 @@ def encode_handbrake(path, target_path, width, height, fps):
 @click.option("--resolution", help="New resolution. Use strings formatted like '(width,height,channels)'")
 @click.option("--fps", type=int, help="Frames per second to encode to")
 @click.option("--suffix", default='.mkv', help="Please use .mkv, as multiple script assume this")
-@click.option("--method", default="imageio", help="Encoding/decoding library/method to use. Either 'imageio' or 'handbrake'. Handbrake mode assumes minutes to be 0.")
+@click.option("--method", default="imageio", type=click.Choice(['imageio','handbrake']), help="Video encoding/decoding library/program/method to use.")
 @click.option("--logs", help="Folder in which log files are stored")
 @click.option("--minutes", default=0, help="If a positive integer, videos are recoded to videos of this many minutes in length. If 0, videos are kept to the previous length.")
 def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes):   
