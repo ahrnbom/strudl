@@ -857,6 +857,19 @@ paths:
         404:
           description: No tracks .zip file exist
       
+  
+  /usb:
+    get:
+      operationId: server.get_usb
+      summary: Get list of all files that could be imported
+      description: Get a list of all files that are mounted to `/usb/` inside the docker container. The script `run_docker.sh` controls which folder(s) get mounted there. Typically, we want `/media/` to be mounted there to get access to USB drives plugged into the computer, but this might also be a security hazard as other sensitive information and files may be available there.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Successfully found list of files
+        404: 
+          description: No `/usb/` folder is visible from within the docker container.
       
   /videos:
     get: 

@@ -795,6 +795,13 @@ def post_world_calibration(dataset_name, calib_text):
         else:
             return (NoContent, 400)
 
+def get_usb():
+    if isdir('/usb/'):
+        files = glob('/usb/**',recursive=True)
+        return (files, 200)
+    else:
+        return (NoContent, 404)
+
 @click.command()
 @click.option("--port", default=80, help="Port number. Note that if this is changed and run from within docker, the docker run command needs to be changed to forward the correct port.")
 def main(port):
