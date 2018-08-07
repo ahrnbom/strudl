@@ -18,20 +18,9 @@ import click
 from folder import mkdir, datasets_path
 from storage import save
 from util import parse_resolution, print_flush
-
-def get_colors(n=10):
-    colors = []
-    for i in range(0, n):
-        # This can probably be written in a more elegant manner
-        hue = 255*i/(n+1)
-        col = np.zeros((1,1,3)).astype("uint8")
-        col[0][0][0] = hue
-        col[0][0][1] = 200 # Saturation
-        col[0][0][2] = 255 # Value
-        cvcol = cv2.cvtColor(col, cv2.COLOR_HSV2BGR)
-        col = (int(cvcol[0][0][0]), int(cvcol[0][0][1]), int(cvcol[0][0][2]))
-        colors.append(col) 
-    return colors
+from apply_mask import Masker
+from visualize import class_colors as get_colors
+from util import clamp
 
 class Track(list):
     """ A KLT track. Each track needs an ID number """
@@ -43,11 +32,13 @@ def kltfull(video_file, imsize, mask, out_file=None):
     Arguments:
     video_file -- path to a source video file
     imsize     -- size which frames will be resized to
-    mask       -- a mask which can be applied to only look at parts of the images
+    mask       -- a Masker object which can be applied to only look at parts of the images
     out_file   -- if set to a path to an output video path, then a video showing
                     the tracked points is created. Can be None, in which case no
                     video is made
     """
+    mask_to_copy = 255 - cv2.resize(mask.saved_mask[:,:,3], imsize)
+
     render_vid = True
     if out_file is None:
         render_vid = False
@@ -89,7 +80,6 @@ def kltfull(video_file, imsize, mask, out_file=None):
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             vis = frame.copy()
 
-
             if len(tracks) > 0:
                 img0, img1 = prev_gray, frame_gray
                 p0 = np.float32([tr[-1][1:3] for tr in tracks]).reshape(-1, 1, 2)
@@ -115,7 +105,7 @@ def kltfull(video_file, imsize, mask, out_file=None):
                                       False, col)
 
             if frame_idx % detect_interval == 0:
-                mask2 = mask.copy()
+                mask2 = mask_to_copy.copy()
                 for x, y in [np.int32(tr[-1][1:3]) for tr in tracks]:
                     cv2.circle(mask2, (x, y), 5, 0, -1)
                 p = cv2.goodFeaturesToTrack(frame_gray, mask = mask2, **feature_params)
@@ -124,7 +114,21 @@ def kltfull(video_file, imsize, mask, out_file=None):
                         nt = Track([(systime, x, y)])
                         nt.id_num = next(id_generator)
                         tracks.append(nt)
-
+                
+                # Remove tracks that go outside the masked region
+                good_tracks = []
+                for checked_track in tracks:
+                    last_time, last_x, last_y = checked_track[-1]
+                    x = clamp(int(last_x), 0, imsize[0]-1)
+                    y = clamp(int(last_y), 0, imsize[1]-1)
+                    sampled = mask_to_copy[y,x]
+                    if sampled > 127:
+                        good_tracks.append(checked_track)
+                    else: 
+                        lost_tracks.append(checked_track)
+                
+                tracks = good_tracks
+                
             frame_idx += 1
             prev_gray = frame_gray
                        
@@ -174,8 +178,7 @@ def main(cmd, dataset, imsize):
     
     imsize = parse_resolution(imsize)
     
-    maskpath = "{}{}/mask.png".format(datasets_path, dataset)
-    mask = 255 - cv2.resize(cv2.imread(maskpath, -1)[:,:,3], imsize)
+    mask = Masker(dataset)
     
     if cmd == "findvids" or cmd=="continue":
         vidfolder = "{}{}/videos/".format(datasets_path, dataset)
