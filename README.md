@@ -35,20 +35,30 @@ Got any issues with this software? Feel free to [open an issue, if there isn't o
 ### Requirements
 
 1. A Linux computer with a powerful, modern NVidia GPU
-2. [NVidia CUDA](https://developer.nvidia.com/cuda-downloads), STRUDL is made for CUDA 8.0 but could probably work with more modern CUDA versions with some modifications to the dockerfile
-3. [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
-4. git
+1. git
+1. [NVidia CUDA](https://developer.nvidia.com/cuda-downloads), STRUDL is made for CUDA 8.0 but could probably work with more modern CUDA versions with some modifications to the dockerfile
+1. [docker](https://docs.docker.com/install/)
+1. [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
 
 ### Installation
-Note: This has not been quite tested yet!
+The following commands should work on Ubuntu, assuming the requirements are installed correctly.
+```
+mkdir ~/strudl_stuff && cd ~/strudl_stuff/
+mkdir data
+git clone https://github.com/ahrnbom/strudl.git
+cd strudl
+sudo ./run_docker.sh
+```
+The last command can take a long time to run the first time, as it builds a complex docker container.
+If it works and you are inside the docker container, inside a folder called `/code/`, you should be able to access the `data` folder you created at `/data`.
 
-1. In a terminal, navigate to some folder where you want to store STRUDL and its data, e.g. `mkdir ~/strudl_stuff && cd ~/strudl_stuff/`
-1. Clone this repo via `git clone https://github.com/ahrnbom/strudl.git`. This creates a folder called `strudl`.
-2. Create a folder called `data` right next to the `strudl` folder, e.g. `mkdir data`
-3. Navigate into the `strudl` folder, and run `run_docker.sh`, which requires sudo-privileges (because docker does), e.g. `cd strudl` and `sudo ./run_docker.sh`
-4. If everything works as expected, you should now be inside the docker container, in a folder called `/code`. You should be able to access the `data` folder you created at `/data`.
-5. To start the web server, run `python server.py`
-6. Visit the host computer via a web browser to see the Web UI and interact with it. For example, if you're using the web browser on the same computer, visit `localhost` in a web browser like Firefox.
+Go to [this link](https://mega.nz/#F!7RowVLCL!q3cEVRK9jyOSB9el3SssIA) and download the file "weights_SSD300.hdf5". Make a folder inside the `data` folder called `ssd` and place this file there.
+
+To start the web server, run `python server.py`. Visit the host computer via a web browser to see the Web UI and interact with it. For example, if you're using the web browser on the same computer, visit `localhost` in a web browser like Firefox.
+
+If you leave the docker container (by pressing Ctrl + D on the command line prompt), running `sudo ./run_docker.sh` again will start it up again. There is no need to run the other installation commands again.
+
+The `run_docker.sh` script takes an optional parameter, a path to the `data` folder, allowing it to be put anywhere you want, like on a different disk. This could be useful at the `data` folder can get quite large if large amounts of video are to be processed.
 
 ### Security notice
 This software has not been designed with maximum security in mind. It is recommended to run it in a local network behind a firewall. While docker does provide some sandboxing, this code is not "battle tested" and it should not be assumed to be safe. Leaving the port open to the internet could compromise your computer. One possible security flaw is that your computer's `/media` folder is being made available in the docker container, to simplify importing videos via e.g. USB. This can be changed by modifying `run_docker.sh`.
@@ -61,4 +71,5 @@ There's always more to do! On our to-do list contains, among other things, the f
 3. SSD code is currently based on [this port by Rykov8](https://github.com/rykov8/ssd_keras). It might be a good idea to change to [this one instead, by Pierluigiferrari](https://github.com/pierluigiferrari/ssd_keras), which is more nicely documented and runs NMS on the GPU.
 4. Code should become more readable and better commented (this started as, and in many ways still is, experimental research code)
 5. Different tracking algorithms should be examined, possibly replacing the simplistic one currently used.
+1. Reducing the size of the docker container (currently around 20 GB)
 6. More easter eggs, jokes and memes. 
