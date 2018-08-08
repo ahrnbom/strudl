@@ -69,7 +69,7 @@ def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epo
     
     detections = detections.reset_index(drop=True)   
     image_props = get_image_props(detections)
-    detections = detections_add_ytrue(detections, image_props)
+    detections = detections_add_ytrue(detections, image_props, dataset)
     
     detections.index = detections.image_file
     

@@ -35,6 +35,7 @@ from apply_mask import Masker
 from util import parse_resolution, print_flush
 from folder import runs_path, base_path
 from ssd_cleanup import cleanup
+from classnames import get_classnames
 
 np.set_printoptions(suppress=True)
 
@@ -235,8 +236,8 @@ def get_image_props(detections):
     return image_props
 
 
-def detections_add_ytrue(detections, image_props):
-    types = sorted(detections.type.unique())
+def detections_add_ytrue(detections, image_props, dataset):
+    types = get_classnames(dataset) #sorted(detections.type.unique())
     y_true = pd.Series()
     for image_file, det in detections.groupby('image_file'):
         width, height = image_props[image_file]
@@ -311,7 +312,7 @@ def main(batch_size, max_images, epochs, name, frozen_layers, experiment,train_d
             log('Image properties created')
 
         log('Adding y_true to detections')
-        detections = detections_add_ytrue(detections, image_props)
+        detections = detections_add_ytrue(detections, image_props, name)
         detections.to_pickle(detections_file)
 
     detections.index = detections.image_file
@@ -319,7 +320,7 @@ def main(batch_size, max_images, epochs, name, frozen_layers, experiment,train_d
     print('Detection frequencies:')
     print(detections.type.value_counts())
     print(' ')
-    classes = sorted(detections.type.unique())
+    classes = get_classnames(name) #sorted(detections.type.unique())
     num_classes = len(classes) + 1
 
     log('Loading priors')
