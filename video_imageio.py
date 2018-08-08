@@ -31,7 +31,7 @@ def rescale(df, index, factor):
     s2 = [int(factor*x) for x in s]
     df[index] = s2      
 
-def get_model(name, experiment, input_shape, num_classes=6):
+def get_model(name, experiment, input_shape, num_classes=6, verbose=True):
     """ Gets an SSD model, with trained weights
     
         Arguments:
@@ -45,7 +45,8 @@ def get_model(name, experiment, input_shape, num_classes=6):
     weights_files_loss = np.array([float(wf.split('-')[-1].replace('.hdf5', '')) for wf in weights_files])
     weights_file = weights_files[np.argmin(weights_files_loss)]
     model.load_weights(weights_file, by_name=True)
-    log('Model loaded from {}'.format(weights_file))
+    if verbose:
+        log('Model loaded from {}'.format(weights_file))
     return model
 
 def test_on_video(model, name, experiment, videopath, outvideopath, classnames, batch_size=32, input_shape=(480,640,3), soft=False,  width=480, height=640, conf_thresh=0.75, csv_conf_thresh=0.75):

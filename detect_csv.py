@@ -10,6 +10,8 @@ import pandas as pd
 import cv2
 from math import floor, ceil
 from keras.applications.imagenet_utils import preprocess_input
+import subprocess
+from subprocess import PIPE
 
 from video_imageio import get_model
 from folder import mkdir, datasets_path, runs_path
@@ -17,61 +19,6 @@ from util import parse_resolution, print_flush
 from apply_mask import Masker
 from classnames import get_classnames
 from ssd_utils import BBoxUtility
-
-def rescale(df, index, factor):
-    """ Rescales a data frame row, as integers. Used since detections are stored on scale 0-1 """
-    s = df[index]
-    s2 = [int(factor*x) for x in s]
-    df[index] = s2      
-
-def get_priors(model, input_shape):
-    im_in = np.random.random((1,input_shape[1],input_shape[0],input_shape[2]))
-    priors = model.predict(im_in,batch_size=1)[0, :, -8:]
-    
-    return priors
-
-def generator(vid, input_shape, masker, batch_size, seq):
-    inputs = []
-    old_inputs = []  
-
-    for i in range(seq[0], seq[1]):
-        frame = vid.get_data(i)
-        
-        frame = masker.mask(frame)
-        resized = cv2.resize(frame, (input_shape[0], input_shape[1]))
-        inputs.append(resized)
-        
-        if len(inputs) == batch_size:
-            inputs = np.array(inputs).astype(np.float64)
-            inputs = preprocess_input(inputs)
-            
-            yield inputs
-            
-            old_inputs = inputs
-            inputs = []       
-    
-    # Video finished, just keep repeating the same frame over and over
-    # Keras expects infinite generators
-    while True:
-        yield old_inputs
-
-def process_results(result, width, height, classnames, conf_thresh, step_size, frame_number):
-    result = [r if len(r) > 0 else np.zeros((1, 6)) for r in result]
-    raw_detections = pd.DataFrame(np.vstack(result), columns=['class_index', 'confidence', 'xmin', 'ymin', 'xmax', 'ymax'])
-    
-    rescale(raw_detections, 'xmin', width)
-    rescale(raw_detections, 'xmax', width)
-    rescale(raw_detections, 'ymin', height)
-    rescale(raw_detections, 'ymax', height)
-    rescale(raw_detections, 'class_index', 1)
-           
-    ci = raw_detections['class_index']
-    cn = [classnames[int(x)-1] for x in ci]
-    raw_detections['class_name'] = cn
-    
-    raw_detections['frame_number'] = (frame_number+1)
-    
-    return raw_detections[raw_detections.confidence>conf_thresh]
 
 def next_multiple(a, b):
     """ Finds a number that is equal to or larger than a, divisble by b """
@@ -96,55 +43,41 @@ def make_seqs(a, b):
     
     return seqs
 
-def generator_test(model, dataset, run, videopath, outname, classnames, input_shape, conf_thresh, priors, bbox_util, masker, batch_size, soft=False):
-    with io.get_reader(videopath) as vid:
-        # Doing predict_generator on an entire half hour video takes too much RAM,
-        # so we split it up into sequences of around 1000 frames
+def run_detector(dataset, run, videopath, outname, input_shape, conf_thresh, batch_size):
+    
+    
+    with io.get_reader(videopath) as vid:        
         vlen = len(vid)
-        seq_len = next_multiple(1000, batch_size)
-        seqs = make_seqs(vlen, seq_len)
         
-        for i_seq,seq in enumerate(seqs):
-            
-            gen = generator(vid, input_shape, masker, batch_size, seq)
-            
-            width = input_shape[0]
-            height = input_shape[1]
-            
-            step_size = int(ceil(float(seq_len)/batch_size))
-            
-            print_flush(seq)
-            print_flush("Predicting...")
-            preds = model.predict_generator(gen, steps=step_size)
-            
-            del gen
-            
-            print_flush("Processing...")
-            all_detections = []        
-            for i in range(seq_len):
-                frame_num = i + seq[0]
-                
-                pred = preds[i, :]
-                pred = pred.reshape(1, pred.shape[0], pred.shape[1])
-                results = bbox_util.detection_out(pred, soft=soft)
-
-                detections = process_results(results, width, height, classnames, conf_thresh, step_size, frame_num)
-                all_detections.append(detections)
-            
-            dets = pd.concat(all_detections)
-            
-            # For the first line, we should open in write mode, and then in append mode
-            # This makes it so that we don't need to keep everything in RAM, which was an issue before
-            # This way, we still overwrite the files if this script is run multiple times
-            open_mode = 'a'
-            include_header = False
-            if i_seq == 0:
-                open_mode = 'w'
-                include_header = True
-            
-            with open(outname, open_mode) as f:
-                dets.to_csv(f, header=include_header) 
-
+    vlen2 = next_multiple(vlen, batch_size)
+    seq_len = next_multiple(1000, batch_size)
+    
+    # Doing predict_generator on an entire half hour video takes too much RAM,
+    # so we split it up into sequences of around 1000 frames
+    seqs = make_seqs(vlen2, seq_len)
+    
+    for i_seq,seq in enumerate(seqs):
+        print_flush("From frame {} to {}...".format(seq[0], seq[1]))
+        
+        completed = subprocess.run(["python", "detect_csv_sub.py", 
+                         "--dataset={}".format(dataset),
+                         "--run={}".format(run),
+                         "--input_shape={}".format(input_shape),
+                         "--seq_start={}".format(seq[0]),
+                         "--seq_stop={}".format(seq[1]),
+                         "--videopath={}".format(videopath),
+                         "--conf_thresh={}".format(conf_thresh),
+                         "--i_seq={}".format(i_seq),
+                         "--outname={}".format(outname),
+                         "--batch_size={}".format(batch_size)], stdout=PIPE, stderr=PIPE)
+        if not (completed.returncode == 0):
+            print_flush("ERROR: SUBPROCESS CRASHED")
+        else:
+            print_flush("Subprocess completed successfully")
+        
+        print_flush("Subprocess output:")    
+        print_flush(completed.stdout.decode('UTF-8'))
+        print_flush(completed.stderr.decode('UTF-8'))
 
 @click.command()
 @click.option("--dataset", default="sweden2", help="Name of the dataset to use")
@@ -154,25 +87,16 @@ def generator_test(model, dataset, run, videopath, outname, classnames, input_sh
 @click.option("--bs", default=32, type=int, help="Batch size, the number of frames to feed into SSD in a batch, must fit on the GPU VRAM")
 @click.option("--clean", default=True, help="If True, all csv files are made from scratch. If False, any existing ones are kept")
 def detect(dataset, run, res, conf, bs, clean):
-    res = parse_resolution(res)
 
     vids = sorted(glob("{}{}/videos/*.mkv".format(datasets_path, dataset)))
 
     outfolder = "{}{}_{}/csv/".format(runs_path, dataset, run)
     mkdir(outfolder)
 
-    classes = get_classnames(dataset)
+    
 
     nvids = len(vids)
 
-    input_shape = (res[0], res[1], 3)
-
-    num_classes = len(classes)+1
-    model = get_model(dataset, run, input_shape, num_classes)
-    priors = get_priors(model, input_shape)
-    bbox_util = BBoxUtility(num_classes, priors)
-    masker = Masker(dataset)
-    
     for i, vid in enumerate(vids):
         vname = vid.split('/')[-1]
         vsplit = vname.split('.')
@@ -186,7 +110,7 @@ def detect(dataset, run, res, conf, bs, clean):
         before = time()
         
         print_flush(vname)
-        generator_test(model, dataset, run, vid, outname, classes, input_shape, conf, priors, bbox_util, masker, bs)
+        run_detector(dataset, run, vid, outname, res, conf, bs)
         
         done_percent = round(100*(i+1)/nvids)
         now = time()
