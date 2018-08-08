@@ -305,7 +305,9 @@ var make_suggestion = function() {
             sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_train_detector_job>Train the detector!</a>";
         } else if (!curr_data['dataset']['has_calibration']) {
             sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_world_calibration>Submit camera calibration!</a>";
-        } else if (curr_data['run']['videos_with_detected_objects_in_world_coordinates'] < curr_data['run']['videos_with_detected_objects']) {
+        } else if (curr_data['run']['videos_with_detected_objects'] < curr_data['dataset']['number_of_videos']) {
+            sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_detect_objects_job>Do pixel coordinate detections!</a>";
+        } else if (curr_data['run']['videos_with_detected_objects_in_world_coordinates'] < curr_data['dataset']['number_of_videos']) {
             sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_detections_to_world_coordinates_job>Convert detections to world coordinates!</a>";
         } else if (!curr_data['run']['has_optimized_world_tracking']) {
             sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_optimize_tracking_world_coordinates_job>Optimize world coordinate tracking!</a>";
