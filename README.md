@@ -41,18 +41,23 @@ Got any issues with this software? Feel free to [open an issue, if there isn't o
 1. [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
 
 ### Installation
-The following commands should work on Ubuntu, assuming the requirements are installed correctly.
+The following terminal commands should work on Ubuntu, assuming the requirements are installed correctly.
+
 ```
-mkdir ~/strudl_stuff && cd ~/strudl_stuff/
+mkdir ~/strudl_stuff
+cd ~/strudl_stuff/
 mkdir data
 git clone https://github.com/ahrnbom/strudl.git
 cd strudl
 sudo ./run_docker.sh
 ```
-The last command can take a long time to run the first time, as it builds a complex docker container.
-If it works and you are inside the docker container, inside a folder called `/code/`, you should be able to access the `data` folder you created at `/data`.
+
+The `run_docker.sh` command will take a long time to run the first time, as it builds a complex docker container.
+If it works and you are inside the docker container, inside a folder called `/code/`.
 
 Go to [this link](https://mega.nz/#F!7RowVLCL!q3cEVRK9jyOSB9el3SssIA) and download the file "weights_SSD300.hdf5". Make a folder inside the `data` folder called `ssd` and place this file there.
+
+Inside the docker container, in the terminal, type `ls /data/ssd/` and if you can see the .hdf5 file there, everything seems to work as intended.
 
 To start the web server, run `python server.py`. Visit the host computer via a web browser to see the Web UI and interact with it. For example, if you're using the web browser on the same computer, visit `localhost` in a web browser like Firefox.
 
