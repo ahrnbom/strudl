@@ -30,11 +30,13 @@ def get_priors(model, input_shape):
     
     return priors
 
-def generator(vid, input_shape, masker, batch_size):
+def generator(vid, input_shape, masker, batch_size, seq):
     inputs = []
     old_inputs = []  
 
-    for frame in vid:
+    for i in range(seq[0], seq[1]):
+        frame = vid.get_data(i)
+        
         frame = masker.mask(frame)
         resized = cv2.resize(frame, (input_shape[0], input_shape[1]))
         inputs.append(resized)
@@ -71,32 +73,77 @@ def process_results(result, width, height, classnames, conf_thresh, step_size, f
     
     return raw_detections[raw_detections.confidence>conf_thresh]
 
+def next_multiple(a, b):
+    """ Finds a number that is equal to or larger than a, divisble by b """
+    while not (a%b == 0):
+        a += 1
+    return a
+    
+def make_seqs(a, b):
+    """ Makes mutliple sequences of length b, from 0 to a. The sequences are represented 
+        as tuples with start and stop numbers. Note that the stop number of one sequence is
+        the start number for the next one, meaning that the stop number is NOT included.
+    """
+    seqs = []
+    x = 0
+    while x < a:
+        x2 = x + b
+        if x2 > a:
+            x2 = a
+            
+        seqs.append( (x, x2) )
+        x = x2
+    
+    return seqs
+
 def generator_test(model, dataset, run, videopath, outname, classnames, input_shape, conf_thresh, priors, bbox_util, masker, batch_size, soft=False):
     with io.get_reader(videopath) as vid:
-        gen = generator(vid, input_shape, masker, batch_size)
+        # Doing predict_generator on an entire half hour video takes too much RAM,
+        # so we split it up into sequences of around 1000 frames
+        vlen = len(vid)
+        seq_len = next_multiple(1000, batch_size)
+        seqs = make_seqs(vlen, seq_len)
         
-        width = input_shape[0]
-        height = input_shape[1]
-        
-        all_detections = []
-        step_size = int(ceil(len(vid)/batch_size))
-        preds = model.predict_generator(gen, steps=step_size)
-        
-        all_detections = []        
-        for i in range(len(vid)):
-            pred = preds[i, :]
-            pred = pred.reshape(1, pred.shape[0], pred.shape[1])
-            results = bbox_util.detection_out(pred, soft=soft)
-
-            detections = process_results(results, width, height, classnames, conf_thresh, step_size, i)
-            all_detections.append(detections)
+        for i_seq,seq in enumerate(seqs):
             
-            if ((i+1)%500) == 0:
-                print_flush(i+1)
+            gen = generator(vid, input_shape, masker, batch_size, seq)
+            
+            width = input_shape[0]
+            height = input_shape[1]
+            
+            step_size = int(ceil(float(seq_len)/batch_size))
+            
+            print_flush(seq)
+            print_flush("Predicting...")
+            preds = model.predict_generator(gen, steps=step_size)
+            
+            del gen
+            
+            print_flush("Processing...")
+            all_detections = []        
+            for i in range(seq_len):
+                frame_num = i + seq[0]
                 
-        print_flush(i)
-        dets = pd.concat(all_detections)
-        dets.to_csv(outname) 
+                pred = preds[i, :]
+                pred = pred.reshape(1, pred.shape[0], pred.shape[1])
+                results = bbox_util.detection_out(pred, soft=soft)
+
+                detections = process_results(results, width, height, classnames, conf_thresh, step_size, frame_num)
+                all_detections.append(detections)
+            
+            dets = pd.concat(all_detections)
+            
+            # For the first line, we should open in write mode, and then in append mode
+            # This makes it so that we don't need to keep everything in RAM, which was an issue before
+            # This way, we still overwrite the files if this script is run multiple times
+            open_mode = 'a'
+            include_header = False
+            if i_seq == 0:
+                open_mode = 'w'
+                include_header = True
+            
+            with open(outname, open_mode) as f:
+                dets.to_csv(f, header=include_header) 
 
 
 @click.command()
@@ -105,7 +152,8 @@ def generator_test(model, dataset, run, videopath, outname, classnames, input_sh
 @click.option("--res", default="(640,480,3)", help="Image resolution that SSD was trained for, as a string on format '(width,height,channels)'")
 @click.option("--conf", default=0.6, type=float, help="Confidence threshold of detections, as a float between 0 and 1")
 @click.option("--bs", default=32, type=int, help="Batch size, the number of frames to feed into SSD in a batch, must fit on the GPU VRAM")
-def detect(dataset, run, res, conf, bs):
+@click.option("--clean", default=True, help="If True, all csv files are made from scratch. If False, any existing ones are kept")
+def detect(dataset, run, res, conf, bs, clean):
     res = parse_resolution(res)
 
     vids = sorted(glob("{}{}/videos/*.mkv".format(datasets_path, dataset)))
@@ -130,12 +178,14 @@ def detect(dataset, run, res, conf, bs):
         vsplit = vname.split('.')
         outname = outfolder + vsplit[0] + '.csv'
         
-        if os.path.isfile(outname):
-            print_flush("Skipping {}".format(outname))
-            continue
+        if not clean:
+            if os.path.isfile(outname):
+                print_flush("Skipping {}".format(outname))
+                continue
         
         before = time()
-  
+        
+        print_flush(vname)
         generator_test(model, dataset, run, vid, outname, classes, input_shape, conf, priors, bbox_util, masker, bs)
         
         done_percent = round(100*(i+1)/nvids)
