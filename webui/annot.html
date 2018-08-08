@@ -716,7 +716,7 @@ var send_annot_response = function(err, text) {
 }
 
 window.addEventListener("keydown", function(event) {
-    if (loaded) {
+    if (loaded && (state == "idle")) { 
         key = event.keyCode;
         
         if (key == 83) {
@@ -736,8 +736,7 @@ window.addEventListener("keydown", function(event) {
             
             xhr.send(text_data)
             
-            info.innerHTML = "Annotation sent!";
-            
+            info.innerHTML = "Annotation sent!";   
             
         } 
     }
