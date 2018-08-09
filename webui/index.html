@@ -66,6 +66,16 @@ select {
     overflow-y: auto;
 }
 
+div.hscroll {
+    height: 150px;
+    width: 500px;
+    overflow-y: auto;
+}
+
+div.textblock {
+ display: block;
+}
+
 </style>
 </head>
 
@@ -75,6 +85,11 @@ select {
 
     <h2>Usage</h2>
     <p class=bottomspace>Go to <a href="ui/#/default">the Connexion User Interface</a> to do things!</p>
+
+    <h2>Activity</h2>
+    <p>Any jobs run since the start of the server will show up here.</p>
+    <div id=activity class=hscroll>
+    </div>
 
     <h2>Status</h2>
     <p id=topstatus></p>
@@ -133,19 +148,55 @@ var vistitle = document.getElementById("vistitle");
 var vis = document.getElementById("vis");
 var vis2 = document.getElementById("vis2");
 var sugg = document.getElementById("suggestion");
+var activity = document.getElementById("activity");
 var dataset = "";
 var run = "";
 var curr_data = "";
 var chosen_vt = "";
 
+var set_info = function(text) {
+    info.innerHTML = text;
+    console.log(text);
+}
+
+var get_activity = function() {
+    get_json("/jobs?jobs_type=recent_with_status", function(err, data) {
+        if (err !== null) {
+            set_info("Failed to get activity");
+        } else {
+            for (var i = 0; i != data.length; ++i) {
+                var d = data[i];
+                
+                var div = document.createElement('div');
+                div.class = "textblock";
+                
+                var text = document.createElement('p');
+                text.innerHTML = d['id'] + " " + d['result'];
+                div.appendChild(text);
+                if (d['result'] == 'running') {
+                    div.style.background = "lightyellow";
+                } else if (d['result'] == 'success') {
+                    div.style.background = "palegreen";
+                } else {
+                    div.style.background = "tomato";
+                }
+                
+                activity.appendChild(div);
+            }
+        }
+    });
+};
+get_activity();
+setInterval(get_activity, 50000);
+
 var get_status = function() {
     get_json("/jobs/status", function(err, data) {
         if (err !== null) {
-            statustext.innerHTML = "Failed to get status";
+            set_info("Failed to get status");
         } else {
             topstatus.innerHTML = "CPU: " + data['cpu'] + "%<br>" + "RAM: " + data['ram'] + "%<br>" + "GPU: " + data['gpu'] + "%<br>" + "VRAM: " + data['vram'] + "%<br>" + "DISK: " + data['disk'] + "%";
         
-            statustext.innerHTML = "Running now: " + data['running_now'];
+            statustext.innerHTML = ("Running now: " + data['running_now']);
 
             // Set color of log scrolling field
             // Containing the line 'Done!' is chosen as a measure of if something was successfull or not, since
@@ -203,7 +254,7 @@ ds_sel.onchange = function() {
         run_sel.appendChild(opt);
     
         if (err !== null) {
-            //info.innerHTML = "Failed to get list of runs";    
+            //set_info("Failed to get list of runs");    
         } else {
             
             for (var i = 0; i != data.length; ++i) {
@@ -248,7 +299,7 @@ var make_visualization_list = function() {
         chosen_vt = vt_sel.value;
         get_json("/visualization/list?dataset_name=" + dataset + "&run_name=" + run + "&visualization_type=" + chosen_vt, function(err, data) {
             if (err !== null) {
-                info.innerHTML = "Failed to get list of visualization videos";
+                set_info("Failed to get list of visualization videos");
             } else {
                 make_visualization_list2(data);
             }
@@ -352,7 +403,7 @@ var visualize = function() {
 
 get_json("/datasets", function(err,data) {
     if (err !== null) {
-        info.innerHTML = "Failed to get list of datasets";
+        set_info("Failed to get list of datasets");
     } else {
         while (ds_sel.firstChild) {
             ds_sel.removeChild(im_sel.firstChild);
