@@ -164,6 +164,10 @@ var get_activity = function() {
         if (err !== null) {
             set_info("Failed to get activity");
         } else {
+            while (activity.firstChild) {
+                activity.removeChild(activity.firstChild);
+            }
+        
             for (var i = 0; i != data.length; ++i) {
                 var d = data[i];
                 
@@ -171,7 +175,7 @@ var get_activity = function() {
                 div.class = "textblock";
                 
                 var text = document.createElement('p');
-                text.innerHTML = d['id'] + " " + d['result'];
+                text.innerHTML = d['id'] + " " + d['result'] + " <a href=http://browkin/jobs/" + d['id'] + ">log</a>";
                 div.appendChild(text);
                 if (d['result'] == 'running') {
                     div.style.background = "lightyellow";
