@@ -437,7 +437,8 @@ def main(cmd, dataset, run, conf, make_videos):
     if isfile(config_path):
         config = load(config_path)
     else:
-        raise(ValueError("No world tracking optimized configuration exists at {}".format(config_path)))
+        #raise(ValueError("No world tracking optimized configuration exists at {}".format(config_path)))
+        config = WorldTrackingConfig(default_config)
     
     calib = Calibration(dataset)    
     munkres = Munkres()

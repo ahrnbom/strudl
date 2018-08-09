@@ -43,7 +43,7 @@ def process_results(result, width, height, classnames, conf_thresh, frame_number
     cn = [classnames[int(x)-1] for x in ci]
     raw_detections['class_name'] = cn
     
-    raw_detections['frame_number'] = (frame_number+1)
+    raw_detections['frame_number'] = frame_number
     
     dets = raw_detections[raw_detections.confidence>conf_thresh]
     del raw_detections

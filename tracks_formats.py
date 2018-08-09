@@ -7,7 +7,7 @@ from glob import glob
 import click
 
 from tracking import DetTrack
-from tracking_world import WorldTrack
+from tracking_world import WorldTrack, WorldTrackingConfig
 from storage import load
 from folder import runs_path, mkdir
 from util import print_flush
