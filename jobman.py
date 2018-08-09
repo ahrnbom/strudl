@@ -106,6 +106,30 @@ class JobManager(object):
     def get_jobs(self, job_type):
         if job_type == 'recent':
             return [x[0] for x in self.history]
+        elif job_type == 'recent_with_status':
+            job_ids = [x[0] for x in self.history]
+            
+            out = []
+            for job_id in job_ids:
+                if (not self.is_available()) and (self.history[-1][0] == job_id):
+                    result = "running"
+                else:
+                    log_path = "{}{}.log".format(jobs_path, job_id)
+                    if isfile(log_path):
+                        with open(log_path, 'r') as f:
+                            lines = [x.strip('\n') for x in f.readlines()]
+                        
+                        result = "failure"
+                        for line in lines:
+                            if line == "Done!":
+                                result = "success"
+                    else:
+                        result = "failure"
+                    
+                out.append({"id":job_id, "result":result})
+            
+            return out
+                
         elif job_type == 'all':
             logs = glob("{}*.log".format(jobs_path))
             job_ids = [x.split('/')[-1].strip('.log') for x in logs]

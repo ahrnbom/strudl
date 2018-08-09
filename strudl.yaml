@@ -424,7 +424,7 @@ paths:
     get:
       operationId: server.get_job_ids
       summary: Get list of jobs
-      description: When `jobs_type` is 'all', literally all jobs will be presented (both jobs that have run in the past and those that are currently running and those in the queue). When `jobs_type` is 'running', only currently running jobs are shown. When `jobs_type` is 'recent', any jobs started since the web server started are shown. When `jobs_type` is 'queued', jobs that are queued (and not yet running) are shown.
+      description: When `jobs_type` is 'all', literally all jobs will be presented (both jobs that have run in the past and those that are currently running and those in the queue). When `jobs_type` is 'running', only currently running jobs are shown. When `jobs_type` is 'recent', any jobs started since the web server started are shown. When `jobs_type` is 'queued', jobs that are queued (and not yet running) are shown. When `jobs_type` is 'recent_with_status', you get a list with job IDs and True/False depending on if the job succeeded or not, for all jobs run since the start of the server.
       produces: 
         - application/json
       parameters: 
@@ -432,7 +432,7 @@ paths:
           in: query
           type: string
           default: all
-          enum: [all, running, recent, queued]
+          enum: [all, running, recent, queued, recent_with_status]
           required: true
       responses:
         200: 
