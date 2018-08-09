@@ -71,6 +71,9 @@ def detections_video(detections, videopath, outvideopath, classnames, dataset, r
                 
                 outvid.append_data(frame)
                 
+                if i%500 == 0:
+                    print_flush("Frame {}".format(i))
+                
                 
 @click.command()
 @click.option("--cmd", default="findvids", help="Either 'findvids' to search for videos, or a path to a specific video's csv file containing detections")
@@ -121,6 +124,8 @@ def main(cmd, res, dataset, run, conf, fps, coords):
         detections = pd.read_csv(csv_path)
         detections_video(detections, vid_path, outvid_path, classnames, dataset, res, fps=fps, conf_thresh=conf, coords=coords)
         print_flush(outvid_path)
+    
+    print_flush("Done!")
 
 if __name__ == '__main__':
     main()

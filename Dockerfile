@@ -40,7 +40,7 @@ RUN apt-get update && apt-get install -y libavcodec-dev libavformat-dev libswsca
 
 RUN mv /opt/conda/lib/libstdc++.so.6 /opt/conda/lib/libstdc++.so.6_bak && mv /opt/conda/lib/libgomp.so.1 /opt/conda/lib/libgomp.so.1_bak
 
-RUN pip install imageio==2.2.0
+RUN pip install imageio==2.3.0
 RUN echo "import imageio\nimageio.plugins.ffmpeg.download()" | python
 RUN pip install line_profiler
 RUN echo 'alias prof="kernprof -l -v"' >> ~/.bashrc
@@ -48,14 +48,10 @@ RUN echo 'alias prof="kernprof -l -v"' >> ~/.bashrc
 RUN pip install dask --upgrade
 
 RUN apt-get install -y graphviz
-RUN pip install pydot
-
-RUN pip install connexion
+RUN pip install pydot connexion munkres
 
 RUN apt-get update && apt-get install -y software-properties-common 
 RUN add-apt-repository ppa:stebbins/handbrake-releases && apt-get update && apt-get install -y handbrake-cli
-
-RUN pip install munkres
 
 ENV TF_CPP_MIN_LOG_LEVEL 2
 

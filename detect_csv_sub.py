@@ -62,7 +62,7 @@ def process_results(result, width, height, classnames, conf_thresh, frame_number
 @click.option("--batch_size", type=int, help="Batch size for executing neural network")
 def main(dataset, run, input_shape, seq_start, seq_stop, videopath, conf_thresh, i_seq, outname, batch_size):
     
-    print_flush("  Predicting...")
+    print_flush("> Predicting...")
     classes = get_classnames(dataset)
     masker = Masker(dataset)
     
@@ -106,7 +106,7 @@ def main(dataset, run, input_shape, seq_start, seq_stop, videopath, conf_thresh,
         
     preds = np.vstack(outputs)
     
-    print_flush("  Processing...")
+    print_flush("> Processing...")
     all_detections = []   
     seq_len = seq_stop - seq_start
          
@@ -131,7 +131,7 @@ def main(dataset, run, input_shape, seq_start, seq_stop, videopath, conf_thresh,
         open_mode = 'w'
         include_header = True
 
-    print_flush("  Writing to {} ...".format(outname))    
+    print_flush("> Writing to {} ...".format(outname))    
     with open(outname, open_mode) as f:
         dets.to_csv(f, header=include_header) 
 
