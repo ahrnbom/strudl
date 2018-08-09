@@ -201,15 +201,18 @@ def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes
         for path in files:
             video_name = '.'.join(path.split('/')[-1].split('.')[0:-1])
             
-            target_path = "{t}{vn}{sx}".format(t=target, vn=video_name, sx=suffix)
+            src_log_path = "{l}{vn}.log".format(l=logs, vn=video_name)
+            with open(src_log_path, 'r') as f:
+                first = f.readline().rstrip()
+            first_time, _ = line_to_datetime(first)
+            target_path, target_log_path = generate_paths(first_time, target, logs_target, suffix)
+            
             print_flush(target_path)
             
             encode(path, target_path, width, height, fps)
             
-            src_log_path = "{l}{vn}.log".format(l=logs, vn=video_name)
-            
             if validate_logfile(src_log_path):
-                copy(src_log_path, logs_target)
+                copy(src_log_path, target_log_path)
                 print_flush("Log file OK! {}".format(src_log_path))
             else:
                 raise(ValueError("Incorrect log file {}".format(src_log_path)))
@@ -245,6 +248,9 @@ def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes
             print_flush("Handbrake section complete")
 
         recode_minutes_imageio(files, logs, minutes, width, height, fps, target, logs_target, suffix)
+        
+        if method == "handbrake":
+            rmtree(tmp_folder)
                     
     print_flush("Done!")       
     
