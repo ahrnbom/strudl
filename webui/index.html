@@ -288,7 +288,7 @@ var make_suggestion = function() {
     } else if (curr_data['dataset']['number_of_videos'] == 0) {
         sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_import_videos_job>Import some videos!</a>";
     } else if (curr_data['dataset']['training_frames_to_annotate'] == 0) {
-        sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_import_videos_job>Prepare annotations!</a>";
+        sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_prepare_annotations_job>Prepare annotations!</a>";
     } else if (curr_data['dataset']['videos_with_point_tracks_computed'] == 0) {
         sugg.innerHTML = "Suggestion: <a href=/ui/#!/default/server_post_point_tracks_job>Generate point tracks!</a>";
     } else if (curr_data['dataset']['training_frames_annotated'] < curr_data['dataset']['training_frames_to_annotate']) {
@@ -357,12 +357,16 @@ get_json("/datasets", function(err,data) {
         while (ds_sel.firstChild) {
             ds_sel.removeChild(im_sel.firstChild);
         }
-            
-        for (var i = 0; i != data.length; ++i) {
-            var text = data[i]
-            var opt = document.createElement('option');
-            opt.innerHTML = text;
-            ds_sel.appendChild(opt);
+        
+        if (data.length == 0) {
+            sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_dataset>Define a dataset!</a>";    
+        } else {    
+            for (var i = 0; i != data.length; ++i) {
+                var text = data[i]
+                var opt = document.createElement('option');
+                opt.innerHTML = text;
+                ds_sel.appendChild(opt);
+            }
         }
     }
     

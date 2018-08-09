@@ -563,6 +563,12 @@ paths:
           in: query
           type: integer
           required: false
+        - name: resolution
+          in: query
+          type: string
+          required: false
+          default: (640,480,3)
+          description: Resolution the detector will be trained for. A compromise between quality and speed/memory usage.
       responses:
         202:
           description: Job accepted and started. A job ID is returned.
