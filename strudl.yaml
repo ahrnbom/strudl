@@ -525,6 +525,11 @@ paths:
       description: Computes point tracks for all videos in a dataset. This is independent of any runs. 
       parameters: 
         - $ref: "#/parameters/datasetName"
+        - name: visualize
+          in: query
+          type: boolean
+          required: true
+          description: If true, videos are generated showing the point tracks.
       responses:
         202:
           description: Job accepted and started. A job ID is returned.

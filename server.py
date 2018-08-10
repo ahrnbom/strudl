@@ -386,7 +386,7 @@ def post_import_videos_job(dataset_name, path, method, logs_path=None, minutes=0
     else:
         return (NoContent, 404)
 
-def post_point_tracks_job(dataset_name):
+def post_point_tracks_job(dataset_name, visualize):
     dataset_name = quote(dataset_name)
     dc = DatasetConfig(dataset_name)
     if dc.exists:

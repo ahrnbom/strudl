@@ -376,7 +376,7 @@ var make_suggestion = function() {
         sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_import_videos_job>Import some videos!</a>";
     } else if (curr_data['dataset']['training_frames_to_annotate'] == 0) {
         sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_prepare_annotations_job>Prepare annotations!</a>";
-    } else if (curr_data['dataset']['videos_with_point_tracks_computed'] == 0) {
+    } else if (curr_data['dataset']['videos_with_point_tracks_computed'] < curr_data['dataset']['number_of_videos']) {
         sugg.innerHTML = "Suggestion: <a href=/ui/#!/default/server_post_point_tracks_job>Generate point tracks!</a>";
     } else if (curr_data['dataset']['training_frames_annotated'] < curr_data['dataset']['training_frames_to_annotate']) {
         sugg.innerHTML = "Suggestion: <a href=/annotate>Annotate more images!</a>";
