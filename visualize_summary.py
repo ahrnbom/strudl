@@ -11,6 +11,7 @@ from random import choice, randint
 from os.path import isfile
 import imageio as iio
 import pandas as pd
+import numpy as np
 
 from folder import datasets_path, runs_path
 from util import print_flush
@@ -18,17 +19,39 @@ from config import DatasetConfig
 from storage import load
 from tracking_world import WorldTrack
 
+def join(pieces):
+    """ Joins some images into a single one, stracking the best it can.
+        Works with up to four images.
+    """
+    
+    if len(pieces) == 1:
+        return pieces[0]
+    elif len(pieces) == 2:
+        return np.vstack(pieces)
+    else:
+        shape = pieces[0].shape
+        new_shape = (shape[0]*2, shape[1]*2, shape[2])
+        
+        new_im = np.zeros(new_shape, dtype=np.uint8)
+        xs = [0, shape[1], 0,        shape[1]]
+        ys = [0, 0,        shape[0], shape[0]]
+        
+        for piece, x, y in zip(pieces, xs, ys):
+            new_im[y:y+shape[0], x:x+shape[1], :] = piece
+        
+        return new_im
+
 def klt_frame(klt, frame):
-    return None
+    return 128*np.ones( (128,128,3), dtype=np.uint8)
     
 def pixeldet_frame(det, frame):
-    return None
+    return 200*np.ones( (128,128,3), dtype=np.uint8)
 
 def worlddet_frame(det, frame):
-    return None
+    return 10*np.ones( (128,128,3), dtype=np.uint8)
     
 def worldtracks_frame(tracks, frame):
-    return None
+    return 255*np.ones( (128,128,3), dtype=np.uint8)
 
 def get_klt_path(dataset_path, vid):
     return "{dsp}klt/{v}.pklz".format(dsp=dataset_path, v=vid)
@@ -146,19 +169,22 @@ def main(dataset, run, n_clips, clip_length):
     dats = [klts, pixeldets, worlddets, worldtracks]
     
     print_flush(clips)
+        
+    with iio.get_writer("{dsp}summary.mp4".format(dsp=dataset_path), fps=dc.get('video_fps')) as outvid:
+        for i_vid, vid in enumerate(vids):
+            with iio.get_reader("{dsp}videos/{v}.mkv".format(dsp=dataset_path, v=vid)) as invid:
+                for i_frame, frame in enumerate(invid):
+                    
+                    pieces = []
+                    
+                    for inc, fun, dat in zip(incs, funs, dats):
+                        if inc:
+                            pieces.append(fun(dat[i_vid], frame))
+                    
+                    outvid.append_data(join(pieces))
 
-    for i_vid, vid in enumerate(vids):
-        with iio.get_reader("{dsp}videos/{v}.mkv".format(dsp=dataset_path, v=vid)) as invid:
-            for i_frame, frame in enumerate(invid):
-                
-                pieces = []
-                
-                for inc, fun, dat in zip(incs, funs, dats):
-                    if inc:
-                        pieces.append(fun(dat[i_frame], frame))
-                
-                
-                return                
+                    if i_frame % 1000 == 0:
+                        print_flush(i_frame)    
                 
                 
                 
