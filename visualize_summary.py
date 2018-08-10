@@ -116,7 +116,14 @@ def make_clip(vid, clip_length, dataset_path):
     
     return start, stop
     
-    
+def draw_text(frame, vid, i_frame, name):
+    text = "{}     {} : {}".format(name, vid, i_frame)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.4
+    width = frame.shape[1]
+    text_size = cv2.getTextSize(text, font, font_scale, 1)
+    text_pos = (width - text_size[0][0] - 10,16)
+    cv2.putText(frame, text, text_pos, font, font_scale, (255,160,255), 1, cv2.LINE_AA)
 
 @click.command()
 @click.option("--dataset", type=str, help="Name of dataset")
@@ -236,6 +243,7 @@ def main(dataset, run, n_clips, clip_length):
     incs = [include_klt, include_pixeldets, include_worlddets, include_worldtracks]
     funs = [klt_frame, pixeldet_frame, worlddet_frame, worldtracks_frame]
     dats = [klts, pixeldets, worlddets, worldtracks]
+    nams = ["Point tracks", "Detections in pixel coordinates", "Detections in world coordinates", "Tracks in world coordinates"]
     
     print_flush(clips)
         
@@ -251,9 +259,11 @@ def main(dataset, run, n_clips, clip_length):
                     
                     pieces = []
                     
-                    for inc, fun, dat in zip(incs, funs, dats):
+                    for inc, fun, dat, nam in zip(incs, funs, dats, nams):
                         if inc:
-                            pieces.append(fun(dat[i_vid], mask.mask(frame.copy(), alpha=0.5), i_frame))
+                            piece = fun(dat[i_vid], mask.mask(frame.copy(), alpha=0.5), i_frame)
+                            draw_text(piece, vid, i_frame, nam)
+                            pieces.append(piece)
                     
                     outvid.append_data(join(pieces))
                     
