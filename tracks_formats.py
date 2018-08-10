@@ -12,12 +12,16 @@ from storage import load
 from folder import runs_path, mkdir
 from util import print_flush
 
+all_track_formats = ['csv','custom_text']
+
 @click.command()
 @click.option("--dataset", default="sweden2", help="Name of dataset")
 @click.option("--run", default="default", help="Name of training run")
-@click.option("--tf", type=click.Choice(['custom_text']))
+@click.option("--tf", type=str)
 @click.option("--coords", type=click.Choice(['pixels','world']), help="Pixel coordinates or world coordinates")
 def generate_tracks_in_zip(dataset, run, tf, coords):
+    assert(tf in all_tracks_formats)    
+    
     tracks_format = tf
     if coords == 'pixels':
         tracks = glob("{rp}{dn}_{rn}/tracks/*.pklz".format(rp=runs_path, dn=dataset, rn = run))
@@ -64,6 +68,8 @@ def format_tracks(dataset, run, video, tracks_format, coords='pixels'):
 def format_tracks_from_file(tpath, tracks_format, coords='pixels'):    
     if tracks_format == 'custom_text':    
         convert_track = convert_track_custom_text
+    elif tracks_format == 'csv':
+        convert_track = convert_track_csv
     else:
         raise(ValueError('Tracks format {} is invalid'.format(tracks_format)))
         
@@ -73,16 +79,50 @@ def format_tracks_from_file(tpath, tracks_format, coords='pixels'):
         
         tracks.sort(key=lambda x: x.id)
         
-        for track in tracks:
-            text += convert_track(track, coords) + '\n'
+        for i_track, track in enumerate(tracks):
+            text += convert_track(track, coords, i_track)
         
         return text
     else:
-        raise(FileNotFoundError('Track {} not found'.format(tpath)))
-        
+        raise(FileNotFoundError('Track {} not found'.format(tpath)))      
     
+def convert_track_csv(track, coords, i_track):
+    text = ""
+    if coords == 'pixels':
+        # For csv files, this header should only be for the very first track
+        if i_track == 0:
+            text = "track_id,class,t,x,y,w,h\n"
         
-def convert_track_custom_text(track, coords='pixels'):
+        lines = {}
+        
+        for hist in track.history:
+            t, x, y, w, h = hist[0:5]
+            t, x, y, w, h = map(round, (t, x, y, w, h))
+            t, x, y, w, h = map(int, (t, x, y, w, h))
+            lines[t] = "{tid},{c},{t},{x},{y},{w},{h}\n".format(tid=track.id, c=track.c, t=t, x=x, y=y, w=w, h=h)
+    elif coords == 'world':
+        if i_track == 0:
+            text = "track_id,class,t,frame_number,x,y,dx,dy,speed\n"
+        
+        lines = {}
+        
+        for hist in track.history:
+            fn, t, x, y, dx, dy, speed = hist[0:7]
+            fn, x, y, dx, dy, speed = map(lambda x: round(x,2), (fn, x, y, dx, dy, speed))
+            lines[t] = "{tid},{c},{t},{fn},{x},{y},{dx},{dy},{sp}\n".format(tid=track.id, c=track.cn, t=t, fn=fn, x=x, y=y, dx=dx, dy=dy, sp=speed)
+    else:
+        raise(ValueError("Incorrect coords '{}'".format(coords)))
+    
+    keys = list(lines.keys())
+    keys.sort()
+    
+    for key in keys:
+        line = lines[key]
+        text += line
+    
+    return text
+        
+def convert_track_custom_text(track, coords, i_track):
     if coords == 'pixels':
         text = "track ID: {tid}, class: {tc}\n".format(tid=track.id, tc=track.c)
 
@@ -115,6 +155,8 @@ def convert_track_custom_text(track, coords='pixels'):
     for key in keys:
         line = lines[key]
         text += line
+    
+    text += '\n'
     
     return text
         

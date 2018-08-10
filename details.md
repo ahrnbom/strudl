@@ -68,7 +68,9 @@ Track ID: _TRACKID_, class: _CLASSNAME_
 Track ID: _TRACKID_, class: _CLASSNAME_
   fn: _FRAMENUMBER_, t: _TIME_, x: _X_, y: _Y_, dx: _DX_, dy: _DY_, sp: _SPEED_ 
   fn: _FRAMENUMBER_, t: _TIME_, x: _X_, y: _Y_, dx: _DX_, dy: _DY_, sp: _SPEED_
-  fn: _FRAMENUMBER_, t: _TIME_, x: _X_, y: _Y_, dx: _DX_, dy: _DY_, sp: _SPEED_  
+  fn: _FRAMENUMBER_, t: _TIME_, x: _X_, y: _Y_, dx: _DX_, dy: _DY_, sp: _SPEED_
 ```
 
-If some other format is desired, modify `tracks_format.py` (add a new function similar to `convert_track_custom_text` and make sure it is used in `format_tracks_from_file`) and `strudl.yaml` (change the `tracksFormat` parameter to have your new format in the enum).
+There is also a csv format which is similar, but csv. This means that track ID and class is repeated for every line in a track.
+
+If some other format is desired, modify `tracks_format.py` (add a new function similar to `convert_track_custom_text` and make sure it is used in `format_tracks_from_file`, while also changing the `all_track_formats` list) and `strudl.yaml` (change the `tracksFormat` parameter to have your new format in the enum).

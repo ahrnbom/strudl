@@ -15,14 +15,14 @@ from config import DatasetConfig, RunConfig
 from folder import mkdir, datasets_path, runs_path
 from classnames import set_classnames, get_classnames
 from tracking import DetTrack # not directly used, but required for tracks_formats to work for some reason
-from tracks_formats import format_tracks, generate_tracks_in_zip
+from tracks_formats import format_tracks, generate_tracks_in_zip, all_track_formats
 from import_videos import import_videos
 from visualize import class_colors
 from visualize_objects import slideshow
 from validation import validate_annotation, validate_calibration, validate_pretrained_md5
 from annotation import annotation_image_list, get_annotation_path, get_annotation_object, annotation_data
 from storage import load, save
-from tracking_world import WorldTrackingConfig
+from tracking_world import WorldTrackingConfig, WorldTrack # same as DetTrack
 from compstatus import status
 
 jm = JobManager()
@@ -688,12 +688,12 @@ def get_visualization(dataset_name, run_name, visualization_type, video_name):
     else:
         return (NoContent, 404)
 
-def get_tracks(dataset_name, run_name, video_name, tracks_format):
+def get_tracks(dataset_name, run_name, video_name, tracks_format, coords):
     dataset_name, run_name, video_name = map(quote, (dataset_name, run_name, video_name))
     
     val = None
     try:
-        val = format_tracks(dataset_name, run_name, video_name, tracks_format)
+        val = format_tracks(dataset_name, run_name, video_name, tracks_format, coords=coords)
     except FileNotFoundError:
         return (NoContent, 404)
     except ValueError:
@@ -715,6 +715,22 @@ def get_all_tracks(dataset_name, run_name, tracks_format, coords):
         return (send_file(zip_path, mimetype='application/zip'), 200)
     else:
         return (NoContent, 500)
+
+def get_track_zip_list(dataset_name, run_name):
+    dataset_name, run_name = map(quote, (dataset_name, run_name))
+    
+    found = []
+    
+    for coords in ['pixels','world']:
+        for tracks_format in all_track_formats:
+            zip_path = "{rp}{dn}_{rn}/track_zips/{tf}.zip".format(rp=runs_path, dn=dataset_name, rn=run_name, tf=tracks_format)
+            if coords == 'world':
+                zip_path = zip_path.replace('.zip', '_world.zip')
+            
+            if isfile(zip_path):
+                found.append({'coords':coords, 'tracks_format':tracks_format})
+    
+    return (found, 200)
     
 
 def get_list_of_runs(dataset_name):

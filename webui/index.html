@@ -117,7 +117,9 @@ div.textblock {
     <div id=vis></div>
     <br>
     <div id=vis2 class=scrollable></div>
-
+    <br>
+    <div id=vis_zip class=scrollable></div>
+    
     <p id=info></p>
 </div>
 <script>
@@ -147,6 +149,7 @@ var info = document.getElementById("info");
 var vistitle = document.getElementById("vistitle");
 var vis = document.getElementById("vis");
 var vis2 = document.getElementById("vis2");
+var vis_zip = document.getElementById("vis_zip");
 var sugg = document.getElementById("suggestion");
 var activity = document.getElementById("activity");
 var dataset = "";
@@ -287,6 +290,35 @@ var get_progress = function() {
     });
 };
 
+var make_zip_list = function() {
+    get_json("/tracks/zip_list?dataset_name=" + dataset + "&run_name=" + run, function(err,data) {
+        if (err !== null) {
+            set_info("Failed to get list of tracks zips");
+        } else {
+            while (vis_zip.firstChild) {
+                vis_zip.removeChild(vis_zip.firstChild);
+            }
+            
+            if (data.length > 0) {
+                var first = document.createElement('h3');
+                first.innerHTML = "Zip files of all tracks";
+                vis_zip.appendChild(first);
+                
+                for (var i = 0; i != data.length; ++i) {
+                    var z = data[i];
+                    var link = document.createElement('p');
+                    
+                    link.innerHTML = "<a href=/tracks/all?dataset_name=" + dataset + "&run_name=" + run + "&tracks_format=" + z['tracks_format'] + "&coords=" + z['coords'] + ">" + z['coords'] + " " + z['tracks_format'] + "</a>";
+                    
+                    vis_zip.appendChild(link);
+                }
+            }
+            
+            
+        }
+    });
+}
+
 var make_visualization_list = function() {
     var vt_sel = document.createElement('select');
     vt_sel.size=5;
@@ -403,6 +435,7 @@ var visualize = function() {
     
     make_suggestion();
     make_visualization_list();
+    make_zip_list();
 }
 
 get_json("/datasets", function(err,data) {
