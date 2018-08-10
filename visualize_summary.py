@@ -12,12 +12,16 @@ from os.path import isfile
 import imageio as iio
 import pandas as pd
 import numpy as np
+import cv2
 
 from folder import datasets_path, runs_path
 from util import print_flush
 from config import DatasetConfig
 from storage import load
 from tracking_world import WorldTrack
+from tracking import convert_klt, find_klt_for_frame
+from visualize import class_colors
+from apply_mask import Masker
 
 def join(pieces):
     """ Joins some images into a single one, stracking the best it can.
@@ -41,17 +45,28 @@ def join(pieces):
         
         return new_im
 
-def klt_frame(klt, frame):
-    return 128*np.ones( (128,128,3), dtype=np.uint8)
-    
-def pixeldet_frame(det, frame):
-    return 200*np.ones( (128,128,3), dtype=np.uint8)
+def klt_frame(data, frame, i_frame):
+    klts, klt_frames, colors = data
 
-def worlddet_frame(det, frame):
-    return 10*np.ones( (128,128,3), dtype=np.uint8)
+    klts = find_klt_for_frame(klts, klt_frames, i_frame)
+
+    for klt in klts:
+        klt_id = klt['id']
+        x, y = klt[i_frame]
+        
+        color = colors[klt_id % 50]
+        cv2.circle(frame, (int(x), int(y)), 2, color, -1)
     
-def worldtracks_frame(tracks, frame):
-    return 255*np.ones( (128,128,3), dtype=np.uint8)
+    return frame
+    
+def pixeldet_frame(det, frame, i_frame):
+    return frame
+
+def worlddet_frame(det, frame, i_frame):
+    return frame
+    
+def worldtracks_frame(tracks, frame, i_frame):
+    return frame
 
 def get_klt_path(dataset_path, vid):
     return "{dsp}klt/{v}.pklz".format(dsp=dataset_path, v=vid)
@@ -87,6 +102,9 @@ def make_clip(vid, clip_length, dataset_path):
 @click.option("--n_clips", default=4, help="Maximum number of videos to take clips from")
 @click.option("--clip_length", default=60, help="Length of clips, in seconds")
 def main(dataset, run, n_clips, clip_length):
+    dc = DatasetConfig(dataset)
+    mask = Masker(dataset)
+    
     dataset_path = "{dsp}{ds}/".format(dsp=datasets_path, ds=dataset)
     run_path = "{rp}{ds}_{r}/".format(rp=runs_path, ds=dataset, r=run)
     
@@ -123,12 +141,27 @@ def main(dataset, run, n_clips, clip_length):
     worlddets = []
     worldtracks = []
        
+    # Point tracks need to be converted for faster access
+    vidres = dc.get('video_resolution')
+    kltres = dc.get('point_track_resolution')
+       
+    class KLTConfig(object):
+        klt_x_factor = 0
+        klt_y_factor = 0
+        
+    klt_config = KLTConfig()
+    klt_config.klt_x_factor = vidres[0]/kltres[0]
+    klt_config.klt_y_factor = vidres[1]/kltres[1]
+       
     for vid in vids:
         f = get_klt_path(dataset_path, vid)
         if not isfile(f):
             include_klt = False
         else:
-            klts.append(load(f))
+            klt = load(f)
+            klt, klt_frames = convert_klt(klt, klt_config)
+            pts = (klt, klt_frames, class_colors(50))
+            klts.append(pts)
         
         f = get_pixeldet_path(run_path, vid)
         if not isfile(f):
@@ -154,7 +187,6 @@ def main(dataset, run, n_clips, clip_length):
     print_flush("World coordinate tracks: {}".format(include_worldtracks))
     
     # Decide where to start and stop in the videos
-    dc = DatasetConfig(dataset)
     clip_length = clip_length*dc.get('video_fps') # convert from seconds to frames
     
     print_flush("Clip length in frames: {}".format(clip_length))
@@ -173,17 +205,19 @@ def main(dataset, run, n_clips, clip_length):
     with iio.get_writer("{dsp}summary.mp4".format(dsp=dataset_path), fps=dc.get('video_fps')) as outvid:
         for i_vid, vid in enumerate(vids):
             with iio.get_reader("{dsp}videos/{v}.mkv".format(dsp=dataset_path, v=vid)) as invid:
-                for i_frame, frame in enumerate(invid):
+                start, stop = clips[i_vid]
+                for i_frame in range(start, stop):
+                    frame = invid.get_data(i_frame)
                     
                     pieces = []
                     
                     for inc, fun, dat in zip(incs, funs, dats):
                         if inc:
-                            pieces.append(fun(dat[i_vid], frame))
+                            pieces.append(fun(dat[i_vid], mask.mask(frame.copy(), alpha=0.5), i_frame))
                     
                     outvid.append_data(join(pieces))
 
-                    if i_frame % 1000 == 0:
+                    if i_frame % 100 == 0:
                         print_flush(i_frame)    
                 
                 
