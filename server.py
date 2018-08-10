@@ -386,14 +386,19 @@ def post_import_videos_job(dataset_name, path, method, logs_path=None, minutes=0
     else:
         return (NoContent, 404)
 
-def post_point_tracks_job(dataset_name, visualize):
+def post_point_tracks_job(dataset_name, visualize, overwrite):
     assert(type(visualize) == bool)
+    assert(type(overwrite) == bool)
+    
+    cmd = "findvids"
+    if not overwrite:
+        cmd = "continue"
     
     dataset_name = quote(dataset_name)
     dc = DatasetConfig(dataset_name)
     if dc.exists:
         cmd = ["python", "klt.py",
-               "--cmd=findvids",
+               "--cmd={}".format(cmd),
                "--dataset={}".format(dataset_name),
                "--imsize={}".format(dc.get('point_track_resolution')),
                "--visualize={}".format(visualize)]

@@ -530,6 +530,11 @@ paths:
           type: boolean
           required: true
           description: If true, videos are generated showing the point tracks.
+        - name: overwrite
+          in: query
+          type: boolean
+          required: true
+          description: If true, old point tracks are overwritten. If false, a half-finished job can be continued. Note that if a point track job is cancelled exactly while the file is being written, this won't work as expected so be careful.
       responses:
         202:
           description: Job accepted and started. A job ID is returned.
