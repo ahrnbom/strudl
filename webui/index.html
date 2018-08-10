@@ -370,10 +370,10 @@ var make_visualization_list2 = function(data) {
 var make_suggestion = function() {
     if (!curr_data['dataset']['has_config']) {
         sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_dataset_config>Submit a dataset configuration!</a>";
-    } else if (!curr_data['dataset']['has_mask']) {
-        sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_mask>Make and submit a mask image!</a>";
     } else if (curr_data['dataset']['number_of_videos'] == 0) {
         sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_import_videos_job>Import some videos!</a>";
+    } else if (!curr_data['dataset']['has_mask']) {
+        sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_mask>Make and submit a mask image!</a>";    
     } else if (curr_data['dataset']['training_frames_to_annotate'] == 0) {
         sugg.innerHTML = "Suggestion: <a href=ui/#!/default/server_post_prepare_annotations_job>Prepare annotations!</a>";
     } else if (curr_data['dataset']['videos_with_point_tracks_computed'] < curr_data['dataset']['number_of_videos']) {
