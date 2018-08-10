@@ -789,6 +789,33 @@ paths:
         503:
           description: Device is busy
   
+  /jobs/summary_video:
+    post:
+      operationId: server.post_summary_video_job
+      summary: Makes a video with some clips, showing general progress
+      description: Makes a video with point tracks, detections, world-coordinate detections and tracks, or less if not all of that is ready yet.
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - name: num_clips
+          in: query
+          type: integer
+          default: 4
+          required: true
+        - name: clip_length
+          in: query
+          type: integer
+          default: 60
+          required: true
+          description: Length of each clip, in seconds
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start.
+        503:
+          description: Device is busy
+  
   /visualization:
     get:
       operationId: server.get_visualization
@@ -983,7 +1010,7 @@ parameters:
         name: visualization_type
         in: query
         type: string
-        enum: [detections_pixels,detections_world,tracks_pixels,tracks_world,point_tracks,world_tracking_optimization]
+        enum: [summary,detections_pixels,detections_world,tracks_pixels,tracks_world,point_tracks,world_tracking_optimization]
         required: true
 
     tracksCoords:

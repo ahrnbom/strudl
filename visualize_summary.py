@@ -23,6 +23,11 @@ from tracking import convert_klt, find_klt_for_frame
 from visualize import class_colors, draw
 from apply_mask import Masker
 from classnames import get_classnames
+from world import Calibration
+from visualize_tracking import draw_world
+
+n_cols_klts = 50
+n_cols_tracks = 20
 
 def join(pieces):
     """ Joins some images into a single one, stracking the best it can.
@@ -55,7 +60,7 @@ def klt_frame(data, frame, i_frame):
         klt_id = klt['id']
         x, y = map(int, klt[i_frame])
         
-        color = colors[klt_id % 50]
+        color = colors[klt_id % n_cols_klts]
         
         cv2.circle(frame, (x, y), 2, color, -1)
     
@@ -69,10 +74,20 @@ def pixeldet_frame(data, frame, i_frame):
 
     return frame
 
-def worlddet_frame(det, frame, i_frame):
+def worlddet_frame(data, frame, i_frame):
+    dets, colors, calib = data
+    det = dets[dets['frame_number'] == i_frame]
+    
+    frame = draw(frame, det, colors, coords='world', calib=calib)
+    
     return frame
     
-def worldtracks_frame(tracks, frame, i_frame):
+def worldtracks_frame(data, frame, i_frame):
+    tracks, colors, calib = data
+    
+    for track in tracks:
+        draw_world(frame, track, i_frame, colors[track.id%n_cols_tracks], calib)
+
     return frame
 
 def get_klt_path(dataset_path, vid):
@@ -114,6 +129,7 @@ def main(dataset, run, n_clips, clip_length):
     mask = Masker(dataset)
     classes = get_classnames(dataset)
     num_classes = len(classes)+1
+    calib = Calibration(dataset)
     
     dataset_path = "{dsp}{ds}/".format(dsp=datasets_path, ds=dataset)
     run_path = "{rp}{ds}_{r}/".format(rp=runs_path, ds=dataset, r=run)
@@ -166,6 +182,8 @@ def main(dataset, run, n_clips, clip_length):
     ssdres = rc.get('detector_resolution')
     x_scale = vidres[0]/ssdres[0]
     y_scale = vidres[1]/ssdres[1]
+    
+    colors = class_colors(num_classes)
        
     for vid in vids:
         f = get_klt_path(dataset_path, vid)
@@ -174,7 +192,7 @@ def main(dataset, run, n_clips, clip_length):
         else:
             klt = load(f)
             klt, klt_frames = convert_klt(klt, klt_config)
-            pts = (klt, klt_frames, class_colors(50))
+            pts = (klt, klt_frames, class_colors(n_cols_klts))
             klts.append(pts)
         
         f = get_pixeldet_path(run_path, vid)
@@ -183,7 +201,7 @@ def main(dataset, run, n_clips, clip_length):
         else:
             dets = pd.read_csv(f)
                         
-            pixeldets.append( (dets, class_colors(num_classes), x_scale, y_scale) )
+            pixeldets.append( (dets, colors, x_scale, y_scale) )
         
         f = get_worlddet_path(run_path, vid)
         if not isfile(f):
@@ -191,13 +209,14 @@ def main(dataset, run, n_clips, clip_length):
         else:
             dets = pd.read_csv(f)
                 
-            worlddets.append(dets)
+            worlddets.append( (dets, colors, calib) )
 
         f = get_worldtracks_path(run_path, vid)
         if not isfile(f):
             include_worldtracks = False
         else:
-            worldtracks.append(load(f))
+            tracks = load(f)
+            worldtracks.append( (tracks, class_colors(n_cols_tracks), calib) )
     
     print_flush("Point tracks: {}".format(include_klt))
     print_flush("Pixel coordinate detections: {}".format(include_pixeldets))
@@ -220,8 +239,9 @@ def main(dataset, run, n_clips, clip_length):
     
     print_flush(clips)
         
-    with iio.get_writer("{dsp}summary.mp4".format(dsp=dataset_path), fps=dc.get('video_fps')) as outvid:
+    with iio.get_writer("{trp}summary.mp4".format(trp=run_path), fps=dc.get('video_fps')) as outvid:
         for i_vid, vid in enumerate(vids):
+            print_flush(vid)
             old_prog = 0
             
             with iio.get_reader("{dsp}videos/{v}.mkv".format(dsp=dataset_path, v=vid)) as invid:
@@ -242,7 +262,7 @@ def main(dataset, run, n_clips, clip_length):
                         print_flush("{}%".format(round(prog*100)))
                         old_prog = prog    
                 
-                
+    print_flush("Done!")        
                 
     
 if __name__ == '__main__':

@@ -636,13 +636,35 @@ def post_all_tracks_as_zip_job(dataset_name, run_name, tracks_format, coords):
         return (job_id, 202)
     else:
         return (NoContent, 503)
+        
+def post_summary_video_job(dataset_name, run_name, num_clips, clip_length):
+    dataset_name = quote(dataset_name)
+    run_name = quote(run_name)
+    
+    if (type(num_clips) == int) and (type(clip_length) == int):
+    
+        cmd = ["python", "visualize_summary.py",
+               "--dataset={}".format(dataset_name),
+               "--run={}".format(run_name),
+               "--n_clips={}".format(num_clips),
+               "--clip_length={}".format(clip_length)]  
+        
+        job_id = jm.run(cmd, "summary_video")
+        if job_id:
+            return (job_id, 202)
+        else:
+            return (NoContent, 503)
+    else:
+        return (NoContent, 500)
 
 def get_visualization_list(dataset_name, run_name, visualization_type):
     dataset_name = quote(dataset_name)
     run_name = quote(run_name)
     this_run_path = "{rp}{dn}_{rn}/".format(rp=runs_path, dn=dataset_name, rn=run_name)
     
-    if visualization_type == "detections_pixels":
+    if visualization_type == "summary":
+        video_path = "{trp}summary.mp4".format(trp=this_run_path)
+    elif visualization_type == "detections_pixels":
         video_path = "{trp}detections/*.mp4".format(trp=this_run_path)
     elif visualization_type == "detections_world":
         video_path = "{trp}detections_world/*.mp4".format(trp=this_run_path)
@@ -675,7 +697,9 @@ def get_visualization(dataset_name, run_name, visualization_type, video_name):
     run_name = quote(run_name)
     video_name = quote(video_name)
     this_run_path = "{rp}{dn}_{rn}/".format(rp=runs_path, dn=dataset_name, rn=run_name)
-    if visualization_type == "detections_pixels":
+    if visualization_type == "summary":
+        video_path = "{trp}summary.mp4".format(trp=this_run_path)
+    elif visualization_type == "detections_pixels":
         video_path = "{trp}detections/{vn}.mp4".format(trp=this_run_path, vn=video_name)
     elif visualization_type == "detections_world":
         video_path = "{trp}detections_world/{vn}.mp4".format(trp=this_run_path, vn=video_name)

@@ -323,7 +323,7 @@ var make_visualization_list = function() {
     var vt_sel = document.createElement('select');
     vt_sel.size=5;
     
-    var vis_types = ["detections_pixels","detections_world","tracks_pixels","tracks_world","point_tracks","world_tracking_optimization"];
+    var vis_types = ["summary","detections_pixels","detections_world","tracks_pixels","tracks_world","point_tracks","world_tracking_optimization"];
     for (var i = 0; i != vis_types.length; ++i) {
         var vt = vis_types[i];
         var opt = document.createElement('option');
