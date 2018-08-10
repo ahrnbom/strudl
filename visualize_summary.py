@@ -15,13 +15,14 @@ import numpy as np
 import cv2
 
 from folder import datasets_path, runs_path
-from util import print_flush
-from config import DatasetConfig
+from util import print_flush, pandas_loop
+from config import DatasetConfig, RunConfig
 from storage import load
 from tracking_world import WorldTrack
 from tracking import convert_klt, find_klt_for_frame
-from visualize import class_colors
+from visualize import class_colors, draw
 from apply_mask import Masker
+from classnames import get_classnames
 
 def join(pieces):
     """ Joins some images into a single one, stracking the best it can.
@@ -52,14 +53,20 @@ def klt_frame(data, frame, i_frame):
 
     for klt in klts:
         klt_id = klt['id']
-        x, y = klt[i_frame]
+        x, y = map(int, klt[i_frame])
         
         color = colors[klt_id % 50]
-        cv2.circle(frame, (int(x), int(y)), 2, color, -1)
+        
+        cv2.circle(frame, (x, y), 2, color, -1)
     
     return frame
     
-def pixeldet_frame(det, frame, i_frame):
+def pixeldet_frame(data, frame, i_frame):
+    dets, colors, x_scale, y_scale = data
+    det = dets[dets['frame_number'] == i_frame]
+    
+    frame = draw(frame, det, colors, x_scale=x_scale, y_scale=y_scale, coords='pixels')
+
     return frame
 
 def worlddet_frame(det, frame, i_frame):
@@ -103,7 +110,10 @@ def make_clip(vid, clip_length, dataset_path):
 @click.option("--clip_length", default=60, help="Length of clips, in seconds")
 def main(dataset, run, n_clips, clip_length):
     dc = DatasetConfig(dataset)
+    rc = RunConfig(dataset, run)
     mask = Masker(dataset)
+    classes = get_classnames(dataset)
+    num_classes = len(classes)+1
     
     dataset_path = "{dsp}{ds}/".format(dsp=datasets_path, ds=dataset)
     run_path = "{rp}{ds}_{r}/".format(rp=runs_path, ds=dataset, r=run)
@@ -152,6 +162,10 @@ def main(dataset, run, n_clips, clip_length):
     klt_config = KLTConfig()
     klt_config.klt_x_factor = vidres[0]/kltres[0]
     klt_config.klt_y_factor = vidres[1]/kltres[1]
+    
+    ssdres = rc.get('detector_resolution')
+    x_scale = vidres[0]/ssdres[0]
+    y_scale = vidres[1]/ssdres[1]
        
     for vid in vids:
         f = get_klt_path(dataset_path, vid)
@@ -167,13 +181,17 @@ def main(dataset, run, n_clips, clip_length):
         if not isfile(f):
             include_pixeldets = False
         else:
-            pixeldets.append(pd.read_csv(f))
+            dets = pd.read_csv(f)
+                        
+            pixeldets.append( (dets, class_colors(num_classes), x_scale, y_scale) )
         
         f = get_worlddet_path(run_path, vid)
         if not isfile(f):
             include_worlddets = False
         else:
-            worlddets.append(pd.read_csv(f))
+            dets = pd.read_csv(f)
+                
+            worlddets.append(dets)
 
         f = get_worldtracks_path(run_path, vid)
         if not isfile(f):
@@ -204,6 +222,8 @@ def main(dataset, run, n_clips, clip_length):
         
     with iio.get_writer("{dsp}summary.mp4".format(dsp=dataset_path), fps=dc.get('video_fps')) as outvid:
         for i_vid, vid in enumerate(vids):
+            old_prog = 0
+            
             with iio.get_reader("{dsp}videos/{v}.mkv".format(dsp=dataset_path, v=vid)) as invid:
                 start, stop = clips[i_vid]
                 for i_frame in range(start, stop):
@@ -216,9 +236,11 @@ def main(dataset, run, n_clips, clip_length):
                             pieces.append(fun(dat[i_vid], mask.mask(frame.copy(), alpha=0.5), i_frame))
                     
                     outvid.append_data(join(pieces))
-
-                    if i_frame % 100 == 0:
-                        print_flush(i_frame)    
+                    
+                    prog = float(i_frame-start)/(stop-start)
+                    if prog-old_prog > 0.1:
+                        print_flush("{}%".format(round(prog*100)))
+                        old_prog = prog    
                 
                 
                 
