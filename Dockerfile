@@ -53,6 +53,8 @@ RUN pip install pydot connexion munkres
 RUN apt-get update && apt-get install -y software-properties-common 
 RUN add-apt-repository ppa:stebbins/handbrake-releases && apt-get update && apt-get install -y handbrake-cli
 
+RUN pip install -I numpy==1.14.3
+
 ENV TF_CPP_MIN_LOG_LEVEL 2
 
 WORKDIR "/code"
