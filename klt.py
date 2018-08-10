@@ -174,9 +174,8 @@ def klt_save(vidpath, datpath, imsize, mask, outvidpath=None):
 @click.option("--cmd", default="findvids", help="Which command to run, either 'findvids' to search for videos, 'continue' to keep running a cancelled run or 'test' to run a test on some hardcoded video")
 @click.option("--dataset", default="sweden2", help="Which dataset to run on")
 @click.option("--imsize", default="(320,240)", help="Image size to run KLT on (smaller is much faster), as a string on this format: '(320,240)' where 320 is the width and 240 is the height")
-@click.option("--visualize", default=True, help="If True, videos are made showing the point tracks")
-def main(cmd, dataset, imsize, visualize):
-    
+@click.option("--visualize", default=True, type=bool, help="If True, videos are made showing the point tracks")
+def main(cmd, dataset, imsize, visualize):    
     imsize = parse_resolution(imsize)
     
     mask = Masker(dataset)

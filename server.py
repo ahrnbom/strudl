@@ -387,13 +387,16 @@ def post_import_videos_job(dataset_name, path, method, logs_path=None, minutes=0
         return (NoContent, 404)
 
 def post_point_tracks_job(dataset_name, visualize):
+    assert(type(visualize) == bool)
+    
     dataset_name = quote(dataset_name)
     dc = DatasetConfig(dataset_name)
     if dc.exists:
         cmd = ["python", "klt.py",
                "--cmd=findvids",
                "--dataset={}".format(dataset_name),
-               "--imsize={}".format(dc.get('point_track_resolution'))]
+               "--imsize={}".format(dc.get('point_track_resolution')),
+               "--visualize={}".format(visualize)]
         
         job_id = jm.run(cmd, "point_tracks")
         if job_id:
