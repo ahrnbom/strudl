@@ -770,7 +770,9 @@ def get_list_of_runs(dataset_name):
     
     runs = glob("{rp}{dn}_*".format(rp=runs_path, dn=dataset_name))
     runs.sort()
-    runs = [x.split('/')[-1].split('_')[-1] for x in runs]
+    
+    # Run names and dataset names can contain underscore characters (which is kinda dumb, but whatever)
+    runs = [x.split('/')[-1].lstrip(dataset_name + '_') for x in runs]
     
     if runs:
         return (runs, 200)
