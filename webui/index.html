@@ -204,9 +204,9 @@ var get_activity = function() {
                     div.style.background = "tomato";
                 }
                 
-                if (d['result'] == 'queued') {
+                if ((d['result'] == 'queued') || (d['result'] == 'running')) {
                     var butt = document.createElement('button');
-                    butt.innerHTML = "Delete";
+                    butt.innerHTML = "Cancel";
                     butt.onclick = function() {
                         rest_delete('/jobs/' + d['id'], function(err,data) {
                             if (err !== null) {
