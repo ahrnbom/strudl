@@ -18,7 +18,7 @@ from folder import datasets_path, runs_path
 from util import print_flush, pandas_loop
 from config import DatasetConfig, RunConfig
 from storage import load
-from tracking_world import WorldTrack
+from tracking_world import WorldTrack, WorldTrackingConfig
 from tracking import convert_klt, find_klt_for_frame
 from visualize import class_colors, draw
 from apply_mask import Masker
