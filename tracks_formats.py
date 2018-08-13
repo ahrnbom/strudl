@@ -20,7 +20,7 @@ all_track_formats = ['csv','custom_text']
 @click.option("--tf", type=str)
 @click.option("--coords", type=click.Choice(['pixels','world']), help="Pixel coordinates or world coordinates")
 def generate_tracks_in_zip(dataset, run, tf, coords):
-    assert(tf in all_tracks_formats)    
+    assert(tf in all_track_formats)    
     
     tracks_format = tf
     if coords == 'pixels':
