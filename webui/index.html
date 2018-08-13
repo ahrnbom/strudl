@@ -139,6 +139,20 @@ var get_json = function(url, callback) {
     xhr.send();
 };
 
+var rest_delete = function(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('DELETE', url, true);
+    xhr.onload = function() {
+      var status = xhr.status;
+      if (status === 200) {
+        callback(null, xhr.response);
+      } else {
+        callback(status, xhr.response);
+      }
+    };
+    xhr.send();
+}
+
 var topstatus = document.getElementById("topstatus");
 var statustext = document.getElementById("statustext");
 var scrollstatus = document.getElementById("scrollstatus");
@@ -184,8 +198,26 @@ var get_activity = function() {
                     div.style.background = "lightyellow";
                 } else if (d['result'] == 'success') {
                     div.style.background = "palegreen";
+                } else if (d['result'] == 'queued') {
+                    div.style.background = 'lavender';
                 } else {
                     div.style.background = "tomato";
+                }
+                
+                if (d['result'] == 'queued') {
+                    var butt = document.createElement('button');
+                    butt.innerHTML = "Delete";
+                    butt.onclick = function() {
+                        rest_delete('/jobs/' + d['id'], function(err,data) {
+                            if (err !== null) {
+                                set_info("Failed to delete " + d['id'] + ', result: ' + err + ', ' + data);
+                            } else {
+                                get_activity();
+                            }
+                        });
+                    };
+                    
+                    div.appendChild(butt);
                 }
                 
                 activity.appendChild(div);

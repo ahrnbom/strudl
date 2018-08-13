@@ -128,6 +128,10 @@ class JobManager(object):
                     
                 out.append({"id":job_id, "result":result})
             
+            queue_ids = [x[0] for x in self.queue]
+            for queue_id in queue_ids:
+                out.append({"id":queue_id, "result":'queued'})
+                
             return out
                 
         elif job_type == 'all':
