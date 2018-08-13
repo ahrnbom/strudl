@@ -513,6 +513,22 @@ def post_visualize_detections_job(dataset_name, run_name, confidence_threshold, 
             return (NoContent, 503)
     else:
         return (NoContent, 404)
+
+def post_visualize_tracks_world_coordinates_job(dataset_name, run_name, videos):
+    dataset_name = quote(dataset_name)
+    run_name = quote(run_name)
+    videos = quote(videos)
+    
+    cmd = ["python", "visualize_tracking.py",
+           "--dataset={}".format(dataset_name),
+           "--run={}".format(run_name),
+           "--videos={}".format(videos)]
+    
+    job_id = jm.run(cmd, "visualize_detections")
+    if job_id:
+        return (job_id, 202)
+    else:
+        return (NoContent, 503)
         
 def post_detections_to_world_coordinates_job(dataset_name, run_name, make_videos):
     dataset_name = quote(dataset_name)

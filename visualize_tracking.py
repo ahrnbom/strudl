@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from random import shuffle, choice
 from bisect import bisect
+import click
+from os.path import isfile
 
 from tracking import DetTrack
 from tracking_world import WorldTrack
@@ -11,6 +13,7 @@ from apply_mask import Masker
 from world import Calibration
 from folder import runs_path, datasets_path
 from config import DatasetConfig
+from util import print_flush
 
 def get_colors(n=10):
     colors = []
@@ -151,19 +154,67 @@ def draw(to_draw, track, frame_number, color):
     text_pos = (xmin + 5, ymin-2)
     cv2.rectangle(to_draw, text_top, text_bot, color, -1)        
     cv2.putText(to_draw, text, text_pos, font, font_scale, (0,0,0), 1, cv2.LINE_AA)
-                
-if __name__ == '__main__':
-    video_name = '20170516_101005_2628'
-    dataset = "sweden2"
-    run = "fivehundred"
+
+@click.command()
+@click.option("--dataset", type=str, help="Name of dataset")
+@click.option("--run", type=str, help="Name of run")
+@click.option("--videos", type=str, help="Either some videos separated by commas without spaces (or a single video), or, 'all' or 'random:X' where X is a number")
+def main(dataset, run, videos):
+    # Note: This main function only works for world coordinate tracks!
     
     calib = Calibration(dataset)
     dc = DatasetConfig(dataset)
-    
-    tracks = load('{rp}{ds}_{r}/tracks_world/{v}_tracks.pklz'.format(rp=runs_path, ds=dataset, r=run, v=video_name))
-    vidpath = "{dsp}{ds}/videos/{v}.mkv".format(dsp=datasets_path, ds=dataset, v=video_name)
-    
     masker = Masker(dataset)
     
-    render_video(tracks, vidpath, "vid_{}_tracks.mp4".format(video_name), mask=masker, id_mode="local", calib=calib, fps=dc.get('video_fps'))
+    if videos == 'all':
+        from glob import glob
+        files = glob('{rp}{ds}_{r}/tracks_world/*_tracks.pklz'.format(rp=runs_path, ds=dataset, r=run))
+        video_names = [x.split('/')[-1].rstrip('_tracks.pklz') for x in files]
+    elif videos.startswith('random:'):
+        num = int(videos.lstrip('random:'))
+        
+        from glob import glob
+        files = glob('{rp}{ds}_{r}/tracks_world/*_tracks.pklz'.format(rp=runs_path, ds=dataset, r=run))
+        all_video_names = [x.split('/')[-1].rstrip('_tracks.pklz') for x in files]
+
+        video_names = []        
+        while len(video_names) < num:
+            video_name = choice(all_video_names)
+            if not video_name in video_names:
+                video_names.append(video_name)
+            
+            # Just in case user wants more videos than there are
+            if len(video_names) == len(all_video_names):
+                break
+        
+    else:
+        # Assumes the user types one or more videos, separated by commas with no spaces
+        video_names = videos.split(',')
+        
+        # In case user includes endings
+        video_names = [x.rstrip('.mkv') for x in video_names]
+    
+        # In case user includes spaces
+        video_names = [x.strip(' ') for x in video_names]
+        
+    print_flush("Chosen videos: ")
+    print_flush(str(video_names))
+    for video_name in video_names:
+        print_flush(video_name)
+        print_flush("Loading...")
+        tracks = load('{rp}{ds}_{r}/tracks_world/{v}_tracks.pklz'.format(rp=runs_path, ds=dataset, r=run, v=video_name))
+        vidpath = "{dsp}{ds}/videos/{v}.mkv".format(dsp=datasets_path, ds=dataset, v=video_name)
+        
+        if not isfile(vidpath):
+            raise(ValueError("Incorrect input {}".format(videos)))
+        
+        outvidpath = '{rp}{ds}_{r}/tracks_world/{v}_tracks.mp4'.format(rp=runs_path, ds=dataset, r=run, v=video_name)
+        
+        print_flush("Rendering...")
+        render_video(tracks, vidpath, outvidpath, mask=masker, id_mode="global", calib=calib, fps=dc.get('video_fps'))
+    
+    print_flush("Done!")
+        
+if __name__ == '__main__':
+    main()
 

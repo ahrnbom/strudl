@@ -645,6 +645,27 @@ paths:
         404:
           description: No run configuration exists for this dataset and run
   
+  /jobs/visualize_tracks_world_coordinates:
+    post:  
+      operationId: server.post_visualize_tracks_world_coordinates_job
+      summary: Visualizes world coordinate tracks as video
+      description: After running tracking in world coordinates, this job creates videos showing the tracks
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - $ref: "#/parameters/runName"
+        - name: videos
+          in: query
+          type: string
+          required: true
+          description: Either `all` to take all videos, or `random:X` where X is some integer number to take X random videos, or a comma-separated list of video names, like `20180813_122900_ABCD,20180813_124900_EFGH` without spaces
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start.
+        503:
+          description: Device is busy
+          
   /jobs/detections_to_world_coordinates:
     post:
       operationId: server.post_detections_to_world_coordinates_job
@@ -1017,7 +1038,7 @@ parameters:
         name: coords
         in: query
         type: string
-        enum: [pixels,world]
+        enum: [world,pixels]
         required: true
 
     tracksFormat:
