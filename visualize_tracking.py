@@ -7,7 +7,7 @@ import click
 from os.path import isfile
 
 from tracking import DetTrack
-from tracking_world import WorldTrack
+from tracking_world import WorldTrack, WorldTrackingConfig
 from storage import load
 from apply_mask import Masker
 from world import Calibration
