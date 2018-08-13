@@ -8,4 +8,4 @@ echo "Using data from $DATAPATH"
 
 docker build -t strudl .
 docker rm -f strudl_sess
-nvidia-docker run --name strudl_sess -p 80:80 -v $PWD:/code/ -v $DATAPATH:/data/ -v /media/:/usb/ -it strudl
+nvidia-docker run --name strudl_sess -p 80:80 -v $PWD:/code/ -v $DATAPATH:/data/ --mount type=bind,src=/media,dst=/usb,bind-propagation=rslave -it strudl
