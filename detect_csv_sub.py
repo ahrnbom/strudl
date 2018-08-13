@@ -113,12 +113,13 @@ def main(dataset, run, input_shape, seq_start, seq_stop, videopath, conf_thresh,
     for i in range(seq_len):
         frame_num = i + seq_start
         
-        pred = preds[i, :]
-        pred = pred.reshape(1, pred.shape[0], pred.shape[1])
-        results = bbox_util.detection_out(pred, soft=False)
+        if frame_num < vlen:           
+            pred = preds[i, :]
+            pred = pred.reshape(1, pred.shape[0], pred.shape[1])
+            results = bbox_util.detection_out(pred, soft=False)
 
-        detections = process_results(results, width, height, classes, conf_thresh, frame_num)
-        all_detections.append(detections)
+            detections = process_results(results, width, height, classes, conf_thresh, frame_num)
+            all_detections.append(detections)
     
     dets = pd.concat(all_detections)
     
