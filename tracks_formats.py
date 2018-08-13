@@ -50,7 +50,10 @@ def generate_tracks_in_zip(dataset, run, tf, coords):
             with open(tmp_path, 'w') as f:
                 f.write(text)
             
-            z.write(tmp_path, arcname=tname.replace('.pklz', '.txt'))
+            suffix = '.txt'
+            if tracks_format == 'csv':
+                suffix = '.csv'
+            z.write(tmp_path, arcname=tname.replace('.pklz', suffix))
     
     remove(tmp_path)
     print_flush("Done!")
