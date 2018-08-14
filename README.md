@@ -1,7 +1,5 @@
 # STRUDL: Surveillance Tracking Using Deep Learning
 
-### Note: This software is still under development, and has not been properly tested yet! Please be patient.
-
 STRUDL is an open-source and free framework for tracking objects in videos filmed by **static surveillance cameras**. It uses a deep learining object detector, camera calibration and tracking to create trajectories of e.g. road users, in world coordinates. It was designed to faciliate traffic safety analysis, using modern computer vision and deep learning, rather than the traditional methods commonly used despite their many flaws. By creating trajectories in world coordinates, truly meaningful metrics and safety measures can be computed. The paper behind this research will hopefully be released soon!
 
 STRUDL was developed as a part of the [InDeV project](https://www.indev-project.eu). 
@@ -17,7 +15,7 @@ Some more information about how STRUDL works internally can be found [here](deta
 Got any issues with this software? Feel free to [open an issue, if there isn't one already for your problem](https://github.com/ahrnbom/strudl/issues)!
 
 ### Workflow
-1. Import videos
+1. Import videos alongside log files specifying the times for each frame in the videos
 2. Annotate images
 3. Train an object detector
 4. Provide camera calibration
@@ -28,9 +26,15 @@ Got any issues with this software? Feel free to [open an issue, if there isn't o
 1. Take advantage of modern deep learning without extensive knowledge of the technology
 1. Easily make object detection annotations via custom web interface
 1. Semi-automatic annotation process, where a detector can be trained on the currently available training data, and those detections can then be used as a starting point for annotations, speeding up the process once a critical number of images has been annotated.
-1. When importing videos, typically from a USB drive, videos can be recoded to arbitrarily long/short clips, and different resolutions, assuming log files are present which specify the real times of every frame.
-1. Tracking in world coordinates, which can optimized if the user provides ground truth tracks made by [T-Analyst](http://www.tft.lth.se/en/research/video-analysis/co-operation/software/t-analyst/)
-1. Full trajectories can be obtained as text files, which the user can then filter, sort and present, using any tools they prefer. This allows e.g. complex traffic analysis.
+1. When importing videos, typically from a USB drive, videos can be recoded to arbitrarily long/short clips, and different resolutions.
+1. Tracking in world coordinates, which can optimized if the user provides ground truth tracks made by [T-Analyst](https://bitbucket.org/TrafficAndRoads/tanalyst/wiki/Manual). In our experience, this is not necessary and the default parameters work OK for most scenarios.
+1. Full trajectories can be obtained as text files (e.g. csv), which the user can then filter, sort and present, using any tools they prefer. This allows e.g. complex traffic analysis.
+1. Visualize each step in the process in summary video files, to better understand what goes wrong when something goes wrong.
+
+### Data assumptions
+1. Data should be in video files, filmed from static (non-moving) surveillance cameras.
+1. A TSAI-calibration should exist, allowing translation between pixel coordinates and world coordinates
+1. For each video file, there should be a log file specifying the time for each frame. This allows more accurate measures of time which is useful in tracking. If your videos do not have this information, simply generate such text files using some approximate method of your choice. The log files should be text files in the `.log` format, where each line looks like this: `00158 2017 05 16 01:28:52.642`, where the first number (with five characters) is the frame number, followed by the year, month, day, hour, minute, second and milliseconds.
 
 ### Requirements
 
