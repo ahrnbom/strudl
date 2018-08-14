@@ -76,9 +76,8 @@ This software has not been designed with maximum security in mind. It is recomme
 There's always more to do! On our to-do list contains, among other things, the following:
 
 1. Simplification of the Web UI, to make it easier to understand what has been done and what to do next
-2. It should be possible to import annotated images from one dataset to another during training
-3. SSD code is currently based on [this port by Rykov8](https://github.com/rykov8/ssd_keras). It might be a good idea to change to [this one instead, by Pierluigiferrari](https://github.com/pierluigiferrari/ssd_keras), which is more nicely documented and runs NMS on the GPU.
-4. Code should become more readable and better commented (this started as, and in many ways still is, experimental research code)
-5. Different tracking algorithms should be examined, possibly replacing the simplistic one currently used.
+1. SSD code is currently based on [this port by Rykov8](https://github.com/rykov8/ssd_keras). It might be a good idea to change to [this one instead, by Pierluigiferrari](https://github.com/pierluigiferrari/ssd_keras), which is more nicely documented and runs NMS on the GPU.
+1. Code should become more readable and better commented (this started as, and in many ways still is, experimental research code)
+1. Different tracking algorithms should be examined, possibly replacing the simplistic one currently used.
 1. Reducing the size of the docker container (currently around 20 GB)
-6. More easter eggs, jokes and memes. 
+1. More easter eggs, jokes and memes. 
