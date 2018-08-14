@@ -7,6 +7,7 @@ import numpy as np
 from os.path import isfile
 
 from folder import datasets_path
+from util import right_remove
 
 def line_to_datetime(line):
     splot = line.split(' ')
@@ -46,7 +47,7 @@ class Timestamps(object):
         all_logs = glob("{lp}*.log".format(lp=self.logs_path))
         all_logs.sort()
         
-        video_names = [x.split('/')[-1].strip('.log') for x in all_logs]
+        video_names = [right_remove(x.split('/')[-1], '.log') for x in all_logs]
         
         if self.start_times is None:
             self.start_times = dict()

@@ -6,7 +6,7 @@ import numpy as np
 from itertools import count
 
 from world import Calibration
-from util import parse_resolution, print_flush, pandas_loop, normalize
+from util import parse_resolution, print_flush, pandas_loop, normalize, right_remove
 from storage import load, save
 from folder import datasets_path, runs_path, mkdir
 from timestamps import Timestamps
@@ -198,7 +198,7 @@ def main(cmd, dataset, run, vidres, ssdres, kltres, make_videos):
     if cmd == "findvids":
         from glob import glob
         vidnames = glob('{dsp}{ds}/videos/*.mkv'.format(dsp=datasets_path, ds=dataset))
-        vidnames = [x.split('/')[-1].strip('.mkv') for x in vidnames]
+        vidnames = [right_remove(x.split('/')[-1], '.mkv') for x in vidnames]
         vidnames.sort()
         
         outfolder = '{}{}_{}/detections_world/'.format(runs_path, dataset, run)

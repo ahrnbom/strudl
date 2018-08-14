@@ -11,7 +11,7 @@ from os.path import isfile
 
 from folder import mkdir, datasets_path
 from timestamps import Timestamps
-from util import print_flush
+from util import print_flush, right_remove
 from config import DatasetConfig
 
 @click.command()
@@ -56,7 +56,7 @@ def main(dataset, times, images_per_time, interval):
         
         already_ims = glob(annot_folder + '*.jpg')
         if already_ims:
-            already_nums = [int(x.split('/')[-1].rstrip('.jpg')) for x in already_ims]
+            already_nums = [int(right_remove(x.split('/')[-1], '.jpg')) for x in already_ims]
             i = max(already_nums) + 1
         else:
             i = 1

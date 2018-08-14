@@ -15,7 +15,7 @@ import numpy as np
 import cv2
 
 from folder import datasets_path, runs_path
-from util import print_flush, pandas_loop
+from util import print_flush, pandas_loop, right_remove
 from config import DatasetConfig, RunConfig
 from storage import load
 from tracking_world import WorldTrack, WorldTrackingConfig
@@ -144,7 +144,7 @@ def main(dataset, run, n_clips, clip_length):
     # Grab a bunch of videos
     vids_query = "{dsp}videos/*.mkv".format(dsp=dataset_path)
     all_vids = glob(vids_query)
-    all_vids = [x.split('/')[-1].rstrip('.mkv') for x in all_vids]
+    all_vids = [right_remove(x.split('/')[-1], '.mkv') for x in all_vids]
     
     all_vids.sort()
     

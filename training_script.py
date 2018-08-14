@@ -270,12 +270,13 @@ def log(string):
 @click.option('--frozen_layers', default=3, help='The number of frozen layers, max 5.')
 @click.option('--experiment', default='default', help='The name of the experiment.')
 @click.option('--name', prompt='The name of the trainset', help='The name of the trainset.')
+@click.option("--import_datasets", default="", type=str, help="Additional datasets to include during training, separated by commas")
 @click.option('--train_data_dir', prompt='The location of the train data, when using matlab_export', help='The location of the train data, when using matlab_export.')
 @click.option('--input_shape',default='(300,300,3)',help='The size into which the images are rescaled before going into SSD')
 @click.option('--image_shape', default='(300,300,3)',help='The size of the original training images')
 @click.option('--memory_fraction', default=1.0, help='The memory fraction of the GPU memory to use for TensorFlow')
 @click.option('--do_crop', is_flag=True, help='Use random crops of images during training.')
-def main(batch_size, max_images, epochs, name, frozen_layers, experiment,train_data_dir,input_shape,image_shape,memory_fraction,do_crop):
+def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, experiment,train_data_dir,input_shape,image_shape,memory_fraction,do_crop):
     from keras.backend.tensorflow_backend import set_session
     config = tf.ConfigProto()
     config.gpu_options.per_process_gpu_memory_fraction = memory_fraction
@@ -301,26 +302,22 @@ def main(batch_size, max_images, epochs, name, frozen_layers, experiment,train_d
     log("Git hash: {}".format(githash))
     
     log('Loading detections')
-    if os.path.exists(detections_file):
-        detections = pd.read_pickle(detections_file)
-        log('Detections loaded from file')
-    else:
-        detections = load_detections.custom(name, image_shape)
-        log('Detections loaded')
-        log('Calculating image properties')
-        detections = detections.reset_index(drop=True)
-        image_props_file = '{runspath}{name}_{experiment}/image_props.pickle'.format(runspath=runs_path, name=name, experiment=experiment)
-        if os.path.exists(image_props_file):
-            image_props = pickle.load(open(image_props_file, 'rb'))
-            log('Image properties loaded from file')
-        else:
-            image_props = get_image_props(detections)
-            pickle.dump(image_props, open(image_props_file, 'wb'))
-            log('Image properties created')
+    
+    datasets = [name]
+    if import_datasets:
+        datasets.extend(import_datasets.split(','))
+        log('Using these datasets: ' + str(datasets))
+    
+    detections = load_detections.custom(datasets)
+    
+    log('Detections loaded')
+    log('Calculating image properties')
+    detections = detections.reset_index(drop=True)
+    image_props = get_image_props(detections)
+    log('Image properties created')
 
-        log('Adding y_true to detections')
-        detections = detections_add_ytrue(detections, image_props, name)
-        detections.to_pickle(detections_file)
+    log('Adding y_true to detections')
+    detections = detections_add_ytrue(detections, image_props, name)
 
     detections.index = detections.image_file
     print(' ')
@@ -417,6 +414,8 @@ def main(batch_size, max_images, epochs, name, frozen_layers, experiment,train_d
         plt.legend(loc='upper right')
         g.fig.subplots_adjust(right=.95)
     plt.savefig('{runspath}{name}_{experiment}/results.pdf'.format(runspath=runs_path, name=name, experiment=experiment))
+    
+    results.to_csv('{runspath}{name}_{experiment}/results.csv'.format(runspath=runs_path, name=name, experiment=experiment))
     
     log('Cleaning up non-optimal weights...')
     cleanup(name, experiment)

@@ -638,6 +638,11 @@ paths:
       parameters:
         - $ref: "#/parameters/datasetName"
         - $ref: "#/parameters/runName"
+        - name: import_datasets
+          in: query
+          type: string
+          required: false
+          description: If additional datasets should be included during training, include them here separated by commas, without spaces.
       responses:
         202:
           description: Job accepted and started. A job ID is returned.

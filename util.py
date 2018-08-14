@@ -3,6 +3,20 @@
 import sys
 from math import sqrt
 
+def left_remove(text, to_remove):
+    """ Removes a part of a string, if it starts with it """
+    if text.startswith(to_remove):
+        return text.replace(to_remove, '', 1)
+    else:
+        return text
+
+def right_remove(text, to_remove):
+    """ Removes a part of a string, if it ends with it """
+    if text.endswith(to_remove):
+        return text[:len(text)-len(to_remove)]
+    else:
+        return text 
+
 def parse_resolution(s, expected_length=None):
     """ 
         Takes a string on the format '(WIDTH,HEIGHT,CHANNELS)' and 
@@ -95,4 +109,6 @@ if __name__ == '__main__':
     print(split_lambda([1,2,3,4,5,6,7], lambda x: x%2))
     print(split_lambda([1,2,3,4,5,6,7], lambda x: x%2, as_list=True))
 
+    print(left_remove('abcabcdefg', 'abc'))
+    print(right_remove('defabcabc', 'abc'))
     

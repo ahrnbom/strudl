@@ -9,7 +9,7 @@ import click
 
 from folder import mkdir, datasets_path
 from timestamps import Timestamps
-from util import print_flush
+from util import print_flush, right_remove
 
 def vidname_is_interesting(vidname, ts):
     # Determines if a videoname sounds interesting or not. Used to make sure we don't 
@@ -28,7 +28,7 @@ def vidname_is_interesting(vidname, ts):
 def filtering(vidnames, nvids, ts, night):
     filtered = []
     for vid in vidnames:
-        vidname = vid.split('/')[-1].strip('*.mkv')
+        vidname = right_remove(vid.split('/')[-1], '*.mkv')
         if night:
             if random() < vidname_is_interesting(vidname, ts):
                 filtered.append(vid)
@@ -44,7 +44,7 @@ def get_vidnames(dataset):
     return vidnames
     
 def gen_images(outbasepath, vidpath, n):
-    folder = outbasepath + vidpath.split('/')[-1].strip('.mkv') + '/'
+    folder = outbasepath + right_remove(vidpath.split('/')[-1], '.mkv') + '/'
     mkdir(folder)
     
     with io.get_reader(vidpath) as vid:

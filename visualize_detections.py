@@ -13,7 +13,7 @@ from math import ceil
 from visualize import draw, class_colors
 from apply_mask import Masker
 from classnames import get_classnames
-from util import parse_resolution, print_flush
+from util import parse_resolution, print_flush, right_remove
 from folder import mkdir, datasets_path, runs_path
 from world import Calibration
 
@@ -110,9 +110,9 @@ def main(cmd, res, dataset, run, conf, fps, coords):
     mkdir(out_folder)
     
     for csv_path in csvs:
-        vidname = csv_path.split('/')[-1].strip('.csv')
+        vidname = right_remove(csv_path.split('/')[-1], '.csv')
         if coords == "world":
-            vidname = vidname.strip('_world')
+            vidname = right_remove(vidname, '_world')
             
         vid_path = "{dsp}{ds}/videos/{v}.mkv".format(dsp=datasets_path, ds=dataset, v=vidname)
 

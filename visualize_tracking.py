@@ -13,7 +13,7 @@ from apply_mask import Masker
 from world import Calibration
 from folder import runs_path, datasets_path
 from config import DatasetConfig
-from util import print_flush
+from util import print_flush, right_remove, left_remove
 
 def get_colors(n=10):
     colors = []
@@ -169,13 +169,13 @@ def main(dataset, run, videos):
     if videos == 'all':
         from glob import glob
         files = glob('{rp}{ds}_{r}/tracks_world/*_tracks.pklz'.format(rp=runs_path, ds=dataset, r=run))
-        video_names = [x.split('/')[-1].rstrip('_tracks.pklz') for x in files]
+        video_names = [right_remove(x.split('/')[-1], '_tracks.pklz') for x in files]
     elif videos.startswith('random:'):
-        num = int(videos.lstrip('random:'))
+        num = int(left_remove(videos, 'random:'))
         
         from glob import glob
         files = glob('{rp}{ds}_{r}/tracks_world/*_tracks.pklz'.format(rp=runs_path, ds=dataset, r=run))
-        all_video_names = [x.split('/')[-1].rstrip('_tracks.pklz') for x in files]
+        all_video_names = [right_remove(x.split('/')[-1], '_tracks.pklz') for x in files]
 
         video_names = []        
         while len(video_names) < num:
@@ -192,7 +192,7 @@ def main(dataset, run, videos):
         video_names = videos.split(',')
         
         # In case user includes endings
-        video_names = [x.rstrip('.mkv') for x in video_names]
+        video_names = [right_remove(x.rstrip, '.mkv') for x in video_names]
     
         # In case user includes spaces
         video_names = [x.strip(' ') for x in video_names]

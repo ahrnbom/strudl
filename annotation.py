@@ -8,7 +8,7 @@ from os.path import isfile, isdir
 from folder import mkdir, datasets_path, runs_path
 from classnames import get_classnames
 from visualize import class_colors
-from util import to_hex
+from util import to_hex, right_remove
 
 def get_annotation_stats(dataset_name, annotation_set):
     annot_folder = get_annotation_path(dataset_name, annotation_set)
@@ -52,9 +52,9 @@ def annotation_image_list(dataset_name, annotation_set):
             ims_path = "{ds_path}{vid}/*.jpg".format(ds_path=ds_path, vid=vid)
 
             ims = glob(ims_path)
-            ims.sort(key=lambda x: int(x.split('/')[-1].strip('.jpg')))
+            ims.sort(key=lambda x: int(right_remove(x.split('/')[-1], '.jpg')))
             for im in ims:
-                imnum = im.split('/')[-1].strip('.jpg')
+                imnum = right_remove(im.split('/')[-1], '.jpg')
                 txt = im.replace('.jpg', '.txt')
                 annotated = "not_annotated"
                 if isfile(txt):

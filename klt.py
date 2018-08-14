@@ -20,7 +20,7 @@ from storage import save
 from util import parse_resolution, print_flush
 from apply_mask import Masker
 from visualize import class_colors as get_colors
-from util import clamp
+from util import clamp, right_remove
 
 class Track(list):
     """ A KLT track. Each track needs an ID number """
@@ -189,8 +189,8 @@ def main(cmd, dataset, imsize, visualize):
         
         if cmd == "continue":
             existing = sorted(glob(kltfolder + "*.pklz"))
-            existing = [x.split('/')[-1].strip('.pklz') for x in existing]
-            allvids = [x for x in allvids if not x.split('/')[-1].strip('.mkv') in existing]
+            existing = [right_remove(x.split('/')[-1], '.pklz') for x in existing]
+            allvids = [x for x in allvids if not right_remove(x.split('/')[-1], '.mkv') in existing]
             
         for vidpath in allvids:
             datpath = kltfolder + vidpath.split('/')[-1].replace('.mkv', '.pklz')

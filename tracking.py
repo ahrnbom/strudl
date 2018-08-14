@@ -4,7 +4,7 @@ from random import choice
 from itertools import combinations, count
 import click
 
-from util import parse_resolution, print_flush
+from util import parse_resolution, print_flush, right_remove
 from apply_mask import Masker
 
 class Config(object):
@@ -476,7 +476,7 @@ def main(cmd, dataset, run, vidres, ssdres, kltres, conf, make_videos):
     if cmd == "findvids":
         from glob import glob
         vidnames = glob('{}{}/videos/*.mkv'.format(datasets_path, dataset))
-        vidnames = [x.split('/')[-1].strip('.mkv') for x in vidnames]
+        vidnames = [right_remove(x.split('/')[-1], '.mkv') for x in vidnames]
         vidnames.sort()
         
         outfolder = '{}{}_{}/tracks/'.format(runs_path, dataset, run)

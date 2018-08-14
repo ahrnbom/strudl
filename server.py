@@ -24,6 +24,7 @@ from annotation import annotation_image_list, get_annotation_path, get_annotatio
 from storage import load, save
 from tracking_world import WorldTrackingConfig, WorldTrack # same as DetTrack
 from compstatus import status
+from util import left_remove, right_remove
 
 jm = JobManager()
 
@@ -359,7 +360,7 @@ def post_import_videos_job(dataset_name, path, method, logs_path=None, minutes=0
         logs_path = path
         # Since 'path' probably contains a query, like ending with '*.mkv', this should be removed
         if not (logs_path[-1] == '/'):
-            logs_path = logs_path.strip(logs_path.split('/')[-1])
+            logs_path = right_remove(logs_path, logs_path.split('/')[-1])
     else:
         logs_path = quote(logs_path)
     
@@ -475,7 +476,7 @@ def post_autoannotate_job(dataset_name, import_datasets="", epochs=75, resolutio
     else:
         return (NoContent, 404)
     
-def post_train_detector_job(dataset_name, run_name):
+def post_train_detector_job(dataset_name, run_name, import_datasets=""):
     dataset_name = quote(dataset_name)
     run_name = quote(run_name)
     rc = RunConfig(dataset_name, run_name)
@@ -488,6 +489,10 @@ def post_train_detector_job(dataset_name, run_name):
         "--train_data_dir=fjlfbwjefrlbwelrfb", 
         "--batch_size={}".format(rc.get('detection_training_batch_size')), 
         "--image_shape={}".format(dc.get('video_resolution'))]
+        
+        if import_datasets:
+            import_datasets = quote(import_datasets)
+            cmd.append("--import_datasets={}".format(import_datasets))
         
         job_id = jm.run(cmd, "train_detector")
         if job_id:
@@ -814,7 +819,7 @@ def get_list_of_runs(dataset_name):
     runs.sort()
     
     # Run names and dataset names can contain underscore characters (which is kinda dumb, but whatever)
-    runs = [x.split('/')[-1].lstrip(dataset_name + '_') for x in runs]
+    runs = [left_remove(x.split('/')[-1], dataset_name + '_') for x in runs]
     
     if runs:
         return (runs, 200)
@@ -826,7 +831,7 @@ def get_list_of_videos(dataset_name):
     
     vids = glob("{dsp}{dn}/videos/*.mkv".format(dsp=datasets_path, dn=dataset_name))
     vids.sort()
-    vids = [x.split('/')[-1].strip('.mkv') for x in vids]
+    vids = [right_remove(x.split('/')[-1], '.mkv') for x in vids]
     
     if vids:
         return (vids, 200)
