@@ -48,7 +48,6 @@ class Generator(object):
     def __init__(self, gt, bbox_util,
                  batch_size, path_prefix,
                  train_keys, val_keys, image_size,
-                 dataset,
                  saturation_var=0.5,
                  brightness_var=0.5,
                  contrast_var=0.5,
@@ -60,8 +59,8 @@ class Generator(object):
                  crop_attempts=10,
                  aspect_ratio_range=[3. / 4., 4. / 3.]):
                  
-        self.dataset = dataset
-        self.masker = Masker(self.dataset) 
+        # Because we can include multiple datasets, we need to keep track of multiple masks. They are stored here, as a dict from dataset names to the maskers.        
+        self.maskers = dict()
                  
         self.gt = gt
         self.bbox_util = bbox_util
@@ -195,7 +194,17 @@ class Generator(object):
             targets = []
             for key in keys:
                 img_path = self.path_prefix + key
-                img = self.masker.mask(imread(img_path)).astype('float32')
+                
+                # To know the correct mask, we need the dataset name
+                dataset = img_path.split('/')[3]
+                if dataset in self.maskers:
+                    masker = self.maskers[dataset]
+                else:
+                    masker = Masker(dataset)
+                    self.maskers[dataset] = masker
+                    
+                img = masker.mask(imread(img_path)).astype('float32')
+                
                 y = np.vstack(self.gt.loc[key].y_true)
                 if train and self.do_crop:
                     img, y = self.random_sized_crop(img, y)
@@ -240,9 +249,7 @@ def detections_add_ytrue(detections, image_props, dataset):
     types = get_classnames(dataset) #sorted(detections.type.unique())
     y_true = pd.Series()
     for image_file, det in detections.groupby('image_file'):
-        width, height = image_props[image_file]
         xymin_xymax = np.array([det.xmin.values, det.ymin.values, det.xmax.values, det.ymax.values]).T
-        xymin_xymax = xymin_xymax / np.array([[width, height] * 2])
         classes = np.array([[d.type == t for t in types] for _, d in det.iterrows()], dtype=np.uint8)
         y_true = y_true.append(pd.Series(np.concatenate([xymin_xymax, classes], axis=1).tolist(), index=det.index))
     y_true = y_true.apply(lambda x: np.array(x)[np.newaxis, :])
@@ -364,7 +371,7 @@ def main(batch_size, max_images, epochs, name, frozen_layers, experiment,train_d
     path_prefix = ''
     gen = Generator(detections, bbox_util, batch_size, path_prefix,
                     train_keys, val_keys,
-                    (input_shape[1], input_shape[0]), name, **generator_kwargs)
+                    (input_shape[1], input_shape[0]), **generator_kwargs)
 
     # freeze several layers
     # freeze = []

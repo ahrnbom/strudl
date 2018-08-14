@@ -51,13 +51,14 @@ def get_images_to_autoannotate(dataset):
 
 @click.command()
 @click.option("--dataset", default="default", help="Name of dataset")
+@click.option("--import_datasets", default="", type=str, help="Additional datasets to include during training, separated by commas")
 @click.option('--input_shape',default='(300,300,3)',help='The size into which the images are rescaled before going into SSD')
 @click.option('--image_shape', default='(300,300,3)',help='The size of the original training images')
 @click.option('--batch_size', default=4, help='The batch size of the training.')
 @click.option('--batch_size2', default=32, help='The batch size of the testing.')
 @click.option('--epochs', default=75, help='The number of epochs used to run the training.')
 @click.option('--frozen_layers', default=3, help='The number of frozen layers, max 5.')
-def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epochs, frozen_layers):
+def autoannotate(dataset, import_datasets, input_shape, image_shape, batch_size, batch_size2, epochs, frozen_layers):
     soft = False
 
     input_shape = parse_resolution(input_shape)
@@ -65,7 +66,11 @@ def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epo
     
     print_flush("Loading ground truth...")
     load_detections = LoadDetections()
-    detections = load_detections.custom(dataset, image_shape)
+    datasets = [dataset]
+    if import_datasets:
+        datasets.extend(import_datasets.split(','))
+
+    detections = load_detections.custom(datasets)
     
     detections = detections.reset_index(drop=True)   
     image_props = get_image_props(detections)
@@ -110,7 +115,7 @@ def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epo
     path_prefix = ''
     gen = Generator(detections, bbox_util, batch_size, path_prefix,
                     train_keys, val_keys,
-                    (input_shape[1], input_shape[0]), dataset, **generator_kwargs)
+                    (input_shape[1], input_shape[0]), **generator_kwargs)
 
     # freeze several layers
     freeze = [
@@ -176,12 +181,12 @@ def autoannotate(dataset, input_shape, image_shape, batch_size, batch_size2, epo
                     for det in dets:
                         conf = round(det['confidence'],4)
                         line = "{index} {cx} {cy} {w} {h} conf:{conf} {cn}\n".format(index=int(det['class_index']),
-                                                                                     cx = round((det['xmin']+det['xmax'])/2,4),
-                                                                                     cy = round((det['ymin']+det['ymax'])/2,4),
-                                                                                     w = round(det['xmax']-det['xmin'],4),
-                                                                                     h = round(det['ymax']-det['ymin'],4),
-                                                                                     conf=conf,
-                                                                                     cn = classes[int(det['class_index'])-1])
+                                     cx = round((det['xmin']+det['xmax'])/2,4),
+                                     cy = round((det['ymin']+det['ymax'])/2,4),
+                                     w = round(det['xmax']-det['xmin'],4),
+                                     h = round(det['ymax']-det['ymin'],4),
+                                     conf=conf,
+                                     cn = classes[int(det['class_index'])-1])
                         f.write(line)
                 print_flush("Wrote {}".format(auto_path))
                 

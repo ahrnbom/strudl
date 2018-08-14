@@ -285,7 +285,7 @@ paths:
         - name: class_names
           in: query
           type: string
-          description: List of names of object classes for this dataset, like 'car,pedestrian,bike,other'
+          description: List of names of object classes for this dataset, like 'car,pedestrian,bike,other'. Note that the last class in the list has a special meaning; if you train using images from other datasets, and those datasets have classes that are not in this one, they will be considered to be the last one during training. Therefore, it is a good idea to have `other` as the last one.
           default: car,pedestrian,bicycle,motorbike,bus,other
           required: true
       responses:
@@ -605,6 +605,11 @@ paths:
       description: Make sure annotations are prepared, and some annotations are already made (at least 100, and the more the better). If number of epochs is not provided, 75 will be used.
       parameters:
         - $ref: "#/parameters/datasetName"
+        - name: import_datasets
+          in: query
+          type: string
+          required: false
+          description: If additional datasets should be included during training, include them here separated by commas, without spaces.
         - name: epochs
           in: query
           type: integer

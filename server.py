@@ -452,8 +452,9 @@ def post_prepare_extra_annotations_job(dataset_name, times, images_per_time, int
         return (NoContent, 503)
     
         
-def post_autoannotate_job(dataset_name, epochs=75, resolution="(640,480,3)"):
+def post_autoannotate_job(dataset_name, import_datasets="", epochs=75, resolution="(640,480,3)"):
     dataset_name = quote(dataset_name)
+    
     dc = DatasetConfig(dataset_name)
     if dc.exists:
         cmd = ["python", "autoannotate.py",
@@ -462,6 +463,10 @@ def post_autoannotate_job(dataset_name, epochs=75, resolution="(640,480,3)"):
                "--image_shape={}".format(dc.get('video_resolution')),
                "--epochs={}".format(epochs)]
         
+        if import_datasets:
+            import_datasets = quote(import_datasets)
+            cmd.append("--import_datasets={}".format(import_datasets))
+            
         job_id = jm.run(cmd, "autoannotate")
         if job_id:
             return (job_id, 202)

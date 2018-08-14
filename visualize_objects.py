@@ -8,10 +8,10 @@ from visualize import class_colors, draw
 from classnames import get_classnames
 from apply_mask import Masker
 
-def slideshow(dataset, images_shape, outpath, fps=10, repeat=20):
+def slideshow(dataset, outpath, fps=10, repeat=20):
 
     ld = LoadDetections()
-    dets = ld.custom(dataset, images_shape)
+    dets = ld.custom(dataset)
 
     imfiles = list(set(dets.image_file))
     if not imfiles:
@@ -34,7 +34,10 @@ def slideshow(dataset, images_shape, outpath, fps=10, repeat=20):
             
             im = io.imread(imfile)
             im = mask.mask(im, alpha=0.5)
-            frame = draw(im, d, cc, conf_thresh = -1.0)        
+            
+            width = float(im.shape[1])
+            height = float(im.shape[0])
+            frame = draw(im, d, cc, conf_thresh=-1.0, x_scale=width, y_scale=height)        
             
             for i in range(repeat):
                 vid.append_data(frame)
@@ -42,6 +45,6 @@ def slideshow(dataset, images_shape, outpath, fps=10, repeat=20):
     return True
                 
 if __name__ == '__main__':
-    slideshow('rgb', (720,1280,3), 'slideshow.mp4')
+    slideshow('rgb', 'slideshow.mp4')
 
 
