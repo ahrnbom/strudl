@@ -492,6 +492,7 @@ paths:
           in: query
           type: string 
           required: true
+          description: A path for finding videos to import. When importing from a USB device, the paths should start with `/usb/` which corresponds to `/media/` on the host computer. Only paths accessible from within the docker container can be accessed here. Wildcards are supported. An example is `/usb/my_user/my_usb_drive/videos/*.mkv`.
         - name: method
           in: query
           type: string
