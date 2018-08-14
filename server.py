@@ -412,7 +412,8 @@ def post_point_tracks_job(dataset_name, visualize, overwrite):
     else:
         return (NoContent, 404)
         
-def post_prepare_annotations_job(dataset_name):
+def post_prepare_annotations_job(dataset_name, less_night=True):
+    assert(type(less_night) == bool)
     dataset_name = quote(dataset_name)
     dc = DatasetConfig(dataset_name)
     
@@ -421,7 +422,8 @@ def post_prepare_annotations_job(dataset_name):
                "--dataset={}".format(dataset_name),
                "--num_ims={}".format(dc.get('images_to_annotate')),
                "--ims_per_vid={}".format(dc.get('images_to_annotate_per_video')),
-               "--train_amount={}".format(dc.get('annotation_train_split'))]
+               "--train_amount={}".format(dc.get('annotation_train_split')),
+               "--night={}".format(less_night)]
         
         job_id = jm.run(cmd, "prepare_annotations")
         if job_id:
@@ -430,6 +432,25 @@ def post_prepare_annotations_job(dataset_name):
             return (NoContent, 503)
     else:
         return (NoContent, 404)
+
+def post_prepare_extra_annotations_job(dataset_name, times, images_per_time, interval_length=2.0):
+    dataset_name = quote(dataset_name)
+    times = quote(times)
+    assert(type(images_per_time) == int)
+    assert(type(interval_length) == float)
+    
+    cmd = ["python", "extra_annotations.py",
+           "--dataset={}".format(dataset_name),
+           "--times={}".format(times),
+           "--images_per_time={}".format(images_per_time),
+           "--interval={}".format(interval_length)]
+    
+    job_id = jm.run(cmd, "extra_annotations")
+    if job_id:
+        return (job_id, 202)
+    else:
+        return (NoContent, 503)
+    
         
 def post_autoannotate_job(dataset_name, epochs=75, resolution="(640,480,3)"):
     dataset_name = quote(dataset_name)

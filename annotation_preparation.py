@@ -25,11 +25,14 @@ def vidname_is_interesting(vidname, ts):
     
     return 1.0
     
-def filtering(vidnames, nvids, ts):
+def filtering(vidnames, nvids, ts, night):
     filtered = []
     for vid in vidnames:
         vidname = vid.split('/')[-1].strip('*.mkv')
-        if random() < vidname_is_interesting(vidname, ts):
+        if night:
+            if random() < vidname_is_interesting(vidname, ts):
+                filtered.append(vid)
+        else:
             filtered.append(vid)
     
     shuffle(filtered)
@@ -73,13 +76,14 @@ def train_test_split(vidnames, train_amount):
 @click.option("--num_ims", default=500, help="Number of images to annotate, in total")
 @click.option("--ims_per_vid", default=20, help="How many images per video to annotate")
 @click.option("--train_amount", default=1.0, help="How many of the images that should be part of the training and validation sets, as a float between 0 and 1. The rest will be in a test set")
-def main(dataset, num_ims, ims_per_vid, train_amount):
+@click.option("--night", default=True, type=bool, help="If True, fewer night videos will be included. If False, all videos are treated equally")
+def main(dataset, num_ims, ims_per_vid, train_amount, night):
     outbasepath = "{}{}/objects/".format(datasets_path, dataset)
     trainpath = outbasepath + "train/"
     testpath = outbasepath + "test/"
     
     ts = Timestamps(dataset)
-    vidnames = filtering(get_vidnames(dataset), num_ims//ims_per_vid, ts)
+    vidnames = filtering(get_vidnames(dataset), num_ims//ims_per_vid, ts, night)
     train, test = train_test_split(vidnames, train_amount)
     
     print_flush("Train:")

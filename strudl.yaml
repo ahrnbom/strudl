@@ -544,6 +544,36 @@ paths:
           description: Device is busy
         404:
           description: A dataset configuration does not exist
+  
+  /jobs/prepare_extra_annotation:
+    post:
+      operationId: server.post_prepare_extra_annotations_job
+      summary: Adds additional images to annotate at selected times
+      description: After running the `/jobs/prepare_annotations/post` job, it might be desired to include additional annotations at specific times, for example at times when it is found that the detections are bad.
+      parameters: 
+        - $ref: "#/parameters/datasetName"
+        - name: times
+          in: query
+          type: string
+          required: true
+          description: One or more timestamps, separated by commas. For each, images will be taken from a e.g. two-second interval around this time. For example `2017-05-16 00:49:04.954000,2017-05-16 00:50:03.158000`.
+        - name: images_per_time
+          in: query
+          type: integer
+          required: true
+          description: Number of new images to make for each timestamp
+        - name: interval_length
+          in: query
+          type: number
+          required: false
+          description: How long the intervals around the timestamps should be. If omitted, two-second intervals will be used. In seconds.
+      responses:
+        202:
+          description: Job accepted and started. A job ID is returned.
+        500:
+          description: For some reason, job could not start. 
+        503:
+          description: Device is busy
           
   /jobs/prepare_annotation:
     post:
@@ -552,6 +582,11 @@ paths:
       description: Samples images from the videos to annotate. Make sure videos are imported, and the dataset config is correct.
       parameters:
         - $ref: "#/parameters/datasetName"
+        - name: less_night
+          in: query
+          type: boolean
+          required: false
+          description: Makes it so that fewer night videos will be included in annotation data. This is applied by default if omitted.
       responses:
         202:
           description: Job accepted and started. A job ID is returned.

@@ -26,6 +26,8 @@ class Timestamps(object):
         self.cache_limit = cache_limit # number of files to be kept in memory at once
         
         self.logs_path = "{dsp}{d}/logs/".format(dsp=datasets_path, d=dataset)
+        
+        self.start_times = None # The times when each log file starts, built by get_frame_number
     
     def get_frame_number_given_vidname(self, t, vidname):
         logpath = "{lp}{v}.log".format(lp=self.logs_path, v=vidname)
@@ -37,46 +39,42 @@ class Timestamps(object):
     
         return None
         
-    def get_frame_number(self, t, video_name_format=None, remove_last=0):
-        """ Gets the video name and frame number from a datetime object (t). If the format for video names is provided, this is quite
-           fast as only one log file is searched through. If no format is given, all log files are searched through which is slow. 
-           It might be possible to use bisect search to speed this up also.
-           """
+    def get_frame_number(self, t):
+        """ Gets the video name and frame number from a datetime object (t). 
+        """
         
         all_logs = glob("{lp}*.log".format(lp=self.logs_path))
         all_logs.sort()
         
         video_names = [x.split('/')[-1].strip('.log') for x in all_logs]
         
-        logs = []
-        vids = []
-        if video_name_format is None:
-            logs.extend(all_logs)
-            vids.extend(video_names)
+        if self.start_times is None:
+            self.start_times = dict()
+            for video_name, log in zip(video_names, all_logs):
+                with open(log, 'r') as f:
+                    first_line = f.readline().rstrip()
+                first_time, _ = line_to_datetime(first_line)
+                self.start_times[video_name] = first_time
+        
+        # Find video which starts at or before t, as close as possible
+        best_secs = float("inf")
+        best_vid = None
+        best_log = None
+        for video_name, log in zip(video_names, all_logs):
+            video_start = self.start_times[video_name]
+            dt = t - video_start
+            secs = dt.total_seconds()
+            if secs >= 0:
+                if secs < best_secs:
+                    best_secs = secs
+                    best_vid = video_name
+                    best_log = log
+        
+        if not (best_vid is None):
+            frame_num = self.get_frame_number_given_vidname(t, best_vid)
+            return best_vid, frame_num
         else:
-            start_times = [datetime.strptime(x[:-remove_last], video_name_format) for x in video_names]
-            dts = [(t-x).total_seconds() for x in start_times]
-            dts = [x if x > 0 else float('inf') for x in dts]
-            index_min = np.argmin(dts)
-            logs.append(all_logs[index_min])
-            vids.append(video_names[index_min])
-            
-        best_dt = float("inf")
-        best_frame_number = None
-        best_video = None
-        
-        for i,l in enumerate(logs):
-            times = self.make_times(l)
-            dts = [abs( (t-x).total_seconds() ) for x in times]
-            index_min = np.argmin(dts)
-            closest_dt = dts[index_min]
-            
-            if closest_dt < best_dt:
-                best_dt = closest_dt
-                best_frame_number = index_min
-                best_video = vids[i]
-        
-        return best_video, best_frame_number
+            return None, None
         
     def get(self, video_name, frame_number=0):
         """ Gets the timestamp corresponding to a frame number in a video """
@@ -118,8 +116,7 @@ if __name__ == '__main__':
     ts = Timestamps('sweden2')
     print(ts.get('20170516_141545_4986', 20))
     
-    print(ts.get_frame_number(datetime(2017, 5, 16, 6, 49, 38), '%Y%m%d_%H%M%S', 5))
-    #print(ts.get_frame_number(datetime(2017, 5, 16, 6, 49, 38)))
+    print(ts.get_frame_number(datetime(2017, 5, 16, 6, 49, 38)))
 
 
 

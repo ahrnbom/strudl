@@ -116,7 +116,7 @@ def interpret_tracks_gt(dataset, date, det_id, traj_csv_path):
             hour,minute,second,millisecond = map(int, t.replace('.',':').split(':'))
             t = datetime(year, month, day, hour, minute, second, millisecond*1000)
             
-            vid, fn = ts.get_frame_number(t, '%Y%m%d_%H%M%S', 5)
+            vid, fn = ts.get_frame_number(t)
 
             px, py = calib.to_pixels(x,y)
             px, py = map(int, (px,py))
