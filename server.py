@@ -2,7 +2,7 @@ import connexion
 from connexion import NoContent
 from shlex import quote
 from flask import send_from_directory, send_file
-from glob import glob
+from glob import glob, iglob
 from os.path import isdir, isfile
 import os
 import cv2
@@ -863,7 +863,16 @@ def post_world_calibration(dataset_name, calib_text):
 
 def get_usb():
     if isdir('/usb/'):
-        files = glob('/usb/**',recursive=True)
+        gen = iglob('/usb/**',recursive=True)
+        files = []
+        
+        for filepath in gen:
+            files.append(filepath)
+            
+            if len(files) > 1000:
+                files.append("... (too many to show)")
+                break
+        
         return (files, 200)
     else:
         return (NoContent, 404)
