@@ -28,7 +28,7 @@ def vidname_is_interesting(vidname, ts):
 def filtering(vidnames, nvids, ts, night):
     filtered = []
     for vid in vidnames:
-        vidname = right_remove(vid.split('/')[-1], '*.mkv')
+        vidname = right_remove(vid.split('/')[-1], '.mkv')
         if night:
             if random() < vidname_is_interesting(vidname, ts):
                 filtered.append(vid)
