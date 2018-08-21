@@ -1,3 +1,6 @@
+""" A module for getting the class names for a dataset, in a single canonical order.
+"""
+
 from folder import datasets_path
 
 def get_classnames(dataset):
@@ -6,7 +9,8 @@ def get_classnames(dataset):
     with open(path, 'r') as f:
         lines = [x.strip('\n') for x in f.readlines()]
     
-    lines = [line for line in lines if (len(line) > 0) and (not line.isspace())]
+    # Remove garbage, in case the text file is written by hand
+    lines = [line for line in lines if (len(line) > 0) and (not line.isspace())] 
     lines.sort()
     
     return lines

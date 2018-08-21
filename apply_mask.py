@@ -1,3 +1,10 @@
+""" Module for applying masks to images. These masks are mostly transparent .png
+    images with black regions covering non-interesting parts of the images, to 
+    save annotation time mainly. This was previously quite slow and somewhat of
+    a bottleneck so it was optimized a bit. Masks can be drawn transparently
+    in visualization videos, or completely black when training the object detector.
+"""
+
 import cv2
 import os
 import numpy as np

@@ -1,4 +1,4 @@
-""" Module for converting detections to world coordinates, including KLT-based speed measurement """
+""" Module for converting detections to world coordinates, including KLT-based speed/direction measurement """
 
 import click
 import pandas as pd
@@ -15,6 +15,11 @@ from classnames import get_classnames
 from config import DatasetConfig
 
 class PointTrackStructure(object):
+    """ A class for storing KLT point tracks in a structure where
+        they can be quickly obtained, like getting all point tracks
+        that appear in a given region of a given frame. A simple
+        spatial data structure speeds up access, which used to be a bottleneck.
+    """
     def __init__(self, klts, klt_frames, width, height, nx=16, ny=16):
         self.klt_frames = {}
         for index in klt_frames:

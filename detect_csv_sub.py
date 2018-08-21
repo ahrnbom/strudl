@@ -1,4 +1,4 @@
-""" Because detect_csv.py leaks memory, part of it can run as a subprocess 
+""" Because detect_csv.py used to leak memory, part of it can run as a subprocess 
     by running this module
 """
 
@@ -124,7 +124,6 @@ def main(dataset, run, input_shape, seq_start, seq_stop, videopath, conf_thresh,
     dets = pd.concat(all_detections)
     
     # For the first line, we should open in write mode, and then in append mode
-    # This makes it so that we don't need to keep everything in RAM, which was an issue before
     # This way, we still overwrite the files if this script is run multiple times
     open_mode = 'a'
     include_header = False

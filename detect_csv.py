@@ -52,8 +52,9 @@ def run_detector(dataset, run, videopath, outname, input_shape, conf_thresh, bat
     vlen2 = next_multiple(vlen, batch_size)
     seq_len = next_multiple(1000, batch_size)
     
-    # Doing predict_generator on an entire half hour video takes too much RAM,
-    # so we split it up into sequences of around 1000 frames
+    # In the past, there was a memory leak that forced a division of the video into
+    # shorted sequences. The memory leak was fixed, but this was kept because of
+    # laziness.
     seqs = make_seqs(vlen2, seq_len)
     
     for i_seq,seq in enumerate(seqs):
@@ -71,7 +72,7 @@ def run_detector(dataset, run, videopath, outname, input_shape, conf_thresh, bat
                          "--outname={}".format(outname),
                          "--batch_size={}".format(batch_size)], stdout=PIPE, stderr=PIPE)
         if not (completed.returncode == 0):
-            print_flush("ERROR: SUBPROCESS CRASHED")
+            print_flush("ERROR: Subprocess crashed. Return code: {}".format(completed.returncode))
         else:
             print_flush("Subprocess completed successfully")
         
@@ -92,8 +93,6 @@ def detect(dataset, run, res, conf, bs, clean):
 
     outfolder = "{}{}_{}/csv/".format(runs_path, dataset, run)
     mkdir(outfolder)
-
-    
 
     nvids = len(vids)
 

@@ -1,4 +1,6 @@
-""" A module for getting the status of the host computer (CPU, RAM, GPU, etc.) """
+""" A module for getting the status of the host computer (CPU, RAM, GPU, etc.) 
+    Everything is presented in percent.
+"""
 
 import psutil
 from subprocess import Popen, PIPE
@@ -10,6 +12,8 @@ def ram():
     return psutil.virtual_memory().percent
     
 def gpu():
+    # Returns both GPU utilization and VRAM usage
+    
     p = Popen(["nvidia-smi","--query-gpu=utilization.gpu,memory.total,memory.used", "--format=csv,noheader,nounits"], stdout=PIPE)
     output = p.stdout.read().decode('UTF-8')
     lines = output.split('\n')

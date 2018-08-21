@@ -1,4 +1,10 @@
-""" A module for managing configurations for datasets and runs """
+""" A module for managing configurations for datasets and runs.
+    Configurations exist so that various properties of an experiment
+    can be defined once, instead of having to be repeated for every call.
+    For example, the FPS and resolution of the videos is needed in many jobs.
+    Note that there is special logic for reading/writing resolutions in a simple 
+    string format.
+"""
 
 from os.path import isfile
 
@@ -45,6 +51,7 @@ class BaseConfig(object):
             
             ok = True            
             for v in val:
+                # Having resolutions not divisible by 16 causes issues with video encoding.
                 if not (v%16 == 0):
                     ok = False
             if not ok:
@@ -127,6 +134,7 @@ class RunConfig(BaseConfig):
         super().__init__(self.filepath)
         
 if __name__ == '__main__':
+    # Simple test
     rc = RunConfig('sweden2', '420p2')
     print(rc.get('detector_resolution'))
 

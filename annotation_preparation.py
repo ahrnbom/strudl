@@ -1,4 +1,6 @@
-""" Module for preparing annotation of videos """
+""" Module for preparing annotation of videos, extracting images to annotate, chosen
+    in a reasonably intelligent manner.
+"""
 
 from random import random, shuffle
 from glob import glob
@@ -26,6 +28,7 @@ def vidname_is_interesting(vidname, ts):
     return 1.0
     
 def filtering(vidnames, nvids, ts, night):
+    """ Gets nvids many random videos, possibly with lower probability of night """
     filtered = []
     for vid in vidnames:
         vidname = right_remove(vid.split('/')[-1], '.mkv')
@@ -44,14 +47,20 @@ def get_vidnames(dataset):
     return vidnames
     
 def gen_images(outbasepath, vidpath, n):
+    """ Pick n images evenly spread out over the video """
+    
     folder = outbasepath + right_remove(vidpath.split('/')[-1], '.mkv') + '/'
     mkdir(folder)
     
     with io.get_reader(vidpath) as vid:
         l = vid.get_length()
-        fnums = np.linspace(0,l,n+2)
+        
+        # Avoid the edges of the video
+        fnums = np.linspace(0,l,n+2) 
         fnums = [int(x) for x in fnums[1:n+1]]
         
+        # Log files allow these to be recreated, if necessary.
+        # At the time of writing this, these logs are unused.
         with open(folder + "frames.log", 'w') as f:
             f.write(vidpath.split('/')[-1] + "\n")
             for fn in fnums:
@@ -62,6 +71,9 @@ def gen_images(outbasepath, vidpath, n):
             imsave(folder + "{}.jpg".format(i+1), frame)
             
 def train_test_split(vidnames, train_amount):
+    """ Splits the dataset into train and test set.
+        At the time of writing this, test set is not used for anything.
+    """
     n = len(vidnames)
     n_train = int(n*train_amount)
     n_test = n-n_train

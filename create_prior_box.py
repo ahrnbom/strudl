@@ -1,3 +1,5 @@
+""" Module for creating prior boxes for the SSD object detector """
+
 import numpy as np
 
 BOX_CONFIGS = [

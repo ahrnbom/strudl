@@ -1,5 +1,9 @@
 """ Module for training SSD on incomplete annotations, and using it to create
-    automatic annotations for all the non-annotated images """
+    automatic annotations for all the non-annotated images. Much of the code
+    is copied from training_script, but creating a single script for both
+    purposes was deemed cumbersome. Note that there is no early stopping, and the
+    weight files are not stored anywhere. 
+"""
     
 import keras
 from keras.callbacks import LearningRateScheduler
@@ -197,7 +201,6 @@ def autoannotate(dataset, import_datasets, input_shape, image_shape, batch_size,
     print_flush("Done!")
             
 if __name__ == '__main__':
-    #print(get_images_to_autoannotate('sweden2'))
     autoannotate()
     
 
