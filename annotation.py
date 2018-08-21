@@ -11,6 +11,8 @@ from visualize import class_colors
 from util import to_hex, right_remove
 
 def get_annotation_stats(dataset_name, annotation_set):
+    # This is shown on the web UI to provide a sense of progress
+    
     annot_folder = get_annotation_path(dataset_name, annotation_set)
     
     images = glob(annot_folder + '*/*.jpg')
@@ -21,6 +23,9 @@ def get_annotation_stats(dataset_name, annotation_set):
     
 
 def get_annotation_path(dataset_name, annotation_set, video_name=None, image_number=None, suffix='.txt'):
+    # This function is called from server.py as well as from this module
+    # It can give more or less detailed paths depending on options
+    
     annot_folder = "{dsp}{dn}/objects/{ans}/".format(dsp=datasets_path, dn=dataset_name, ans=annotation_set)
     
     if video_name is None:
@@ -56,6 +61,8 @@ def annotation_image_list(dataset_name, annotation_set):
             for im in ims:
                 imnum = right_remove(im.split('/')[-1], '.jpg')
                 txt = im.replace('.jpg', '.txt')
+                
+                # Depending on the 'annotated' variable, the images show up in different colors in the web UI
                 annotated = "not_annotated"
                 if isfile(txt):
                     annotated = "already_annotated"
@@ -70,8 +77,12 @@ def annotation_image_list(dataset_name, annotation_set):
     else:
         return None
         
-def get_annotation_object(impath):
-    with open(impath, 'r') as f:
+def get_annotation_object(annots_path):
+    """ Builds a JSON-serializable object (a list of dicts) for the annotations
+        in an annotation file. Used when sending annotations to the Web UI.
+    """
+
+    with open(annots_path, 'r') as f:
         lines = [x.strip('\n') for x in f.readlines()]
     
     annots = []
@@ -106,12 +117,19 @@ def get_annotation_object(impath):
     return annots
     
 def annotation_data(dataset_name):
+    """ Gets general annotation data for a dataset. Basically everything that the
+        annotation Web UI needs, like classes and their colors, which keys to press
+        for each class, and progress.
+    """    
+    
     try:
         classnames = get_classnames(dataset_name)
     except FileNotFoundError:
         return None
     else:
+        # Removing R from this would not be sufficient, and would look like a bug
         all_keys = 'abcdefghijklmnopqrstuvwxyz'    
+        
         colors = class_colors(len(classnames))
             
         out_colors = {}

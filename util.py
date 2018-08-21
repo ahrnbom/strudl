@@ -4,14 +4,20 @@ import sys
 from math import sqrt
 
 def left_remove(text, to_remove):
-    """ Removes a part of a string, if it starts with it """
+    """ Removes a part of a string, if it starts with it.
+        Similar to str.lstrip, see note below on right_remove
+    """
     if text.startswith(to_remove):
         return text.replace(to_remove, '', 1)
     else:
         return text
 
 def right_remove(text, to_remove):
-    """ Removes a part of a string, if it ends with it """
+    """ Removes a part of a string, if it ends with it.
+        str.rstrip is similar, but can remove too much. 
+        For example, '4.mp4'.rstrip('.mp4') will remove the leading four!
+        This function does not do that.
+    """
     if text.endswith(to_remove):
         return text[:len(text)-len(to_remove)]
     else:
@@ -31,10 +37,18 @@ def parse_resolution(s, expected_length=None):
     return tup
     
 def print_flush(text):
+    """ Prints text and immidiately flushes stdout. When running python code
+        as subprocesses, with stdout mapped to a log file, print does not flush
+        until the subprocess ends. This is inconvenient, as we want to observe progress
+        while it is running. Therefore, this function is used in all long-running jobs.
+    """
     print(text)
     sys.stdout.flush()
     
 def clamp(x, mi, ma):
+    """ Makes sure x is within the interval [mi, ma]. I've always liked this implementation.
+        '.sort' is ever so slightly faster than 'sorted', because no copy of the list is made. 
+    """
     tmp = [mi, x, ma]
     tmp.sort()
     return tmp[1]
@@ -65,13 +79,20 @@ def split_lambda(some_list, some_function, as_list=False):
     
     
 def to_hex(col):
+    """ Takes an OpenCV/ImageIO-style color (as a tuple/list of three values in BGR) 
+        and converts to RGB hex to be shown in the Web UI.
+    """
     return "#{0:02x}{1:02x}{2:02x}".format(clamp(col[0], 0, 255), clamp(col[1], 0, 255), clamp(col[2], 0, 255))
     
 def pandas_loop(dataframe, stop=0):
     """ Essentially iterrows on a pandas DataFrame, except much faster. 
         The only real difference in use is that you need to use
         indexing (row['some_column_name']) instead of direct referencing (row.some_column_name)
-        If stop is a positive integer, only that many rows are looped over
+        If stop is a positive integer, only that many rows are looped over.
+        
+        The speed difference between this and any built-in functionality in pandas
+        is really large, as looping through pandas dataframe was a huge bottleneck
+        in some scripts before implementing this.
     """
     
     columns = ['_']
