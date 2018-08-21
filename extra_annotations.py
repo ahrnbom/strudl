@@ -31,6 +31,8 @@ def main(dataset, times, images_per_time, interval):
     timestrings = times.split(',')
     for timestring in timestrings:
         print_flush(timestring)
+        
+        # Intepret the requested times, can look like '2017-05-16 00:49:04.954000'
         splot = timestring.split(' ')
         date = splot[0].split('-')
         time = splot[1].replace('.',':').split(':')
@@ -54,6 +56,7 @@ def main(dataset, times, images_per_time, interval):
             with open(log_path, 'w') as f:
                 f.write("{}.mkv\n".format(vid_name))
         
+        # See which frames were already annotated, to start at the right index
         already_ims = glob(annot_folder + '*.jpg')
         if already_ims:
             already_nums = [int(right_remove(x.split('/')[-1], '.jpg')) for x in already_ims]
@@ -62,6 +65,7 @@ def main(dataset, times, images_per_time, interval):
             i = 1
         
         with iio.get_reader(video_path) as vid:
+            # Find start and end time, in frames
             start = frame_num - half_interval
             if start < 0:
                 start = 0
@@ -72,8 +76,10 @@ def main(dataset, times, images_per_time, interval):
             
             with open(log_path, 'a') as log:
                 
+                # Choose frames to extract 
                 frame_nums = np.linspace(start, stop, images_per_time).astype(int).tolist()
                 frame_nums = sorted(list(set(frame_nums))) # Remove duplicates
+                
                 for frame_num in frame_nums:
                     frame = vid.get_data(frame_num)
                     

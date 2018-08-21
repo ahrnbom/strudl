@@ -1,4 +1,8 @@
-""" Module for importing videos into a dataset project """
+""" Module for importing videos into a dataset project.
+    Can recode videos using either handbrake or imageio (to provide some robustness
+    to incorrectly coded videos) and videos can be rearranged into new videos of different
+    lengths.
+"""
 
 import click
 import imageio as iio
@@ -19,6 +23,11 @@ def fill(x, n):
     return str.zfill(str(x), n)
 
 def generate_paths(time, target, logs_target, suffix):
+    """ For simplicity, a single naming convention is used for the videos, which is
+        copied from how Axis cameras tend to name their videos, except those
+        only have hexadecimals at the very end, while we allow any digit and number, 
+        for increased variety (it really doesn't matter).
+    """
     randstring = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
     
     y = fill(time.year, 4)
@@ -40,7 +49,8 @@ def read_log(logpath):
 
 def recode_minutes_imageio(files, logs_basepath, minutes, width, height, fps, target, logs_target, suffix):
     """ Recodes videos such that each video is `minutes` many minutes long.
-        Uses imageio to do this. Using handbrake would certainly be possible but a bit cumbersome to implement.
+        Uses imageio to do this. Using handbrake would probably be possible but 
+        a bit cumbersome to implement.
     """
     
     assert(len(files) > 0)

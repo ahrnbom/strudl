@@ -1,5 +1,10 @@
-""" A simple job manager, to be user by the server for long-running jobs
-    For now, only one job can be running at the time
+""" A simple job manager, to be user by the server for long-running jobs.
+    For now, only one job can be running at the time.
+    Each job has a unique ID, which is presented in the Web UI, containing
+    the time when the job was first requested, the type of job and some randomness.
+    A background thread is looking for new jobs to run every 5 seconds, so that
+    a new job from the queue is automatically started once the current job finishes.
+    This module also takes care of the log files created for each job.
 """
 
 import subprocess
@@ -27,7 +32,11 @@ class Worker(threading.Thread):
     def run(self):
         e = threading.Event()
         while True:
-            e.wait(5)
+            # Wait 5 seconds (to prevent a tight loop)
+            # Because of this, it's often necessary to press Ctrl + C twice to kill
+            # server.py. As far as I know, there's no other problems related to this...
+            # But it would be nice if there was some other way.
+            e.wait(5) 
                         
             if self.jm.queue and self.jm.is_available():
                 job = self.jm.queue.pop(0)
@@ -46,6 +55,7 @@ class JobManager(object):
         mkdir(jobs_path)
         
     def start(self):
+        # There's no point in starting the background thread until there's a job to run.
         if self.worker is None:
             self.worker = Worker()
             self.worker.set_jobmanager(self)
@@ -62,6 +72,9 @@ class JobManager(object):
                 return True
     
     def stop(self, job_id, method='terminate'):
+        """ Can be used to cancel a currently running job or remove it from the queue.
+            There are buttons in the Web UI that call this.
+        """
         if self.history[-1][0] == job_id:
             if method == 'terminate':
                 self.current.terminate()
@@ -104,6 +117,13 @@ class JobManager(object):
             self.current = subprocess.Popen(cmd, stdout=out, stderr=out, bufsize=0)
 
     def get_jobs(self, job_type):
+        """ There are several variations of this:
+            recent: All jobs since the creation of this JobManager, including running ones.
+            recent_with_status: Same as recent but with info about if they're running/done/queued
+            all: All jobs it can find, including those before the creation of this JobManager
+            running: Any job currently running
+            queued: All jobs in the queue
+        """
         if job_type == 'recent':
             return [x[0] for x in self.history]
         elif job_type == 'recent_with_status':

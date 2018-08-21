@@ -37,6 +37,8 @@ def kltfull(video_file, imsize, mask, out_file=None):
                     the tracked points is created. Can be None, in which case no
                     video is made
     """
+    
+    # Used for not finding new points to track too close to existing ones
     mask_to_copy = 255 - cv2.resize(mask.saved_mask[:,:,3], imsize)
 
     render_vid = True
@@ -51,6 +53,8 @@ def kltfull(video_file, imsize, mask, out_file=None):
     if render_vid: 
         n_colors = 128
         colors = get_colors(n_colors)
+        # We have a bunch of colors, and each point track gets one. Some point tracks
+        # will share colors, but that is not really an issue. These are for visualization only.
             
     id_generator = count()
     
@@ -83,6 +87,8 @@ def kltfull(video_file, imsize, mask, out_file=None):
             if len(tracks) > 0:
                 img0, img1 = prev_gray, frame_gray
                 p0 = np.float32([tr[-1][1:3] for tr in tracks]).reshape(-1, 1, 2)
+                
+                # See how the points have moved between the two frames
                 p1, st, err1 = cv2.calcOpticalFlowPyrLK(img0, img1, p0, None, **lk_params)
                 p0r, st, err = cv2.calcOpticalFlowPyrLK(img1, img0, p1, None, **lk_params)
                 d = abs(p0-p0r).reshape(-1, 2).max(-1)
@@ -93,8 +99,7 @@ def kltfull(video_file, imsize, mask, out_file=None):
                         lost_tracks.append(tr)
                         continue
                     tr.append((systime, x, y))
-                    #if len(tr) > track_len:
-                    #    del tr[0]
+
                     new_tracks.append(tr)
                     if render_vid: 
                         cv2.circle(vis, (x, y), 2, colors[tr.id_num % n_colors], -1)
@@ -105,6 +110,7 @@ def kltfull(video_file, imsize, mask, out_file=None):
                                       False, col)
 
             if frame_idx % detect_interval == 0:
+                # Makes sure we don't look for new points near existing ones
                 mask2 = mask_to_copy.copy()
                 for x, y in [np.int32(tr[-1][1:3]) for tr in tracks]:
                     cv2.circle(mask2, (x, y), 5, 0, -1)
@@ -171,7 +177,7 @@ def klt_save(vidpath, datpath, imsize, mask, outvidpath=None):
 #                f.write("{},{},{:.2f},{:.2f}\n".format(i, t, x, y))
 
 @click.command()
-@click.option("--cmd", default="findvids", help="Which command to run, either 'findvids' to search for videos, 'continue' to keep running a cancelled run or 'test' to run a test on some hardcoded video")
+@click.option("--cmd", default="findvids", help="Which command to run, either 'findvids' to search for videos, 'continue' to keep running a cancelled run")
 @click.option("--dataset", default="sweden2", help="Which dataset to run on")
 @click.option("--imsize", default="(320,240)", help="Image size to run KLT on (smaller is much faster), as a string on this format: '(320,240)' where 320 is the width and 240 is the height")
 @click.option("--visualize", default=True, type=bool, help="If True, videos are made showing the point tracks")
