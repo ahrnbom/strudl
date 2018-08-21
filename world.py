@@ -1,6 +1,8 @@
 """ A module for converting between pixel coordinates and world coordinates.
     Uses pdtv (https://bitbucket.org/hakanardo/pdtv/) code as a back-end,
-    assumed to exist as a subfolder called 'pdtv'
+    assumed to exist as a subfolder called 'pdtv'.
+    Note that pdtv was written for Python 2, but STRUDL runs on Python 3. Therefore,
+    a 2to3-converted version is included in STRUDL instead of just having pdtv as a git submodule.
 """
 
 import pdtv.pdtv as pdtv

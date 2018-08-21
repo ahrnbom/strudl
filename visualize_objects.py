@@ -1,4 +1,7 @@
-""" Module for visualizing object detection annotations as a slidehsow-like video """
+""" Module for visualizing object detection annotations as a slidehsow-like video.
+    This module is a bit dated and not connected to STRUDL's API, since the Web UI
+    for annotations can already show annotations.
+"""
 
 import imageio as io
 import cv2

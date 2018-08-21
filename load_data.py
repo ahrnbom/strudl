@@ -1,4 +1,6 @@
-"""Classes for loading detections."""
+""" A module for loading annotations to be fed into object detector training.
+"""
+
 import os
 import pandas as pd
 import json
@@ -11,7 +13,11 @@ from folder import datasets_path
 
 
 class LoadDetections():
-    """Loads the detections for different data sets."""
+    """ Loads the detections for different data sets.
+        This class used to have different methods for loading 
+        data from different sources. But since STRUDL enforces a specific
+        folder layout, only one such method remains.
+    """
 
     def custom(self, datasets, train=True):
         """ Parameters:

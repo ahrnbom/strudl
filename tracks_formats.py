@@ -1,4 +1,4 @@
-""" A module for loading tracks pklz files and converting them to some formats """
+""" A module for loading tracks .pklz files and converting them to some formats """
 
 from os.path import isfile
 from zipfile import ZipFile, ZIP_DEFLATED

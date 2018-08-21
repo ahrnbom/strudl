@@ -1,6 +1,6 @@
 # STRUDL: Surveillance Tracking Using Deep Learning
 
-STRUDL is an open-source and free framework for tracking objects in videos filmed by **static surveillance cameras**. It uses a deep learining object detector, camera calibration and tracking to create trajectories of e.g. road users, in world coordinates. It was designed to faciliate traffic safety analysis, using modern computer vision and deep learning, rather than the traditional methods commonly used despite their many flaws. By creating trajectories in world coordinates, truly meaningful metrics and safety measures can be computed. The paper behind this research will hopefully be released soon!
+STRUDL is an open-source and free framework for tracking objects in videos filmed by **static surveillance cameras**. It uses a deep learining object detector, camera calibration and tracking to create trajectories of e.g. road users, in world coordinates. It was designed to faciliate traffic safety analysis, using modern computer vision and deep learning, rather than the traditional methods commonly used despite their many flaws. By creating trajectories in world coordinates, truly meaningful metrics and safety measures can be computed. The paper behind this research will hopefully be released soon! It is currently under review.
 
 STRUDL was developed as a part of the [InDeV project](https://www.indev-project.eu). 
 
@@ -61,7 +61,7 @@ If it works and you are inside the docker container, inside a folder called `/co
 
 Go to [this link](https://mega.nz/#F!7RowVLCL!q3cEVRK9jyOSB9el3SssIA) and download the file "weights_SSD300.hdf5". Make a folder inside the `data` folder called `ssd` and place this file there.
 
-Inside the docker container, in the terminal, type `ls /data/ssd/` and if you can see the .hdf5 file there, everything seems to work as intended.
+Inside the docker container, in the terminal, type `ls /data/ssd/` and if you can see the .hdf5 file there, everything seems to work as intended. Then, from the `/code` directory, run `python validate.py` to check the validity of the file. Alternatively, after starting the web server, the API call `/pretrained_weights/` allows the file to be uploaded and validated in one go.
 
 To start the web server, run `python server.py`. Visit the host computer via a web browser to see the Web UI and interact with it. For example, if you're using the web browser on the same computer, visit `localhost` in a web browser like Firefox.
 
@@ -78,6 +78,6 @@ There's always more to do! On our to-do list contains, among other things, the f
 1. Simplification of the Web UI, to make it easier to understand what has been done and what to do next
 1. SSD code is currently based on [this port by Rykov8](https://github.com/rykov8/ssd_keras). It might be a good idea to change to [this one instead, by Pierluigiferrari](https://github.com/pierluigiferrari/ssd_keras), which is more nicely documented and runs NMS on the GPU.
 1. Code should become more readable and better commented (this started as, and in many ways still is, experimental research code)
-1. Different tracking algorithms should be examined, possibly replacing the simplistic one currently used.
+1. Different tracking algorithms should be examined, possibly replacing the simplistic one currently used
 1. Reducing the size of the docker container (currently around 20 GB)
-1. More easter eggs, jokes and memes. 
+1. More easter eggs, jokes and memes 

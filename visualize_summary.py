@@ -34,7 +34,9 @@ def join(pieces):
         Works with up to four images.
     """
     
-    if len(pieces) == 1:
+    if len(pieces) == 0:
+        raise(ValueError("To few images to combine. Maybe this dataset/run doesn't have anthing to visualize?"))
+    elif len(pieces) == 1:
         return pieces[0]
     elif len(pieces) == 2:
         return np.vstack(pieces)

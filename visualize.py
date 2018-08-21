@@ -1,3 +1,7 @@
+""" A module for visualzing objects on top of images. The functions here are
+    imported in various other modules that make visualization videos.
+"""
+
 import cv2 
 import pandas as pd
 import os

@@ -1,3 +1,6 @@
+""" A module for creating videos that show tracks (both in world coordinates and pixel coordinates)
+"""
+
 import imageio as iio
 import cv2
 import numpy as np

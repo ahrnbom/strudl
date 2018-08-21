@@ -1,3 +1,7 @@
+""" A module for optimizing tracking in world coordinates. Note that this is 
+    often not necessary as the default parameters tend to work fine. 
+"""
+
 import pandas as pd
 import numpy as np
 from datetime import datetime

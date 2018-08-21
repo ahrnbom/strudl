@@ -1,7 +1,7 @@
 """ A module which provides an easy interface for matplotlib for simple plots """
 
 import matplotlib as mpl
-mpl.use('Agg')
+mpl.use('Agg') # This is necessary since we're running inside Docker, without a graphical interface to draw on
 import matplotlib.pyplot as plt
 
 def multi_plot(xs, ys, filepath, xlabel=None, ylabel=None, linewidth=2, xlim=None, ylim=None, style=None, styles=None, title=None, legend=None):
@@ -12,7 +12,9 @@ def multi_plot(xs, ys, filepath, xlabel=None, ylabel=None, linewidth=2, xlim=Non
     if styles is None:
         for x, y in zip(xs, ys):
             if style is None:
-                    curr_line, = ax.plot(x,y, linewidth=linewidth)
+                # Who thought it was a good idea to return a tuple from ax.plot?
+                # This syntax is error-prone
+                curr_line, = ax.plot(x,y, linewidth=linewidth)
             else:
                 curr_line, = ax.plot(x,y, style, linewidth=linewidth)
                 
@@ -40,9 +42,9 @@ def multi_plot(xs, ys, filepath, xlabel=None, ylabel=None, linewidth=2, xlim=Non
     if not (legend is None):
         plt.legend(lines, legend)
             
-    plt.savefig(filepath, dpi=300)
+    plt.savefig(filepath, dpi=300) # dpi sets the size of the output image
     plt.close(fig)
 
 def simple_plot(x, y, filepath, xlabel=None, ylabel=None, linewidth=2, xlim=None, ylim=None):
     """ Takes two lists, x and y, and draws a simple plot. """
-    multi_plot([x], [y], filepath, xlabel, ylabel, linewidth)
+    multi_plot([x], [y], filepath, xlabel=xlabel, ylabel=ylabel, linewidth=linewidth, xlim=xlim, ylim=ylim)

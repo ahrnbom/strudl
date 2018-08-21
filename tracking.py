@@ -1,3 +1,10 @@
+""" A module for doing tracking in pixel coordinates. Note that this module should
+    not be used unless a calibration cannot be created for some reason. STRUDL is more
+    designed to do tracking in world coordinates, which is more optimized and generally
+    works better. This tracking algorithm was used in the paper, however, because world
+    coordinate tracking was not implemented at that time.
+"""
+
 import pandas as pd
 import numpy as np
 from random import choice

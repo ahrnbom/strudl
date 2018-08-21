@@ -1,12 +1,14 @@
-""" A module for checking if a point is within regions specified by mask images """
+""" A module for checking if a point is within regions specified by mask images.
+    While the images used are identical to the ones in apply_mask.py, the use-case
+    is very different. This is not used much in STRUDL but could be useful if
+    one would like to analyze tracks (like in the paper).
+"""
 
 import cv2
 
 from folder import datasets_path
 from util import clamp
 
-# Example: check = Check("sweden2", "vru_left")
-#          check.test(30, 40)
 class Check(object):
     def __init__(self, dataset, test, margin=0):
         filename = "{dsp}{ds}/{t}.png".format(dsp=datasets_path, ds=dataset, t=test)

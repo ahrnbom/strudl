@@ -95,7 +95,10 @@ def validate_annotation(text, dataset):
     return True
         
 if __name__ == '__main__':
-    with open('/data/datasets/rgb/objects/train/012C/2.txt', 'r') as f:
-        print(validate_annotation(f.read(), 'rgb')) 
+    # readme.md suggests running this, so don't any other tests here.
+    if validate_pretrained_md5('/data/ssd/weights_SSD300.hdf5'):
+        print("Weights file found and is OK!")
+    else:
+        print("Weight file found, but is possibly broken.")
 
 

@@ -13,8 +13,6 @@ import click
 
 from visualize import draw, class_colors
 
-from run_script import log
-
 from ssd import SSD300
 from create_prior_box import create_prior_box
 from ssd_utils import BBoxUtility
@@ -22,7 +20,7 @@ from keras.applications.imagenet_utils import preprocess_input
 
 from apply_mask import Masker
 from classnames import get_classnames
-from util import parse_resolution
+from util import parse_resolution, print_flush
 from folder import runs_path
       
 def rescale(df, index, factor):
@@ -46,7 +44,7 @@ def get_model(name, experiment, input_shape, num_classes=6, verbose=True):
     weights_file = weights_files[np.argmin(weights_files_loss)]
     model.load_weights(weights_file, by_name=True)
     if verbose:
-        log('Model loaded from {}'.format(weights_file))
+        print_flush('Model loaded from {}'.format(weights_file))
     return model
 
 def test_on_video(model, name, experiment, videopath, outvideopath, classnames, batch_size=32, input_shape=(480,640,3), soft=False,  width=480, height=640, conf_thresh=0.75, csv_conf_thresh=0.75):
@@ -81,7 +79,7 @@ def test_on_video(model, name, experiment, videopath, outvideopath, classnames, 
     else:
         csvpath = outvideopath.replace('.{}'.format(suffix), '.csv')
 
-    log('Generating priors')
+    print_flush('Generating priors')
     im_in = np.random.random((1,input_shape[1],input_shape[0],input_shape[2]))
     priors = model.predict(im_in,batch_size=1)[0, :, -8:]
     bbox_util = BBoxUtility(num_classes, priors)    
@@ -133,7 +131,7 @@ def test_on_video(model, name, experiment, videopath, outvideopath, classnames, 
             inputs = []
 
         if i%(10*batch_size) == 0:
-            print(i)
+            print_flush(i)
                     
     detections = pd.concat(all_detections)
     

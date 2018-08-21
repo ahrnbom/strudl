@@ -1,4 +1,6 @@
-""" A module for performing tracking in world coordinates """
+""" A module for performing tracking in world coordinates. This works better than
+    tracking in pixel coordinates.
+"""
 
 import click
 import pandas as pd

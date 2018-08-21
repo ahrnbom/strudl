@@ -43,7 +43,7 @@ np.set_printoptions(suppress=True)
 BASE_LR = 3e-4
 
 class Generator(object):
-    """Generator to generate bounding boxes for ssd."""
+    """ Generator to generate training data """
 
     def __init__(self, gt, bbox_util,
                  batch_size, path_prefix,

@@ -1,3 +1,10 @@
+""" The module for starting a web server, presenting the Web UI and the API defined
+    by strudl.yaml. It should be the main entrypoint for running strudl (like `python server.py`)
+    Each function here is mapped to from strudl.yaml, to be the response to API calls.
+    The documentation for how these functions work is in strudl.yaml so it's not repeated here.
+    The main function at the bottom is responsible for starting the server using connexion.
+"""
+
 import connexion
 from connexion import NoContent
 from shlex import quote
@@ -913,7 +920,7 @@ def get_usb():
 def main(port):
     # Allows the host computer to remain responsive even while long-running and heavy processes are started by server
     import os
-    os.nice(10)
+    os.nice(10) # nice :)
     
     # Start server based on YAML specification
     app = connexion.App(__name__, specification_dir='./')
