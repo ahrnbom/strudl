@@ -168,15 +168,15 @@ def get_annotation_slideshow(dataset_name):
     if dc.exists:
         imsize = dc.get('video_resolution')
         outpath = "{dsp}{dn}/slideshow.mp4".format(dsp=datasets_path, dn=dataset_name)
-        res = slideshow(dataset_name, imsize, outpath)
+        res = slideshow(dataset_name, outpath)
         
         if not res:
-            return (NoContent, 404)
+            return ("Failed to make slideshow", 404)
         else:
             vid = send_file(outpath, mimetype='video/mp4')
             return (vid, 200)
     else:
-        return (NoContent, 404)
+        return ("Dataset does not exist", 404)
     
 
 def post_annotation_annotation(dataset_name, image_number, video_name, annotation_set, annotation_text):
