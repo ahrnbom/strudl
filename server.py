@@ -209,6 +209,9 @@ def get_annotation_data(dataset_name):
         return (out, 200)
             
 def post_dataset(dataset_name, class_names):
+    if ' ' in dataset_name:
+        return ("Spaces are not allowed in dataset names!", 500)
+        
     dataset_name = quote(dataset_name)
     path = "{}{}/".format(datasets_path, dataset_name)
     mkdir(path)
@@ -251,6 +254,9 @@ def get_run_config(dataset_name, run_name):
         return (NoContent, 404)
     
 def post_run_config(dataset_name, run_name, run_config):
+    if ' ' in run_name:
+        return ("Spaces are not allowed in run names!", 500)
+
     dataset_name = quote(dataset_name)
     run_name = quote(run_name)
     rc = RunConfig(dataset_name, run_name)
