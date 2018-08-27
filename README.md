@@ -67,7 +67,7 @@ To start the web server, run `python server.py`. Visit the host computer via a w
 
 If you leave the docker container (by pressing Ctrl + D on the command line prompt), running `sudo ./run_docker.sh` again will start it up again. There is no need to run the other installation commands again.
 
-The `run_docker.sh` script takes an optional parameter, a path to the `data` folder, allowing it to be put anywhere you want, like on a different disk. This could be useful at the `data` folder can get quite large if large amounts of video are to be processed.
+The `run_docker.sh` script takes an optional parameter, a path to the `data` folder, allowing it to be put anywhere you want, like on a different disk. This could be useful as the `data` folder can get quite large if large amounts of video are to be processed.
 
 ### Security notice
 This software has not been designed with maximum security in mind. It is recommended to run it in a local network behind a firewall. While docker does provide some sandboxing, this code is not "battle tested" and it should not be assumed to be safe. Leaving the port open to the internet could compromise your computer. One possible security flaw is that your computer's `/media` folder is being made available in the docker container, to simplify importing videos via e.g. USB. This can be changed by modifying `run_docker.sh`.
