@@ -98,7 +98,7 @@ def kltfull(video_file, imsize, mask, out_file=None):
                     if not good_flag:
                         lost_tracks.append(tr)
                         continue
-                    tr.append((systime, x, y))
+                    tr.append((systime, int(x), int(y)))
 
                     new_tracks.append(tr)
                     if render_vid: 
@@ -117,7 +117,7 @@ def kltfull(video_file, imsize, mask, out_file=None):
                 p = cv2.goodFeaturesToTrack(frame_gray, mask = mask2, **feature_params)
                 if p is not None:
                     for x, y in np.float32(p).reshape(-1, 2):
-                        nt = Track([(systime, x, y)])
+                        nt = Track([(systime, int(x), int(y))])
                         nt.id_num = next(id_generator)
                         tracks.append(nt)
                 
@@ -159,16 +159,8 @@ def klt_save(vidpath, datpath, imsize, mask, outvidpath=None):
     """
     tracks = kltfull(vidpath, imsize, mask, outvidpath)
     
-    compact_tracks = []
-    for tr in tracks:
-        compact = []
-        for det in tr:
-            det2 = [int(round(x)) for x in det]
-            compact.append(det2)
-
-        compact_tracks.append(compact)
-            
-    save(compact_tracks, datpath)
+    print_flush("Saving...")
+    save(tracks, datpath)
     
 #    with open(csvpath, 'w') as f:
 #        f.write("id,frame_number,x,y\n")
