@@ -31,8 +31,8 @@ class Calibration(object):
         self.tsai = pdtv.TsaiCamera(**self.vals)
         
                 
-    def to_world(self, x, y, as_type=None):
-        x, y, z = self.tsai.image_to_world((x,y))    
+    def to_world(self, x, y, as_type=None, z=0.0):
+        x, y, z = self.tsai.image_to_world((x,y), z)
         if not (as_type is None):
             x,y,z = map(as_type, (x,y,z))
         return (x,y,z)
