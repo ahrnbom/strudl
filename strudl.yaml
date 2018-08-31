@@ -1146,11 +1146,11 @@ definitions:
     properties:
       video_fps:
         type: integer
-        description: How many frames per second the videos are recorded with. 
+        description: How many frames per second the videos are recorded with. Enter the FPS of the videos as they are before running `import_videos` (since it does not change the FPS).
         example: 15
       video_resolution:
         type: string
-        description: Resolution of videos, as strings like `(640,480,3)` where 640 is the width, 480 is the height and 3 is the number of channels. The number of channels should always be 3. The width and height should be divisible by 16.
+        description: Resolution of videos, as strings like `(640,480,3)` where 640 is the width, 480 is the height and 3 is the number of channels. The number of channels should always be 3. The width and height should be divisible by 16. Enter the video resolution you want *after* running `import_videos`, not the videos' original resolution (in case you want the videos rescaled).
         example: (640,480,3)
       point_track_resolution:
         type: string
