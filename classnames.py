@@ -1,28 +1,28 @@
 """ A module for getting the class names for a dataset, in a single canonical order.
 """
+import json
 
 from folder import datasets_path
 
-def get_classnames(dataset):
-    path = '{}{}/classes.txt'.format(datasets_path, dataset)
+def get_class_data(dataset):
+    path = '{}{}/classes.json'.format(datasets_path, dataset)
     
     with open(path, 'r') as f:
-        lines = [x.strip('\n') for x in f.readlines()]
-    
-    # Remove garbage, in case the text file is written by hand
-    lines = [line for line in lines if (len(line) > 0) and (not line.isspace())] 
-    lines.sort()
-    
-    return lines
-    
-def set_classnames(dataset, classnames):
-    classnames.sort()
+        class_data = json.load(f)
+    class_data.sort(key=lambda d: d['name'])
+    return class_data
 
-    path = '{}{}/classes.txt'.format(datasets_path, dataset)
+def get_classnames(dataset):
+    class_data = get_class_data(dataset)
+    names = [d['name'] for d in class_data]
+    return names
+
+def set_class_data(dataset, class_data):
+    class_data.sort(key=lambda d: d['name'])
+    path = '{}{}/classes.json'.format(datasets_path, dataset)
     with open(path, 'w') as f:
-        for cn in classnames:
-            f.write("{}\n".format(cn))
-    
+        json.dump(class_data, f)
+
     
 if __name__ == '__main__':
     print(get_classnames('sweden2'))

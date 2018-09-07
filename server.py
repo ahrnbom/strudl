@@ -20,7 +20,7 @@ import click
 from jobman import JobManager
 from config import DatasetConfig, RunConfig
 from folder import mkdir, datasets_path, runs_path
-from classnames import set_classnames, get_classnames
+from classnames import get_classnames, set_class_data
 from tracking import DetTrack # not directly used, but required for tracks_formats to work for some reason
 from tracks_formats import format_tracks, generate_tracks_in_zip, all_track_formats
 from import_videos import import_videos
@@ -208,7 +208,7 @@ def get_annotation_data(dataset_name):
     else:
         return (out, 200)
             
-def post_dataset(dataset_name, class_names):
+def post_dataset(dataset_name, class_names, class_heights):
     if ' ' in dataset_name:
         return ("Spaces are not allowed in dataset names!", 500)
         
@@ -216,9 +216,12 @@ def post_dataset(dataset_name, class_names):
     path = "{}{}/".format(datasets_path, dataset_name)
     mkdir(path)
     mkdir(path + 'videos')
+
     class_names = [quote(x.lower()) for x in class_names.split(',')]
-    
-    set_classnames(dataset_name, class_names)
+    class_heights = map(float, class_heights.split(','))
+    class_data = [{'name': n, 'height': h} for n, h in zip(class_names, class_heights)]
+    set_class_data(dataset_name, class_data)
+
     return (NoContent, 200)
     
 def get_datasets():

@@ -288,6 +288,12 @@ paths:
           description: List of names of object classes for this dataset, like 'car,pedestrian,bike,other'. Note that the last class in the list has a special meaning; if you train using images from other datasets, and those datasets have classes that are not in this one, they will be considered to be the last one during training. Therefore, it is a good idea to have `other` as the last one.
           default: car,pedestrian,bicycle,motorbike,bus,other
           required: true
+        - name: class_heights
+          in: query
+          type: string
+          description: List of mean heights of object classes for this dataset, like 'car,pedestrian,bike,other'. This will be used when projecting pixel coordinates from the object detections made in the image into world coordinates to the the point on the ground plane centered beneth the object.
+          default: 1.5,1.8,2,2,3,2
+          required: true
       responses:
         200:
           description: Dataset creation was successful.
