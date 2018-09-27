@@ -11,7 +11,7 @@ from storage import load, save
 from folder import datasets_path, runs_path, mkdir
 from timestamps import Timestamps
 from tracking import convert_klt, find_klt_for_frame
-from classnames import get_classnames
+from classnames import get_classnames, get_class_data
 from config import DatasetConfig
 
 class PointTrackStructure(object):
@@ -74,9 +74,8 @@ class PointTrackStructure(object):
         
         return [self.klts[x] for x in found]
 
-def detections_to_3D(dets, pts, calib, ts, v, klt_save_path=None):
+def detections_to_3D(dets, pts, calib, ts, v, class_heights, klt_save_path=None):
     """ Treat each detection like a point with a direction """
-    
     cx = (dets['xmin'] + dets['xmax'])//2
     cy = (dets['ymin'] + dets['ymax'])//2
     
@@ -86,8 +85,8 @@ def detections_to_3D(dets, pts, calib, ts, v, klt_save_path=None):
     world_x = []
     world_y = []
     
-    for px, py in zip(cx, cy):
-        x, y, z = calib.to_world(px, py)
+    for px, py, cl in zip(cx, cy, dets['class_name']):
+        x, y, z = calib.to_world(px, py, z=-class_heights[cl]/2)
         world_x.append(x)
         world_y.append(y)
     
@@ -148,7 +147,7 @@ def detections_to_3D(dets, pts, calib, ts, v, klt_save_path=None):
             dx /= n
             dy /= n
             
-            wx2, wy2, _ = calib.to_world(det['cx'] + dx, det['cy'] + dy)
+            wx2, wy2, _ = calib.to_world(det['cx'] + dx, det['cy'] + dy, z=-class_heights[det['class_name']]/2)
             wdx = wx2 - det['world_x']
             wdy = wy2 - det['world_y']
             
@@ -191,6 +190,9 @@ def main(cmd, dataset, run, vidres, ssdres, kltres, make_videos):
 
     calib = Calibration(dataset)
     ts = Timestamps(dataset)
+    class_data = get_class_data(dataset)
+    class_heights = {d['name']: d['height'] for d in class_data}
+
     
     class KLTConfig(object):
         klt_x_factor = 0
@@ -236,7 +238,9 @@ def main(cmd, dataset, run, vidres, ssdres, kltres, make_videos):
         outpath = '{of}{v}_world.csv'.format(of=outfolder, v=v)
         
         print_flush("Converting to world coordinates...")
-        detections3D = detections_to_3D(detections, pts, calib, ts, v, klt_save_path=outpath.replace('.csv', '_klt.pklz'))
+        detections3D = detections_to_3D(detections, pts, calib, ts, v,
+                                        klt_save_path=outpath.replace('.csv', '_klt.pklz'),
+                                        class_heights=class_heights)
         
         detections3D.to_csv(outpath, float_format='%.4f')
         
