@@ -61,10 +61,10 @@ def render_video(tracks, vidpath, outvidname, fps=10, ncols=50, mask=None, id_mo
 
     with iio.get_reader(vidpath) as invid:
         with iio.get_writer(outvidname, fps=fps) as outvid:
-            last_times = [x.history[-1][0] for x in tracks]
-            n = max(last_times)    
-            
-            for i in range(1,n):
+            first_frame = min([x.history[0][0] for x in tracks])
+            last_frame = max([x.history[-1][0] for x in tracks])
+
+            for i in range(first_frame, last_frame + 1):
                 frame = invid.get_data(i-1)
                 if not (mask is None):
                     frame = mask.mask(frame, alpha=0.5)

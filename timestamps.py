@@ -77,12 +77,13 @@ class Timestamps(object):
         else:
             return None, None
         
+    def get_times(self, video_name):
+        log_path = "{lp}{vn}.log".format(lp=self.logs_path, vn=video_name)
+        return self.make_times(log_path)
+
     def get(self, video_name, frame_number=0):
         """ Gets the timestamp corresponding to a frame number in a video """
-        log_path = "{lp}{vn}.log".format(lp=self.logs_path, vn=video_name)
-        
-        times = self.make_times(log_path)
-        
+        times = self.get_times(video_name)
         return times[frame_number]
    
     def make_times(self, log_path):
