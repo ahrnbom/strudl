@@ -1077,7 +1077,31 @@ paths:
           description: It worked
         400:
           description: The data was invalid
-          
+
+  /world/map:
+    parameters:
+      - $ref: "#/parameters/datasetName"
+    post:
+      operationId: server.post_world_map
+      summary: Posts a world map image
+      description: Uplads an image showing the world form above (a world map) and parameters (x0, y0, dx, dy, scale) to transform world ground plane coordantes into pixel coordinates on the map. The parameters are specified in a file with one parameter per line consisting of the parameter name followed by ":" followed by the value of the parameter. World ground plane coordinates (wx, wy) are projected into map pixel coordinates (x, y) using x = ((x - x0) * dx) + ((y - y0) * dy)) * scale and y = ((-(x - x0) * dy) + ((y - y0) * dx)) * scale.
+      consumes:
+        - multipart/form-data
+      parameters:
+        - name: map_image
+          in: formData
+          type: file
+          description: The map png image file to upload.
+        - name: parameter_file
+          in: formData
+          type: file
+          description: A world map parameter text file (tamap)
+      responses:
+        200:
+          description: It worked
+        400:
+          description: The data was invalid
+
 parameters:
     visualizationType:
         name: visualization_type

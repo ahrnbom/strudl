@@ -908,6 +908,14 @@ def post_world_calibration(dataset_name, calib_text):
         else:
             return (NoContent, 400)
 
+def post_world_map(dataset_name, map_image, parameter_file):
+    if map_image.content_type != 'image/png':
+        return ("Map image has to be in png format.", 400)
+    path = "{dsp}{ds}/map.png".format(dsp=datasets_path, ds=dataset_name)
+    map_image.save(path)
+    path = "{dsp}{ds}/map.tamap".format(dsp=datasets_path, ds=dataset_name)
+    parameter_file.save(path)
+
 def get_usb():
     if isdir('/usb/'):
         gen = iglob('/usb/**',recursive=True)
