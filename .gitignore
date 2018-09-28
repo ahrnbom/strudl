@@ -110,3 +110,5 @@ ENV/
 *.log
 *.csv
 *.json
+data
+.idea

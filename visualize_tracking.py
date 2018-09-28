@@ -17,6 +17,7 @@ from world import Calibration
 from folder import runs_path, datasets_path
 from config import DatasetConfig
 from util import print_flush, right_remove, left_remove
+import os
 
 def get_colors(n=10):
     colors = []
@@ -45,7 +46,7 @@ def get_colors(n=10):
      - id_mode: "global" to show track IDs consistent with other videos from the same dataset, or "local" to make the first track in this video be ID 1
      - calib: If None, tracks are assumed to be in pixel coordinates. If a Calibration object (from the world.py module) then tracks are assumed to be in world coordinates and are projected back to pixel coordinates for this visualization
 """
-def render_video(tracks, vidpath, outvidname, fps=10, ncols=50, mask=None, id_mode="global", calib=None):
+def render_video(tracks, vidpath, outvidname, fps=10, ncols=50, mask=None, id_mode="global", calib=None, map_data_dir=None):
     if id_mode == "global":
         pass # Keep track IDs as they are
     elif id_mode == "local":
@@ -59,6 +60,30 @@ def render_video(tracks, vidpath, outvidname, fps=10, ncols=50, mask=None, id_mo
 
     colors = get_colors(ncols)
 
+    if map_data_dir:
+        map_image_file = '{d}/map.png'.format(d=map_data_dir)
+        tamap_file = '{d}/map.tamap'.format(d=map_data_dir)
+        if os.path.exists(map_image_file) and os.path.exists(tamap_file):
+            map_image = cv2.imread(map_image_file)[:,:,[2,1,0]]
+            for l in open(tamap_file).readlines():
+                if not l.strip():
+                    break
+                name, val = l.split(':')
+                name = name.strip().lower()
+                val = float(val)
+                if name == 'x0':
+                    x0 = val
+                elif name == 'y0':
+                    y0 = val
+                elif name == 'dx':
+                    dx = val
+                elif name == 'dy':
+                    dy = val
+                elif name == 'scale':
+                    scale = val
+        else:
+            map_data_dir=None
+
     with iio.get_reader(vidpath) as invid:
         with iio.get_writer(outvidname, fps=fps) as outvid:
             first_frame = min([x.history[0][0] for x in tracks])
@@ -68,14 +93,24 @@ def render_video(tracks, vidpath, outvidname, fps=10, ncols=50, mask=None, id_mo
                 frame = invid.get_data(i-1)
                 if not (mask is None):
                     frame = mask.mask(frame, alpha=0.5)
-                
+
+                if map_data_dir:
+                    frame_map = map_image.copy()
                 for track in tracks:
                     if calib is None:
                         draw(frame, track, i, colors[track.id%ncols])
                     else:
-                        draw_world(frame, track, i, colors[track.id%ncols], calib)
-                
+                        hist, text = draw_world(frame, track, i, colors[track.id%ncols], calib)
+                        if hist is not None and map_data_dir:
+                            x, y = hist[2:4]
+                            # x, y = int(scale*(x - x0)), int(scale*(y - y0))
+                            nx = int((((x - x0) * dx) + ((y - y0) * dy)) * scale)
+                            ny = int(((-(x - x0) * dy) + ((y - y0) * dx)) * scale)
+                            _draw_world(frame_map, text, nx, ny, colors[track.id%ncols])
+
                 cv2.putText(frame, 'frame: {}'.format(i), (10,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+                if map_data_dir:
+                    frame = np.concatenate((frame, frame_map), 1)
                 outvid.append_data(frame)
 
 def clamp(x, lower, upper):
@@ -91,6 +126,8 @@ def draw_world(to_draw, track, frame_number, color, calib):
         x, y = map(int, (x, y))
         text = "{} {}".format(track.cn, track.id)
         to_draw = _draw_world(to_draw, text, x, y, color)
+        return hist, text
+    return None, None
         
 def _draw_world(to_draw, text, x, y, color):
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -101,6 +138,8 @@ def _draw_world(to_draw, text, x, y, color):
     text_pos = (x + 5, y-2)
     cv2.rectangle(to_draw, text_top, text_bot, color, -1)        
     cv2.putText(to_draw, text, text_pos, font, font_scale, (0,0,0), 1, cv2.LINE_AA)
+    if 2 <= x < to_draw.shape[1]-2 and 2 <= x < to_draw.shape[0]-2:
+        to_draw[y-2:y+2, x-2:x+2] = (255,0,0)
     return to_draw
                 
 def draw(to_draw, track, frame_number, color):
