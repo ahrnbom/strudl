@@ -98,7 +98,7 @@ def kltfull(video_file, imsize, mask, out_file=None):
                     if not good_flag:
                         lost_tracks.append(tr)
                         continue
-                    tr.append((systime, int(x), int(y)))
+                    tr.append((systime, x, y))
 
                     new_tracks.append(tr)
                     if render_vid: 
@@ -145,7 +145,7 @@ def kltfull(video_file, imsize, mask, out_file=None):
     if render_vid:
         avi.close()
         
-    return lost_tracks
+    return [[(t, int(round(x)), int(round(y))) for t, x, y in tr] for tr in lost_tracks]
     
 def klt_save(vidpath, datpath, imsize, mask, outvidpath=None):
     """ Computes and saves KLT point tracks
