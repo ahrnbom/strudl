@@ -21,6 +21,7 @@ from tracking_world import make_tracks, WorldTrackingConfig
 from storage import load, save
 from plot import simple_plot
 from config import DatasetConfig
+from klt import Track
 
 def visualize_tracks(outvidpath, dataset, gts, tracks=None, stack_axis='v'):
     import imageio as iio

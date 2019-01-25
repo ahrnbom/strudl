@@ -13,6 +13,8 @@ import click
 
 from util import parse_resolution, print_flush, right_remove
 from apply_mask import Masker
+from klt import Track
+
 
 class Config(object):
     """ 
