@@ -13,6 +13,7 @@ from timestamps import Timestamps
 from tracking import convert_klt, find_klt_for_frame
 from classnames import get_classnames, get_class_data
 from config import DatasetConfig
+from klt import Track
 
 class PointTrackStructure(object):
     """ A class for storing KLT point tracks in a structure where
