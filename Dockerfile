@@ -9,7 +9,7 @@ RUN apt-get update --fix-missing && apt-get install -y wget bzip2 ca-certificate
     libpng12-0 libgtk2.0 \
     git mercurial subversion \
     fonts-freefont-ttf fonts-ubuntu-font-family-console ttf-ubuntu-font-family edubuntu-fonts fonts-ubuntu-title fonts-liberation fonts-arkpandora \
-    font-manager cifs-utils
+    font-manager cifs-utils vim
 
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
     wget --quiet https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh -O ~/anaconda.sh && \
