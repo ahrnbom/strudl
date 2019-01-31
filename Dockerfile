@@ -34,7 +34,7 @@ RUN pip uninstall -y html5lib && pip install tensorflow-gpu==1.4.1
     
 RUN cd / && git clone https://github.com/fchollet/keras.git && cd keras && git checkout 507374c8 && pip install . 
 
-RUN pip install click pudb
+RUN pip install click==6.6 pudb==2018.1
 
 RUN apt-get update && apt-get install -y libavcodec-dev libavformat-dev libswscale-dev
 
@@ -42,13 +42,13 @@ RUN mv /opt/conda/lib/libstdc++.so.6 /opt/conda/lib/libstdc++.so.6_bak && mv /op
 
 RUN pip install imageio==2.3.0
 RUN echo "import imageio\nimageio.plugins.ffmpeg.download()" | python
-RUN pip install line_profiler
+RUN pip install line_profiler==2.1.2
 RUN echo 'alias prof="kernprof -l -v"' >> ~/.bashrc
 
-RUN pip install dask --upgrade
+RUN pip install dask==1.1.0
 
 RUN apt-get install -y graphviz
-RUN pip install pydot connexion munkres
+RUN pip install pydot==1.4.1 connexion==1.5.3  munkres==1.0.12
 
 RUN apt-get update && apt-get install -y software-properties-common 
 RUN add-apt-repository ppa:stebbins/handbrake-releases && apt-get update && apt-get install -y handbrake-cli
