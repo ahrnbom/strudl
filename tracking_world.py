@@ -7,12 +7,16 @@ import pandas as pd
 import numpy as np
 from itertools import count
 from math import sqrt
+
+# from lap._lapjv import lapjv
 from munkres import Munkres, DISALLOWED, print_matrix, UnsolvableMatrix
 from datetime import datetime
 from random import choice
 from copy import deepcopy
 import json
 from os.path import isfile
+
+from tqdm import tqdm
 
 from world import Calibration
 from util import parse_resolution, print_flush, pandas_loop, normalize, right_remove
@@ -235,6 +239,7 @@ class WorldTrack(object):
         dist_weight = self.config.get('cost_dist_weight', self.cn)
         dir_weight = self.config.get('cost_dir_weight', self.cn)
         cost = class_cost + dist_weight*dist_cost + dir_weight*dir_cost
+        cost = np.log(1 + cost) # To avoid numerical problems in the hungarian solver
         return cost
 
 def print_history(history):
@@ -350,9 +355,8 @@ def make_tracks(dataset, video_name, dets, klts, munkres, ts, calib, config, sta
         stop_frame = n_frames
     else:
         start_frame, stop_frame = start_stop
-    
-    for frame_number in range(start_frame, stop_frame):  
-        
+
+    for frame_number in tqdm(range(start_frame, stop_frame), "Making tracks"):
         now = ts.get(video_name, frame_number)
         tracks, just_lost = lose_tracks(tracks, now, frame_number, mask_check, calib, config)
         lost_tracks.extend(just_lost)
@@ -360,7 +364,7 @@ def make_tracks(dataset, video_name, dets, klts, munkres, ts, calib, config, sta
         tracks = update_tracks(tracks, now, frame_number)
         
         dets_frame = dets[dets['frame_number'] == frame_number] # This is slow!
-        
+
         if not tracks:
             # Let each detection be a track of its own
             for d in pandas_loop(dets_frame):
@@ -369,7 +373,7 @@ def make_tracks(dataset, video_name, dets, klts, munkres, ts, calib, config, sta
                     tracks.append(track)
                     
         else:
-            # Hungarian algorithm to find associations           
+            # Hungarian algorithm to find associations
             mat = []
             dets_list = [x for x in pandas_loop(dets_frame)]
             
@@ -380,14 +384,17 @@ def make_tracks(dataset, video_name, dets, klts, munkres, ts, calib, config, sta
                                       det['world_dx'], det['world_dy'], 
                                       det['class_name']) # this is slow!    
                     mat[i_track].append(cost)
-              
+
             try:
                 indices = munkres.compute(mat)
+                # _, idx, _ = lapjv(np.array(mat), extend_cost=True)
+                # indices2 = [p for p in zip(range(len(idx)), idx) if p[1] > -1]
+                # assert indices == indices2
             except UnsolvableMatrix:
                 # This means that tracks and detections were completely incompatible
                 for d in pandas_loop(dets_frame):
                     new_track(tracks, now, frame_number, d, config)
-                    
+
             else:
                 for i_track, i_det in indices:
                     track = tracks[i_track]
@@ -398,13 +405,12 @@ def make_tracks(dataset, video_name, dets, klts, munkres, ts, calib, config, sta
                                      det['world_dx'], det['world_dy'])
                                               
                         dets_list[i_det] = None # So that we can skip these when making new tracks
-                
+
                 for det in dets_list:
                     if det is None:
                         continue
                     
                     new_track(tracks, now, frame_number, det, config)
-                    
     lost_tracks.extend(tracks)
     
     # Remove tracks that are too short to be considered reliable

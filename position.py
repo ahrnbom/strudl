@@ -8,10 +8,13 @@ import cv2
 
 from folder import datasets_path
 from util import clamp
+import os
 
 class Check(object):
     def __init__(self, dataset, test, margin=0):
         filename = "{dsp}{ds}/{t}.png".format(dsp=datasets_path, ds=dataset, t=test)
+        if not os.path.exists(filename):
+            raise IOError("File not found: " + filename)
         self.mask = cv2.imread(filename, -1)
         self.mask = self.mask[:,:,3]
         self.w = self.mask.shape[1]-1
