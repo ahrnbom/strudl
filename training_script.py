@@ -33,7 +33,7 @@ import subprocess
 
 from apply_mask import Masker
 from util import parse_resolution, print_flush
-from folder import runs_path, base_path
+from folder import runs_path, base_path, ssd_path
 from ssd_cleanup import cleanup
 from classnames import get_classnames
 
@@ -346,7 +346,7 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
 
     log('Loading model')
     model = SSD300((input_shape[1],input_shape[0],input_shape[2]), num_classes=num_classes)  
-    model.load_weights('{basepath}ssd/weights_SSD300.hdf5'.format(basepath=base_path), by_name=True)
+    model.load_weights('{ssdpath}/weights_SSD300.hdf5'.format(ssdpath=ssd_path), by_name=True)
     
     log('Generating priors')
     im_in = np.random.random((1,input_shape[1],input_shape[0],input_shape[2]))

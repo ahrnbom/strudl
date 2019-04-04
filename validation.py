@@ -3,6 +3,9 @@
 from classnames import get_classnames
 from hashlib import md5
 
+from folder import ssd_path
+
+
 def validate_pretrained_md5(filepath):
     expected_hash = '9ae4b93e679ea30134ce37e3096f34fa'
 
@@ -96,7 +99,7 @@ def validate_annotation(text, dataset):
         
 if __name__ == '__main__':
     # readme.md suggests running this, so don't any other tests here.
-    if validate_pretrained_md5('/data/ssd/weights_SSD300.hdf5'):
+    if validate_pretrained_md5(ssd_path + '/weights_SSD300.hdf5'):
         print("Weights file found and is OK!")
     else:
         print("Weight file found, but is possibly broken.")

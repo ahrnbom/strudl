@@ -194,7 +194,7 @@ def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes
         encode = encode_handbrake
     else:
         raise(ValueError("Incorrect method {}".format(method)))
-    
+
     resolution = parse_resolution(resolution)
     width, height = resolution[0:2]
     
@@ -204,9 +204,9 @@ def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes
     logs_target = "{dp}{ds}/logs/".format(dp=datasets_path, ds=dataset)
     mkdir(logs_target)
     
-    files = glob(query.strip("'"))
+    files = glob(query)
     files.sort()
-    
+
     if minutes == 0:
         for path in files:
             video_name = '.'.join(path.split('/')[-1].split('.')[0:-1])

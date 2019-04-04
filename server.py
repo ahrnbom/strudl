@@ -19,7 +19,7 @@ import click
 
 from jobman import JobManager
 from config import DatasetConfig, RunConfig
-from folder import mkdir, datasets_path, runs_path
+from folder import mkdir, datasets_path, runs_path, ssd_path
 from classnames import get_classnames, set_class_data
 from tracking import DetTrack # not directly used, but required for tracks_formats to work for some reason
 from tracks_formats import format_tracks, generate_tracks_in_zip, all_track_formats
@@ -67,7 +67,7 @@ def get_progress(dataset_name, run_name):
             progress['has_this_run'] = True
             
             rprogress = dict()
-            rprogress['has_pretrained_weights'] = isfile('/data/ssd/weights_SSD300.hdf5')
+            rprogress['has_pretrained_weights'] = isfile(ssd_path + '/weights_SSD300.hdf5')
             rprogress['videos_with_detected_objects'] = len(glob(run_path + 'csv/*.csv'))
             rprogress['videos_with_detected_objects_visualized'] = len(glob(run_path + 'detections/*.mp4'))
             rprogress['videos_with_detected_objects_in_world_coordinates'] = len(glob(run_path + 'detections_world/*.csv'))
@@ -269,8 +269,24 @@ def post_run_config(dataset_name, run_name, run_config):
     else:
         return ("Could not interpret run configuration. Is some required parameter missing?", 500)
 
+def get_pretrained_weights():
+    path = ssd_path + '/weights_SSD300.hdf5'
+    if os.path.exists(path):
+        return ("Already present", 200)
+    else:
+        url = 'https://github.com/hakanardo/weights/raw/d2243707493e2e5f94c465b6248558ee16c90be6/weights_SSD300.hdf5'
+        os.makedirs(ssd_path, exist_ok=True)
+        os.system("wget -O %s '%s'" % (path, url))
+    if not os.path.exists(path):
+        return ("Download failed", 500)
+    if validate_pretrained_md5(path):
+        return ("Downloaded", 200)
+    else:
+        os.remove(path)
+        return ("File rejected", 500)
+
 def post_pretrained_weights(weights_file):
-    path = '/data/ssd/weights_SSD300.hdf5'
+    path = ssd_path + '/weights_SSD300.hdf5'
     weights_file.save(path)
     if validate_pretrained_md5(path):
         return (NoContent, 200)
@@ -370,16 +386,13 @@ def delete_job_by_id(job_id):
     
 def post_import_videos_job(dataset_name, path, method, logs_path=None, minutes=0):
     dataset_name = quote(dataset_name)
-    path = quote(path)
-    
+
     if logs_path is None:
         logs_path = path
         # Since 'path' probably contains a query, like ending with '*.mkv', this should be removed
         if not (logs_path[-1] == '/'):
             logs_path = right_remove(logs_path, logs_path.split('/')[-1])
-    else:
-        logs_path = quote(logs_path)
-    
+
     dc = DatasetConfig(dataset_name)
     
     if dc.exists:
@@ -932,6 +945,13 @@ def get_usb():
     else:
         return (NoContent, 404)
 
+def make_app():
+    mydir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(mydir)
+    app = connexion.App(__name__, specification_dir=mydir)
+    app.add_api(mydir + '/strudl.yaml')
+    return app
+
 @click.command()
 @click.option("--port", default=80, help="Port number. Note that if this is changed and run from within docker, the docker run command needs to be changed to forward the correct port.")
 def main(port):
@@ -940,8 +960,7 @@ def main(port):
     os.nice(10) # nice :)
     
     # Start server based on YAML specification
-    app = connexion.App(__name__, specification_dir='./')
-    app.add_api('strudl.yaml')
+    app = make_app()
     app.run(port=port)
 
 if __name__ == '__main__':

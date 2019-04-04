@@ -255,10 +255,19 @@ paths:
           description: Something went wrong
           
   /pretrained_weights:
-    post: 
+    get:
+      operationId: server.get_pretrained_weights
+      summary: Download pre-trained weights
+      description: Make the server try to dowbload the file with pretrained ssd weights if it is not already present
+      responses:
+        200:
+          description: Successfully provided access to the data folder
+        500:
+          description: File rejected, probably due to download failure. Try again or upload it manually using a post to /pretrained_weights.
+    post:
       operationId: server.post_pretrained_weights
       summary: Submits pre-trained weights
-      description: Download the weight file from https://mega.nz/#F!7RowVLCL!q3cEVRK9jyOSB9el3SssIA
+      description: Upload the weight file downloaded from https://github.com/hakanardo/weights/raw/d2243707493e2e5f94c465b6248558ee16c90be6/weights_SSD300.hdf5
       consumes:
         - application/x-hdf5
       parameters:

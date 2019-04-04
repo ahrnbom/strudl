@@ -2,7 +2,8 @@
     and keeping constants for commonly used paths
 """
 
-import errno    
+import errno
+from pathlib import Path
 import os
 
 def mkdir(path):
@@ -16,7 +17,8 @@ def mkdir(path):
 
 # These are imported into many modules. The idea is that if one would want to
 # change the paths, it would be sufficient to change the strings here.
-base_path = '/data/'
-datasets_path = '/data/datasets/'
-runs_path = '/data/runs/'
-jobs_path = '/data/jobs/'
+base_path = Path(__file__).parent / 'data'
+datasets_path = str(base_path / 'datasets') + '/'
+runs_path = str(base_path / 'runs') + '/'
+jobs_path = str(base_path / 'jobs') + '/'
+ssd_path = str(base_path / 'ssd') + '/'
