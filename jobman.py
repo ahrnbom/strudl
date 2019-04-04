@@ -25,6 +25,7 @@ def timestamp(sep1='-', sep2=':', sep3=' '):
 
 class Worker(threading.Thread):
     jm = None
+    daemon = True
     
     def set_jobmanager(self, jm):
         self.jm = jm

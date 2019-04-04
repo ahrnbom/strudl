@@ -35,12 +35,13 @@ def run_job(url, timeout=60):
 
     r = client.get("/jobs/%s" % jobid)
     assert r.status_code == 200
-    return res, r.data.decode('utf8')
+    print(r.data.decode('utf8'))
+    return res
 
 
 mydir = os.path.dirname(os.path.abspath(__file__))
 
-class TestSystem:
+class TestWorkflow:
     def test_ssd_download(self):
         r = client.get("/pretrained_weights")
         assert r.status_code == 200
@@ -88,12 +89,61 @@ class TestSystem:
         else:
             old_count = 0
 
-        res, log = run_job('/jobs/import_videos?dataset_name=test&path=test_data%2F*.mp4&method=imageio')
-        print(log)
+        res = run_job('/jobs/import_videos?dataset_name=test&path=test_data%2F*.mp4&method=imageio')
         assert res == 'success'
 
         r = client.get("/videos?dataset_name=test")
         assert r.status_code == 200
         assert len(r.json) == old_count + 3
+
+    def test_prep_anotation(self):
+        res = run_job("/jobs/prepare_annotation?dataset_name=test")
+        assert res == 'success'
+
+    def test_point_tracks(self):
+        res = run_job("/jobs/point_tracks?dataset_name=test&visualize=true&overwrite=true")
+        assert res == 'success'
+
+    def test_annotate(self):
+        r = client.get("/annotate/images?dataset_name=test&annotation_set=train")
+        assert r.status_code == 200
+        names = [None, None, None]
+        for name, n, state in r.json:
+            i = ['170439', '170444', '170449'].index(name.split('_')[1])
+            names[i] = name
+        annotations=[
+            b'6 0.28984 0.49062 0.04531 0.13125 px:0.31250,0.26719,0.28125,0.31250 py:0.55625,0.47292,0.42500,0.55000 pedestrian\n3 0.07422 0.68333 0.14844 0.22500 px:0.00156,0.00000,0.07500,0.14844 py:0.79583,0.70208,0.57083,0.63333 car\n3 0.13906 0.29063 0.08750 0.12708 px:0.10312,0.09531,0.15156,0.18281 py:0.35417,0.32500,0.22708,0.25208 car\n3 0.33125 0.19062 0.14063 0.08542 px:0.34531,0.26094,0.35156,0.40156 py:0.23333,0.19167,0.14792,0.20208 car\n',
+            b'3 0.11957 0.25862 0.06936 0.08138 px:0.09731,0.08489,0.14079,0.15424 py:0.29931,0.25379,0.21793,0.27034 car\n3 0.07557 0.67862 0.14907 0.22069 px:0.00207,0.00104,0.07039,0.15010 py:0.78897,0.61931,0.56828,0.62345 car\n3 0.93219 0.44828 0.13561 0.15448 px:0.99379,0.86439,0.95135,1.00000 py:0.52552,0.41103,0.37103,0.41793 car\n6 0.67754 0.71862 0.05694 0.14345 px:0.69358,0.64907,0.69772,0.70600 py:0.79034,0.73655,0.64690,0.66207 pedestrian\n',
+            b'3 0.07609 0.68345 0.14596 0.21931 px:0.00414,0.00311,0.07764,0.14907 py:0.79310,0.66483,0.57379,0.63310 car\n3 0.09731 0.27517 0.05797 0.08690 px:0.07557,0.06832,0.11905,0.12629 py:0.31862,0.25931,0.23172,0.30069 car\n3 0.60300 0.29862 0.16460 0.12552 px:0.65114,0.52070,0.60663,0.68530 py:0.36138,0.28966,0.23586,0.30897 car\n3 0.86232 0.42276 0.12629 0.13103 px:0.88509,0.79917,0.87474,0.92547 py:0.48828,0.40690,0.35724,0.41931 car\n3 0.90787 0.25793 0.06625 0.07448 px:0.92961,0.87474,0.88820,0.94099 py:0.29517,0.22207,0.22069,0.27172 car\n1 0.53416 0.91103 0.09524 0.17241 px:0.50621,0.48654,0.54037,0.58178 py:0.99724,0.99310,0.82483,0.89517 bicycle\n',
+        ]
+
+        get_anotate_url_template = '/annotate/annotation?annotation_set=train&image_number=1&video_name=%s&dataset_name=test&output_format=plain&accept_auto=false'
+        set_anotate_url_template = '/annotate/annotation?annotation_set=train&image_number=1&video_name=%s&dataset_name=test'
+        for i in range(3):
+            r = client.post(set_anotate_url_template % names[i], data=annotations[i], content_type="text/plain")
+            assert r.status_code == 200
+
+            r = client.get(get_anotate_url_template % names[i])
+            assert r.status_code == 200
+            assert r.data == annotations[i]
+
+    def test_config_run(self):
+        config = {
+            "confidence_threshold": 0.6,
+            "detection_batch_size": 3,
+            "detection_training_batch_size": 3,
+            "detector_resolution": "(640, 480, 3)"
+        }
+        r = post_json("/runs/config?dataset_name=test&run_name=testrun", config)
+        assert r.status_code == 200
+
+        r = client.get("/runs/config?dataset_name=test&run_name=testrun")
+        assert r.status_code == 200
+        assert r.json == config
+
+    def test_train(self):
+        res = run_job("/jobs/train_detector?dataset_name=test&run_name=testrun")
+        assert res == 'success'
+
 
 

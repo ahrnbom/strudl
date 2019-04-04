@@ -181,7 +181,7 @@ def get_annotation_slideshow(dataset_name):
 
 def post_annotation_annotation(dataset_name, image_number, video_name, annotation_set, annotation_text):
     dataset_name, video_name, annotation_set = map(quote, (dataset_name, video_name, annotation_set))
-    
+
     annotation_text = annotation_text.decode('utf-8')
     if validate_annotation(annotation_text, dataset_name):   
         folder_path = "{dsp}{dn}/objects/{ans}/{vn}/".format(dsp=datasets_path, dn=dataset_name, vn=video_name, ans=annotation_set)
