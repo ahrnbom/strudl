@@ -57,11 +57,14 @@ ENV TF_CPP_MIN_LOG_LEVEL 2
 
 WORKDIR "/code"
 
-COPY *.py /code/
+COPY *.py strudl.yaml /code/
 COPY webui /code/webui
 COPY pdtv /code/pdtv
+COPY tests /code/tests
+COPY test_data /code/test_data
 RUN mkdir /code/data
 
+ENV PYTHONPATH=/code
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
 CMD [ "python",  "server.py" ]
 
