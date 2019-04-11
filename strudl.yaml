@@ -28,10 +28,12 @@ info:
     - Download weights from https://mega.nz/#F!7RowVLCL!q3cEVRK9jyOSB9el3SssIA (not the _old one) and submit via `pretrained_weights/post`
     
     - Start training a detector with `/jobs/train_detector/post`
-    
-    - Start generating videos to evaluate the detector with `/jobs/visualize_detections/post`
+
+    - Start detecting objects with `/jobs/detect_objects/post`
     
     - Post a TSAI calibration with `/world/calibration/post`
+
+    - Start generating videos to evaluate the detector with `/jobs/visualize_detections/post`
     
     - Convert detections to world coordinates with `/jobs/detections_to_world_coordinates/post`
     

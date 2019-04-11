@@ -892,7 +892,7 @@ def get_world_tracking_config(dataset_name, run_name):
 def get_world_calibration(dataset_name):
     dataset_name = quote(dataset_name)
     path = "{dsp}{ds}/calib.tacal".format(dsp=datasets_path, ds=dataset_name)
-    
+
     if isfile(path):
         with open(path, 'r') as f:
             content = f.read()

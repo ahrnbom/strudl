@@ -145,5 +145,18 @@ class TestWorkflow:
         res = run_job("/jobs/train_detector?dataset_name=test&run_name=testrun")
         assert res == 'success'
 
+    def test_detect_objects(self):
+        res = run_job("/jobs/detect_objects?dataset_name=test&run_name=testrun")
+        assert res == 'success'
+
+    def test_world_calibration(self):
+        calib_data = "Cx: 284.440315296138\nCy: 295.577475064004\nSx: 0.977499718912692\nTx: 0.655851421157206\nTy: -5.413644708654\nTz: 22.6704367187891\ndx: 1.0\ndy: 1.0\nf: 655.929783301456\nk: 1.19677966687451e-06\nr1: 0.77782287558943\nr2: -0.628168580366148\nr3: 0.0198949453522387\nr4: 0.350254902950456\nr5: 0.459548568226311\nr6: 0.8161719282114\nr7: -0.521836255130819\nr8: -0.627868894023207\nr9: 0.577466513963466"
+        r = client.post("/world/calibration?dataset_name=test", data=calib_data, content_type="text/plain")
+        assert r.status_code == 200
+
+    def test_visualize_detections(self):
+        res = run_job("/jobs/visualize_detections?dataset_name=test&run_name=testrun&confidence_threshold=0.6&coords=world")
+        assert res == 'success'
+
 
 
