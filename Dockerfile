@@ -68,3 +68,5 @@ ENV PYTHONPATH=/code
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
 CMD [ "python",  "server.py" ]
 
+RUN apt-get install -y libxtst6 && apt-get clean
+

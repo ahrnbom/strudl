@@ -149,14 +149,41 @@ class TestWorkflow:
         res = run_job("/jobs/detect_objects?dataset_name=test&run_name=testrun")
         assert res == 'success'
 
+    def test_visualize_detections_pixels(self):
+        res = run_job("/jobs/visualize_detections?dataset_name=test&run_name=testrun&confidence_threshold=0.6&coords=pixels")
+        assert res == 'success'
+
     def test_world_calibration(self):
-        calib_data = "Cx: 284.440315296138\nCy: 295.577475064004\nSx: 0.977499718912692\nTx: 0.655851421157206\nTy: -5.413644708654\nTz: 22.6704367187891\ndx: 1.0\ndy: 1.0\nf: 655.929783301456\nk: 1.19677966687451e-06\nr1: 0.77782287558943\nr2: -0.628168580366148\nr3: 0.0198949453522387\nr4: 0.350254902950456\nr5: 0.459548568226311\nr6: 0.8161719282114\nr7: -0.521836255130819\nr8: -0.627868894023207\nr9: 0.577466513963466"
+        calib_data = b"Cx: 284.440315296138\nCy: 295.577475064004\nSx: 0.977499718912692\nTx: 0.655851421157206\nTy: -5.413644708654\nTz: 22.6704367187891\ndx: 1.0\ndy: 1.0\nf: 655.929783301456\nk: 1.19677966687451e-06\nr1: 0.77782287558943\nr2: -0.628168580366148\nr3: 0.0198949453522387\nr4: 0.350254902950456\nr5: 0.459548568226311\nr6: 0.8161719282114\nr7: -0.521836255130819\nr8: -0.627868894023207\nr9: 0.577466513963466"
         r = client.post("/world/calibration?dataset_name=test", data=calib_data, content_type="text/plain")
         assert r.status_code == 200
+        r = client.get("/world/calibration?dataset_name=test")
+        assert r.status_code == 200
+        assert r.data == calib_data
 
-    def test_visualize_detections(self):
+    def test_detections_to_world_coordinates(self):
+        res = run_job("/jobs/detections_to_world_coordinates?dataset_name=test&run_name=testrun&make_videos=false")
+        assert res == 'success'
+
+    def test_visualize_detections_world(self):
         res = run_job("/jobs/visualize_detections?dataset_name=test&run_name=testrun&confidence_threshold=0.6&coords=world")
         assert res == 'success'
 
+    def test_tracking_config(self):
+        config = {'mask_margin': 6.536554210404338, 'incorrect_class_cost': {'person_bicycle': 21.412795914808466, 'default': 5.204337756031922e+16, 'bicycle_person': 26.12625336049012}, 'time_region_check_thresh': 1.0215532178387352, 'cost_thresh': {'bicycle': 5.587621442965462, 'default': 20.43681365287192}, 'is_too_close_thresh': {'bicycle_bicycle': 1.5646137043645143, 'default': 1.7305655543938163}, 'creation_too_close_thresh': 5.959437096597299, 'cost_dir_weight': 0.7685414019120581, 'time_drop_thresh': 6.542976812490805, 'cost_dist_weight': 0.6283587849948333}
+        r = post_json("/world/tracking_config?dataset_name=test&run_name=testrun", config)
+        assert r.status_code == 200
+        r = client.get("/world/tracking_config?dataset_name=test&run_name=testrun")
+        assert r.status_code == 200
+        assert r.json == config
 
+    def test_tracking_world_coordinates(self):
+        res = run_job("/jobs/tracking_world_coordinates?dataset_name=test&run_name=testrun&confidence_threshold=0.6&make_videos=true")
+        assert res == 'success'
+
+    def test_all_tracks_as_zip(self):
+        res = run_job("/all_tracks_as_zip?dataset_name=test&run_name=testrun&tracks_format=csv&coords=world")
+        assert res == 'success'
+        r = client.get("/tracks/all?dataset_name=test&run_name=testrun&tracks_format=csv&coords=world")
+        assert r.status_code == 200
 

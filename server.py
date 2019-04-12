@@ -882,7 +882,7 @@ def post_world_tracking_config(dataset_name, run_name, world_tracking_config):
 def get_world_tracking_config(dataset_name, run_name):
     dataset_name, run_name = map(quote, (dataset_name, run_name))
     path = "{rp}{dn}_{r}/world_tracking_optimization.pklz".format(rp=runs_path, dn=dataset_name, r=run_name)
-    
+
     if isfile(path):
         wtc = load(path)
         return (wtc.get_dict(), 200)

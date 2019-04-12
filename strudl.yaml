@@ -31,12 +31,12 @@ info:
 
     - Start detecting objects with `/jobs/detect_objects/post`
     
+    - Start generating videos to evaluate the detector with `/jobs/visualize_detections/post`
+
     - Post a TSAI calibration with `/world/calibration/post`
 
-    - Start generating videos to evaluate the detector with `/jobs/visualize_detections/post`
-    
     - Convert detections to world coordinates with `/jobs/detections_to_world_coordinates/post`
-    
+
     - Optimize world coordinates tracker with `/jobs/optimize_tracking_world_coordinates/post` or submit tracking parameters with `/world/tracking_config/post`
     
     - Start performing tracking with `/jobs/tracking_world_coordinates/post`
