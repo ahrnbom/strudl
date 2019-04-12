@@ -146,7 +146,7 @@ class TestWorkflow:
         assert res == 'success'
 
     def test_detect_objects(self):
-        res = run_job("/jobs/detect_objects?dataset_name=test&run_name=testrun")
+        res = run_job("/jobs/detect_objects?dataset_name=test&run_name=testrun", 600)
         assert res == 'success'
 
     def test_visualize_detections_pixels(self):
@@ -182,7 +182,7 @@ class TestWorkflow:
         assert res == 'success'
 
     def test_all_tracks_as_zip(self):
-        res = run_job("/all_tracks_as_zip?dataset_name=test&run_name=testrun&tracks_format=csv&coords=world")
+        res = run_job("/jobs/all_tracks_as_zip?dataset_name=test&run_name=testrun&tracks_format=csv&coords=world")
         assert res == 'success'
         r = client.get("/tracks/all?dataset_name=test&run_name=testrun&tracks_format=csv&coords=world")
         assert r.status_code == 200
