@@ -181,6 +181,8 @@ class Generator(object):
         return img, new_targets
 
     def generate(self, train=True, do_shuffle=True):
+        inputs = []
+        targets = []
         while True:
             if train:
                 if do_shuffle:
@@ -190,8 +192,6 @@ class Generator(object):
                 if do_shuffle:
                     shuffle(self.val_keys)
                 keys = self.val_keys
-            inputs = []
-            targets = []
             for key in keys:
                 img_path = self.path_prefix + key
                 
@@ -298,8 +298,11 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
     
     logging.basicConfig(filename='{runspath}{name}_{experiment}/trainlog.log'.format(runspath=runs_path, name=name, experiment=experiment), level=logging.INFO)
     
-    githash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()[0:6].decode('utf-8')
-    log("Git hash: {}".format(githash))
+    try:
+        githash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()[0:6].decode('utf-8')
+        log("Git hash: {}".format(githash))
+    except subprocess.CalledProcessError:
+        pass
     
     log('Loading detections')
     
@@ -335,6 +338,8 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
         keys = keys[:max_images]
     shuffle(keys)
     num_train = int(round(0.9 * len(keys)))
+    if num_train == len(keys):
+        num_train -= 1
     train_keys = keys[:num_train]
     val_keys = keys[num_train:]
     train_keys_file = '{runspath}{name}_{experiment}/train_keys.pickle'.format(runspath=runs_path, name=name, experiment=experiment)
