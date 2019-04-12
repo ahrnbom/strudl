@@ -188,5 +188,4 @@ class TestWorkflow:
         r = client.get("/tracks/all?dataset_name=test&run_name=testrun&tracks_format=csv&coords=world")
         assert r.status_code == 200
         zip = ZipFile(BytesIO(r.data))
-        assert len(zip.namelist()) == 6
-
+        assert len(zip.namelist()) >= 3
