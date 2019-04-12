@@ -25,7 +25,7 @@ info:
     
     - Define a training run with `/runs/config/post`
     
-    - Download weights from https://mega.nz/#F!7RowVLCL!q3cEVRK9jyOSB9el3SssIA (not the _old one) and submit via `pretrained_weights/post`
+    - Download weights using `pretrained_weights/get`
     
     - Start training a detector with `/jobs/train_detector/post`
 

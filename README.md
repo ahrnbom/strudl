@@ -39,35 +39,34 @@ Got any issues with this software? Feel free to [open an issue, if there isn't o
 ### Requirements
 
 1. A Linux computer with a powerful, modern NVidia GPU
-1. git
-1. [NVidia CUDA](https://developer.nvidia.com/cuda-downloads), STRUDL is made for CUDA 8.0 but could probably work with more modern CUDA versions with some modifications to the dockerfile
+1. [NVidia CUDA](https://developer.nvidia.com/cuda-downloads), STRUDL is made for CUDA 8.0 but the container runs fine on a CUAD 10.0 host
 1. [docker](https://docs.docker.com/install/)
 1. [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
 
 ### Installation
-The following terminal commands should work on Ubuntu, assuming the requirements are installed correctly.
+The following terminal commands should work on Ubuntu, assuming the requirements are installed correctly. The first thing to do is to run the testsuit to ensure your requirements is set up properly. This will also download strudl if needed:
 
 ```
-mkdir ~/strudl_stuff
-cd ~/strudl_stuff/
-mkdir data
-git clone https://github.com/ahrnbom/strudl.git
-cd strudl
-sudo ./run_docker.sh
+nvidia-docker run -ti ahrnbom/strudl py.test -v
 ```
 
-The `run_docker.sh` command will take a long time to run the first time, as it builds a complex docker container.
-If it works and you are inside the docker container, inside a folder called `/code/`.
+A `data` folder has to be created. It can be put anywhere you want, like on a different disk. This could be useful as the `data` folder can get quite large if large amounts of video are to be processed.
 
-Go to [this link](https://mega.nz/#F!7RowVLCL!q3cEVRK9jyOSB9el3SssIA) and download the file "weights_SSD300.hdf5". Make a folder inside the `data` folder called `ssd` and place this file there.
+```
+mkdir -p /path/of/your/choosing/strudl/data
+```
 
-Inside the docker container, in the terminal, type `ls /data/ssd/` and if you can see the .hdf5 file there, everything seems to work as intended. Then, from the `/code` directory, run `python validate.py` to check the validity of the file. Alternatively, after starting the web server, the API call `/pretrained_weights/` allows the file to be uploaded and validated in one go.
+Download the starter script from [here](https://raw.githubusercontent.com/ahrnbom/strudl/master/start_strudl.sh) and place it next to the data directory and run it to start strudl
+```
+/path/of/your/choosing/strudl/start_strudl.sh
+```
 
-To start the web server, run `python server.py`. Visit the host computer via a web browser to see the Web UI and interact with it. For example, if you're using the web browser on the same computer, visit `localhost` in a web browser like Firefox.
+If you want to upgrade to the latest version before starting add the -u option:
+```
+/path/of/your/choosing/strudl/start_strudl.sh -u
+```
 
-If you leave the docker container (by pressing Ctrl + D on the command line prompt), running `sudo ./run_docker.sh` again will start it up again. There is no need to run the other installation commands again.
-
-The `run_docker.sh` script takes an optional parameter, a path to the `data` folder, allowing it to be put anywhere you want, like on a different disk. This could be useful as the `data` folder can get quite large if large amounts of video are to be processed.
+Visit the host computer via a web browser to see the Web UI and interact with it. For example, if you're using the web browser on the same computer, visit `localhost` in a web browser like Firefox.
 
 ### Security notice
 This software has not been designed with maximum security in mind. It is recommended to run it in a local network behind a firewall. While docker does provide some sandboxing, this code is not "battle tested" and it should not be assumed to be safe. Leaving the port open to the internet could compromise your computer. One possible security flaw is that your computer's `/media` folder is being made available in the docker container, to simplify importing videos via e.g. USB. This can be changed by modifying `run_docker.sh`.
