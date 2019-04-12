@@ -3,6 +3,7 @@ import os
 from io import BytesIO
 from tempfile import TemporaryFile, NamedTemporaryFile
 from time import sleep
+from zipfile import ZipFile
 
 import cv2
 
@@ -186,4 +187,6 @@ class TestWorkflow:
         assert res == 'success'
         r = client.get("/tracks/all?dataset_name=test&run_name=testrun&tracks_format=csv&coords=world")
         assert r.status_code == 200
+        zip = ZipFile(BytesIO(r.data))
+        assert len(zip.namelist()) == 6
 
