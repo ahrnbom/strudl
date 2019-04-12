@@ -505,7 +505,7 @@ def post_autoannotate_job(dataset_name, import_datasets="", epochs=75, resolutio
     else:
         return (NoContent, 404)
     
-def post_train_detector_job(dataset_name, run_name, import_datasets=""):
+def post_train_detector_job(dataset_name, run_name, epochs, import_datasets=""):
     dataset_name = quote(dataset_name)
     run_name = quote(run_name)
     rc = RunConfig(dataset_name, run_name)
@@ -517,7 +517,8 @@ def post_train_detector_job(dataset_name, run_name, import_datasets=""):
         "--input_shape={}".format(rc.get('detector_resolution')), 
         "--train_data_dir=fjlfbwjefrlbwelrfb", 
         "--batch_size={}".format(rc.get('detection_training_batch_size')), 
-        "--image_shape={}".format(dc.get('video_resolution'))]
+        "--image_shape={}".format(dc.get('video_resolution')),
+        "--epochs={}".format(epochs)]
         
         if import_datasets:
             import_datasets = quote(import_datasets)

@@ -142,7 +142,7 @@ class TestWorkflow:
         assert r.json == config
 
     def test_train(self):
-        res = run_job("/jobs/train_detector?dataset_name=test&run_name=testrun")
+        res = run_job("/jobs/train_detector?dataset_name=test&run_name=testrun&epochs=5")
         assert res == 'success'
 
     def test_detect_objects(self):
