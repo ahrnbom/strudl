@@ -39,7 +39,7 @@ Got any issues with this software? Feel free to [open an issue, if there isn't o
 ### Requirements
 
 1. A Linux computer with a powerful, modern NVidia GPU
-1. [NVidia CUDA](https://developer.nvidia.com/cuda-downloads), STRUDL is made for CUDA 8.0 but the container runs fine on a CUAD 10.0 host
+1. [NVidia CUDA](https://developer.nvidia.com/cuda-downloads), STRUDL is made for CUDA 8.0 
 1. [docker](https://docs.docker.com/install/)
 1. [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
 
