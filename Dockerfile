@@ -1,4 +1,4 @@
-FROM nvidia/cuda:8.0-cudnn6-devel-ubuntu16.04
+FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
 
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
@@ -31,8 +31,8 @@ RUN conda upgrade anaconda && \
     conda install -c menpo opencv3==3.2.0 && \
     conda install -c conda-forge nb_conda_kernels
 
-RUN pip uninstall -y html5lib && pip install tensorflow-gpu==1.4.1 
-    
+RUN pip uninstall -y html5lib && pip install tensorflow-gpu==1.13.1
+
 RUN cd / && git clone https://github.com/fchollet/keras.git && cd keras && git checkout 507374c8 && pip install . && cd .. && rm -r keras
 
 RUN pip install click==6.6 pudb==2018.1
