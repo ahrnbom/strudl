@@ -39,7 +39,7 @@ Got any issues with this software? Feel free to [open an issue, if there isn't o
 ### Requirements
 
 1. A Linux computer with a powerful, modern NVidia GPU
-1. [NVidia CUDA](https://developer.nvidia.com/cuda-downloads), STRUDL is made for CUDA 8.0 
+1. [NVidia CUDA](https://developer.nvidia.com/cuda-downloads), STRUDL is made for CUDA 8.0, but there is also a CUDA 10.0 branch 
 1. [docker](https://docs.docker.com/install/)
 1. [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
 
@@ -65,6 +65,19 @@ If you want to upgrade to the latest version before starting add the -u option:
 ```
 /path/of/your/choosing/strudl/start_strudl.sh -u
 ```
+
+It is also possible to run a specific version, say for example version 0.2, using
+```
+/path/of/your/choosing/strudl/start_strudl.sh -v 0.2
+```
+
+If you have a recent NVidia GPU, there is also CUDA 10 versions, which can be started with for example,
+```
+/path/of/your/choosing/strudl/start_strudl.sh -v 0.2-CUDA10
+```
+
+A list of all availble version can be found at [https://cloud.docker.com/repository/docker/ahrnbom/strudl/tags](https://cloud.docker.com/repository/docker/ahrnbom/strudl/tags)
+
 
 Visit the host computer via a web browser to see the Web UI and interact with it. For example, if you're using the web browser on the same computer, visit `localhost` in a web browser like Firefox.
 
