@@ -13,9 +13,9 @@ RUN apt-get update --fix-missing && apt-get install -y wget bzip2 ca-certificate
     apt-get clean
 
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh -O ~/anaconda.sh && \
-    /bin/bash ~/anaconda.sh -b -p /opt/conda && \
-    rm ~/anaconda.sh
+    wget --quiet https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh -O /tmp/anaconda.sh && \
+    /bin/bash /tmp/anaconda.sh -b -p /opt/conda && \
+    rm /tmp/anaconda.sh
 
 RUN apt-get install -y curl grep sed dpkg && \
     TINI_VERSION=`curl https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` && \
@@ -43,7 +43,7 @@ RUN apt-get update && apt-get install -y libavcodec-dev libavformat-dev libswsca
 #RUN mv /opt/conda/lib/libstdc++.so.6 /opt/conda/lib/libstdc++.so.6_bak && mv /opt/conda/lib/libgomp.so.1 /opt/conda/lib/libgomp.so.1_bak
 
 RUN pip install -I numpy==1.14.3 tqdm==4.26.0 imageio==2.3.0 line_profiler==2.1.2
-RUN echo 'alias prof="kernprof -l -v"' >> ~/.bashrc
+RUN echo 'alias prof="kernprof -l -v"' >> /etc/bashrc
 
 RUN pip install dask==1.1.0
 
