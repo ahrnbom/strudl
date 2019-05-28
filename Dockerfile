@@ -37,13 +37,12 @@ RUN cd / && git clone https://github.com/fchollet/keras.git && cd keras && git c
 
 RUN pip install click==6.6 pudb==2018.1
 
-RUN apt-get update && apt-get install -y libavcodec-dev libavformat-dev libswscale-dev graphviz software-properties-common && \
+RUN apt-get update && apt-get install -y libavcodec-dev libavformat-dev libswscale-dev graphviz software-properties-common ffmpeg && \
     apt-get clean
 
 #RUN mv /opt/conda/lib/libstdc++.so.6 /opt/conda/lib/libstdc++.so.6_bak && mv /opt/conda/lib/libgomp.so.1 /opt/conda/lib/libgomp.so.1_bak
 
 RUN pip install -I numpy==1.14.3 tqdm==4.26.0 imageio==2.3.0 line_profiler==2.1.2
-RUN echo "import imageio\nimageio.plugins.ffmpeg.download()" | python
 RUN echo 'alias prof="kernprof -l -v"' >> ~/.bashrc
 
 RUN pip install dask==1.1.0
@@ -69,4 +68,3 @@ ENTRYPOINT [ "/usr/bin/tini", "--" ]
 CMD [ "python",  "server.py" ]
 
 RUN apt-get install -y libxtst6 && apt-get clean
-
