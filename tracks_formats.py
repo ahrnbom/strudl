@@ -32,8 +32,6 @@ def generate_tracks_in_zip(dataset, run, tf, coords):
         
     tracks.sort()
     
-    tmp_path = "tmp.txt"
-    
     zips_folder = "{rp}{dn}_{rn}/track_zips/".format(rp=runs_path, dn=dataset, rn=run)
     mkdir(zips_folder)
     
@@ -47,15 +45,12 @@ def generate_tracks_in_zip(dataset, run, tf, coords):
             print_flush(tname)
             
             text = format_tracks_from_file(t, tracks_format, coords)
-            with open(tmp_path, 'w') as f:
-                f.write(text)
             
             suffix = '.txt'
             if tracks_format == 'csv':
                 suffix = '.csv'
-            z.write(tmp_path, arcname=tname.replace('.pklz', suffix))
+            z.writestr(tname.replace('.pklz', suffix), text)
     
-    remove(tmp_path)
     print_flush("Done!")
     return zip_path
 
