@@ -58,10 +58,10 @@ class Generator(object):
                  crop_area_range=[0.75, 1.0],
                  crop_attempts=10,
                  aspect_ratio_range=[3. / 4., 4. / 3.]):
-                 
-        # Because we can include multiple datasets, we need to keep track of multiple masks. They are stored here, as a dict from dataset names to the maskers.        
+
+        # Because we can include multiple datasets, we need to keep track of multiple masks. They are stored here, as a dict from dataset names to the maskers.
         self.maskers = dict()
-                 
+
         self.gt = gt
         self.bbox_util = bbox_util
         self.batch_size = batch_size
@@ -194,7 +194,7 @@ class Generator(object):
                 keys = self.val_keys
             for key in keys:
                 img_path = self.path_prefix + key
-                
+
                 # To know the correct mask, we need the dataset name
                 dataset = img_path.split('/')[3]
                 if dataset in self.maskers:
@@ -202,9 +202,9 @@ class Generator(object):
                 else:
                     masker = Masker(dataset)
                     self.maskers[dataset] = masker
-                    
+
                 img = masker.mask(imread(img_path)).astype('float32')
-                
+
                 y = np.vstack(self.gt.loc[key].y_true)
                 if train and self.do_crop:
                     img, y = self.random_sized_crop(img, y)
@@ -274,14 +274,14 @@ def log(string):
 @click.option('--train_data_dir', prompt='The location of the train data, when using matlab_export', help='The location of the train data, when using matlab_export.')
 @click.option('--input_shape',default='(300,300,3)',help='The size into which the images are rescaled before going into SSD')
 @click.option('--image_shape', default='(300,300,3)',help='The size of the original training images')
-@click.option('--memory_fraction', default=1.0, help='The memory fraction of the GPU memory to use for TensorFlow')
+@click.option('--memory_fraction', default=0.95, help='The memory fraction of the GPU memory to use for TensorFlow')
 @click.option('--do_crop', is_flag=True, help='Use random crops of images during training.')
 def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, experiment,train_data_dir,input_shape,image_shape,memory_fraction,do_crop):
     from keras.backend.tensorflow_backend import set_session
     config = tf.ConfigProto()
     config.gpu_options.per_process_gpu_memory_fraction = memory_fraction
     set_session(tf.Session(config=config))
-    
+
     import matplotlib.pyplot as plt
     import seaborn as sns
 
@@ -295,24 +295,24 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
     log('Chosen input_shape is {}'.format(input_shape))
     detections_file = '{runspath}{name}_{experiment}/detections.pickle'.format(runspath=runs_path, name=name, experiment=experiment)
     os.makedirs('{runspath}{name}_{experiment}'.format(runspath=runs_path, name=name, experiment=experiment), exist_ok=True)
-    
+
     logging.basicConfig(filename='{runspath}{name}_{experiment}/trainlog.log'.format(runspath=runs_path, name=name, experiment=experiment), level=logging.INFO)
-    
+
     try:
         githash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()[0:6].decode('utf-8')
         log("Git hash: {}".format(githash))
     except subprocess.CalledProcessError:
         pass
-    
+
     log('Loading detections')
-    
+
     datasets = [name]
     if import_datasets:
         datasets.extend(import_datasets.split(','))
         log('Using these datasets: ' + str(datasets))
-    
+
     detections = load_detections.custom(datasets)
-    
+
     log('Detections loaded')
     log('Calculating image properties')
     detections = detections.reset_index(drop=True)
@@ -350,14 +350,14 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
     pickle.dump(val_keys, open(val_keys_file, 'wb'))
 
     log('Loading model')
-    model = SSD300((input_shape[1],input_shape[0],input_shape[2]), num_classes=num_classes)  
+    model = SSD300((input_shape[1],input_shape[0],input_shape[2]), num_classes=num_classes)
     model.load_weights('{ssdpath}/weights_SSD300.hdf5'.format(ssdpath=ssd_path), by_name=True)
-    
+
     log('Generating priors')
     im_in = np.random.random((1,input_shape[1],input_shape[0],input_shape[2]))
     priors = model.predict(im_in,batch_size=1)[0, :, -8:]
     bbox_util = BBoxUtility(num_classes, priors)
-    
+
     generator_kwargs = {
         'saturation_var': 0.5,
         'brightness_var': 0.5,
@@ -419,15 +419,15 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
         plt.legend(loc='upper right')
         g.fig.subplots_adjust(right=.95)
     plt.savefig('{runspath}{name}_{experiment}/results.pdf'.format(runspath=runs_path, name=name, experiment=experiment))
-    
+
     results.to_csv('{runspath}{name}_{experiment}/results.csv'.format(runspath=runs_path, name=name, experiment=experiment))
-    
+
     log('Cleaning up non-optimal weights...')
     cleanup(name, experiment)
-    
+
     log('Finished TensorFlow session')
     print_flush('Done!')
-    
+
 
 if __name__ == '__main__':
     main()
