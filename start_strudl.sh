@@ -44,4 +44,4 @@ fi
 echo "Using data from $DATAPATH"
 
 
-nvidia-docker run -p 80:80 -v $DATAPATH:/code/data/ --mount type=bind,src=/media,dst=/usb,bind-propagation=rslave --rm -ti ahrnbom/strudl:$TAG
+nvidia-docker run -p 80:80 -v $DATAPATH:/data/ --mount type=bind,src=/media,dst=/usb,bind-propagation=rslave --rm -ti ahrnbom/strudl:$TAG

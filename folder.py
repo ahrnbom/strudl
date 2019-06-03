@@ -17,7 +17,7 @@ def mkdir(path):
 
 # These are imported into many modules. The idea is that if one would want to
 # change the paths, it would be sufficient to change the strings here.
-base_path = Path(__file__).parent / 'data'
+base_path = Path('/data')
 datasets_path = str(base_path / 'datasets') + '/'
 runs_path = str(base_path / 'runs') + '/'
 jobs_path = str(base_path / 'jobs') + '/'

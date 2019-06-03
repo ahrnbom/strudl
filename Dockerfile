@@ -61,7 +61,7 @@ COPY webui /code/webui
 COPY pdtv /code/pdtv
 COPY tests /code/tests
 COPY test_data /code/test_data
-RUN mkdir /code/data
+RUN mkdir /data
 
 ENV PYTHONPATH=/code
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
