@@ -2,6 +2,7 @@
     Everything is presented in percent.
 """
 
+import os
 import psutil
 from subprocess import Popen, PIPE
 
@@ -13,12 +14,16 @@ def ram():
     
 def gpu():
     # Returns both GPU utilization and VRAM usage
-    
-    p = Popen(["nvidia-smi","--query-gpu=utilization.gpu,memory.total,memory.used", "--format=csv,noheader,nounits"], stdout=PIPE)
+    args = ["--query-gpu=utilization.gpu,memory.total,memory.used", "--format=csv,noheader,nounits"]
+    devices = os.environ.get('CUDA_VISIBLE_DEVICES')
+    if devices is not None:
+        args.append('--id='+devices)
+
+    p = Popen(["nvidia-smi"] + args, stdout=PIPE)
     output = p.stdout.read().decode('UTF-8')
     lines = output.split('\n')
 
-    assert(len(lines) == 2)
+    assert lines
     line = lines[0]
 
     util, tot, used = map(int, line.split(", "))
