@@ -26,16 +26,15 @@ from ssd_utils import BBoxUtility
 from load_data import LoadDetections
 
 import tensorflow as tf
-import matplotlib as mpl
-mpl.use('pdf')
 import logging
 import subprocess
 
 from apply_mask import Masker
-from util import parse_resolution, print_flush
+from util import parse_resolution, print_flush, pandas_loop
 from folder import runs_path, base_path, ssd_path
 from ssd_cleanup import cleanup
 from classnames import get_classnames
+from plot import multi_plot
 
 np.set_printoptions(suppress=True)
 
@@ -282,9 +281,6 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
     config.gpu_options.per_process_gpu_memory_fraction = memory_fraction
     set_session(tf.Session(config=config))
 
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-
     input_shape = parse_resolution(input_shape)
     image_shape = parse_resolution(image_shape)
 
@@ -410,16 +406,22 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
     log('Session closed, starting with writing results')
     results = pd.DataFrame(history.history).unstack().reset_index(0)
     results = results.rename(columns={'level_0': 'type', 0: 'value'})
-
-    log('Starting with SNS plotting')
-    with sns.plotting_context(font_scale=1.5):
-        g = sns.FacetGrid(results, hue='type', size=6, aspect=1.5)
-        g.map(plt.semilogy, 'value')
-        # g.add_legend()
-        plt.legend(loc='upper right')
-        g.fig.subplots_adjust(right=.95)
-    plt.savefig('{runspath}{name}_{experiment}/results.pdf'.format(runspath=runs_path, name=name, experiment=experiment))
-
+    
+    x1 = []
+    y1 = []
+    x2 = []
+    y2 = []
+    for row in pandas_loop(results):
+        if row['type'] == 'loss':
+            x1.append(row['_'])
+            y1.append(row['value'])
+        elif row['type'] == 'val_loss':
+            x2.append(row['_'])
+            y2.append(row['value'])
+            
+    plot_path = '{runspath}{name}_{experiment}/training.png'.format(runspath=runs_path, name=name, experiment=experiment)
+    multi_plot([x1,x2], [y1,y2], plot_path, xlabel='epochs', ylabel='loss', title='Training', legend=['loss', 'validation loss'])
+    
     results.to_csv('{runspath}{name}_{experiment}/results.csv'.format(runspath=runs_path, name=name, experiment=experiment))
 
     log('Cleaning up non-optimal weights...')

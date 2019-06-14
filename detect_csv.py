@@ -12,6 +12,7 @@ from math import floor, ceil
 from keras.applications.imagenet_utils import preprocess_input
 import subprocess
 from subprocess import PIPE
+import sys
 
 from video_imageio import get_model
 from folder import mkdir, datasets_path, runs_path
@@ -19,6 +20,8 @@ from util import parse_resolution, print_flush
 from apply_mask import Masker
 from classnames import get_classnames
 from ssd_utils import BBoxUtility
+
+python_path = sys.executable
 
 def next_multiple(a, b):
     """ Finds a number that is equal to or larger than a, divisble by b """
@@ -60,7 +63,7 @@ def run_detector(dataset, run, videopath, outname, input_shape, conf_thresh, bat
     for i_seq,seq in enumerate(seqs):
         print_flush("From frame {} to {}...".format(seq[0], seq[1]))
         
-        completed = subprocess.run(["python", "detect_csv_sub.py", 
+        completed = subprocess.run([python_path, "detect_csv_sub.py", 
                          "--dataset={}".format(dataset),
                          "--run={}".format(run),
                          "--input_shape={}".format(input_shape),
@@ -72,7 +75,7 @@ def run_detector(dataset, run, videopath, outname, input_shape, conf_thresh, bat
                          "--outname={}".format(outname),
                          "--batch_size={}".format(batch_size)], stdout=PIPE, stderr=PIPE)
         if not (completed.returncode == 0):
-            print_flush("ERROR: Subprocess crashed. Return code: {}".format(completed.returncode))
+            raise Exception("ERROR: Subprocess crashed. Return code: {}".format(completed.returncode))
         else:
             print_flush("Subprocess completed successfully")
         

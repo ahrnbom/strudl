@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Run this script with a parameter to provide a custom path to your data folder.
-DATAPATH=$PWD/../data/
+DATAPATH=$PWD/data/
 if [ $# == 1 ] 
 then
     DATAPATH=$1

@@ -16,6 +16,7 @@ import cv2
 from random import choice
 import subprocess
 import click
+import sys
 
 from jobman import JobManager
 from config import DatasetConfig, RunConfig
@@ -34,6 +35,7 @@ from compstatus import status
 from util import left_remove, right_remove
 
 jm = JobManager()
+python_path = sys.executable
 
 def get_progress(dataset_name, run_name):
     dataset_name = quote(dataset_name)
@@ -398,7 +400,7 @@ def post_import_videos_job(dataset_name, path, method, logs_path=None, minutes=0
     if dc.exists:
         resolution = dc.get('video_resolution')
         fps = dc.get('video_fps')
-        cmd = ["python", "import_videos.py",
+        cmd = [python_path, "import_videos.py",
                "--query={}".format(path),
                "--dataset={}".format(dataset_name),
                "--resolution={}".format(resolution),
@@ -427,7 +429,7 @@ def post_point_tracks_job(dataset_name, visualize, overwrite):
     dataset_name = quote(dataset_name)
     dc = DatasetConfig(dataset_name)
     if dc.exists:
-        cmd = ["python", "klt.py",
+        cmd = [python_path, "klt.py",
                "--cmd={}".format(cmd),
                "--dataset={}".format(dataset_name),
                "--imsize={}".format(dc.get('point_track_resolution')),
@@ -448,7 +450,7 @@ def post_prepare_annotations_job(dataset_name, less_night=True):
     dc = DatasetConfig(dataset_name)
     
     if dc.exists:
-        cmd = ["python", "annotation_preparation.py",
+        cmd = [python_path, "annotation_preparation.py",
                "--dataset={}".format(dataset_name),
                "--num_ims={}".format(dc.get('images_to_annotate')),
                "--ims_per_vid={}".format(dc.get('images_to_annotate_per_video')),
@@ -469,7 +471,7 @@ def post_prepare_extra_annotations_job(dataset_name, times, images_per_time, int
     assert(type(images_per_time) == int)
     assert(type(interval_length) == float)
     
-    cmd = ["python", "extra_annotations.py",
+    cmd = [python_path, "extra_annotations.py",
            "--dataset={}".format(dataset_name),
            "--times={}".format(times),
            "--images_per_time={}".format(images_per_time),
@@ -487,7 +489,7 @@ def post_autoannotate_job(dataset_name, import_datasets="", epochs=75, resolutio
     
     dc = DatasetConfig(dataset_name)
     if dc.exists:
-        cmd = ["python", "autoannotate.py",
+        cmd = [python_path, "autoannotate.py",
                "--dataset={}".format(dataset_name),
                "--input_shape={}".format(resolution),
                "--image_shape={}".format(dc.get('video_resolution')),
@@ -511,7 +513,7 @@ def post_train_detector_job(dataset_name, run_name, epochs, import_datasets=""):
     rc = RunConfig(dataset_name, run_name)
     dc = DatasetConfig(dataset_name)
     if rc.exists and dc.exists:
-        cmd = ["python", "training_script.py", 
+        cmd = [python_path, "training_script.py", 
         "--name={}".format(dataset_name), 
         "--experiment={}".format(run_name), 
         "--input_shape={}".format(rc.get('detector_resolution')), 
@@ -537,7 +539,7 @@ def post_detect_objects_job(dataset_name, run_name):
     run_name = quote(run_name)
     rc = RunConfig(dataset_name, run_name)
     if rc.exists:
-        cmd = ["python", "detect_csv.py",
+        cmd = [python_path, "detect_csv.py",
                "--dataset={}".format(dataset_name),
                "--run={}".format(run_name),
                "--res={}".format(rc.get("detector_resolution")),
@@ -558,7 +560,7 @@ def post_visualize_detections_job(dataset_name, run_name, confidence_threshold, 
     rc = RunConfig(dataset_name, run_name)
     dc = DatasetConfig(dataset_name)
     if rc.exists and dc.exists:
-        cmd = ["python", "visualize_detections.py",
+        cmd = [python_path, "visualize_detections.py",
                "--cmd=findvids",
                "--dataset={}".format(dataset_name),
                "--run={}".format(run_name),
@@ -580,7 +582,7 @@ def post_visualize_tracks_world_coordinates_job(dataset_name, run_name, videos):
     run_name = quote(run_name)
     videos = quote(videos)
     
-    cmd = ["python", "visualize_tracking.py",
+    cmd = [python_path, "visualize_tracking.py",
            "--dataset={}".format(dataset_name),
            "--run={}".format(run_name),
            "--videos={}".format(videos)]
@@ -597,7 +599,7 @@ def post_detections_to_world_coordinates_job(dataset_name, run_name, make_videos
     rc = RunConfig(dataset_name, run_name)
     dc = DatasetConfig(dataset_name)
     if rc.exists and dc.exists:
-        cmd = ["python", "detections_world.py",
+        cmd = [python_path, "detections_world.py",
                "--cmd=findvids",
                "--dataset={}".format(dataset_name),
                "--run={}".format(run_name),
@@ -633,7 +635,7 @@ def post_optimize_tracking_world_coordinates_job(csv_ground_truth_file, dataset_
             with open(csv_path, 'w') as f:
                 f.write(gt)
             
-            cmd = ["python", "tracking_world_optimization.py",
+            cmd = [python_path, "tracking_world_optimization.py",
                    "--dataset={}".format(dataset_name),
                    "--run={}".format(run_name),
                    "--date={}".format(date),
@@ -659,7 +661,7 @@ def post_tracking_world_coordinates_job(dataset_name, run_name, confidence_thres
     rc = RunConfig(dataset_name, run_name)
     dc = DatasetConfig(dataset_name)
     if rc.exists and dc.exists:
-        cmd = ["python", "tracking_world.py",
+        cmd = [python_path, "tracking_world.py",
                "--cmd=findvids",
                "--dataset={}".format(dataset_name),
                "--run={}".format(run_name),
@@ -680,7 +682,7 @@ def post_tracking_pixel_coordinates_job(dataset_name, run_name, confidence_thres
     rc = RunConfig(dataset_name, run_name)
     dc = DatasetConfig(dataset_name)
     if rc.exists and dc.exists:
-        cmd = ["python", "tracking.py",
+        cmd = [python_path, "tracking.py",
                "--cmd=findvids",
                "--dataset={}".format(dataset_name),
                "--run={}".format(run_name),
@@ -702,7 +704,7 @@ def post_all_tracks_as_zip_job(dataset_name, run_name, tracks_format, coords):
     dataset_name = quote(dataset_name)
     run_name = quote(run_name)
     
-    cmd = ["python", "tracks_formats.py",
+    cmd = [python_path, "tracks_formats.py",
            "--dataset={}".format(dataset_name),
            "--run={}".format(run_name),
            "--tf={}".format(tracks_format),
@@ -720,7 +722,7 @@ def post_summary_video_job(dataset_name, run_name, num_clips, clip_length):
     
     if (type(num_clips) == int) and (type(clip_length) == int):
     
-        cmd = ["python", "visualize_summary.py",
+        cmd = [python_path, "visualize_summary.py",
                "--dataset={}".format(dataset_name),
                "--run={}".format(run_name),
                "--n_clips={}".format(num_clips),

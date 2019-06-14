@@ -4,18 +4,19 @@ ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 RUN cat /etc/apt/sources.list | grep multiverse | sed 's/\# //g' >> /etc/apt/sources.list
 
-RUN apt-get update --fix-missing && apt-get install -y wget bzip2 ca-certificates \
+RUN apt-get update --fix-missing && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:stebbins/handbrake-releases && apt-get update && \
+    apt-get install -y wget bzip2 ca-certificates \
     libglib2.0-0 libxext6 libsm6 libxrender1 \
     libpng12-0 libgtk2.0 \
-    git mercurial subversion \
-    fonts-freefont-ttf fonts-ubuntu-font-family-console ttf-ubuntu-font-family edubuntu-fonts fonts-ubuntu-title fonts-liberation fonts-arkpandora \
-    font-manager cifs-utils vim && \
+    git \
+    python3-dev python3-pip python3-tk \
+    fonts-freefont-ttf fonts-ubuntu-font-family-console ttf-ubuntu-font-family \
+    edubuntu-fonts fonts-ubuntu-title fonts-liberation fonts-arkpandora \
+    font-manager cifs-utils ffmpeg \
+    handbrake-cli libavcodec-dev libavformat-dev libswscale-dev graphviz libxtst6 && \
     apt-get clean
-
-RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh -O /tmp/anaconda.sh && \
-    /bin/bash /tmp/anaconda.sh -b -p /opt/conda && \
-    rm /tmp/anaconda.sh
 
 RUN apt-get install -y curl grep sed dpkg && \
     TINI_VERSION=`curl https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` && \
@@ -24,33 +25,18 @@ RUN apt-get install -y curl grep sed dpkg && \
     rm tini.deb && \
     apt-get clean
 
-ENV PATH /opt/conda/bin:$PATH
-
-RUN conda upgrade anaconda && \
-    conda install seaborn bcolz && \
-    conda install -c menpo opencv3==3.2.0 && \
-    conda install -c conda-forge nb_conda_kernels
-
-RUN pip uninstall -y html5lib && pip install tensorflow-gpu==1.4.1 
+RUN pip3 install --upgrade pip && pip install tensorflow-gpu==1.4.1 && \
+    pip install -I numpy==1.14.3 && \
+    pip install click==6.6 pudb==2018.1 tqdm==4.26.0 imageio==2.3.0 \
+    line_profiler==2.1.2 dask==1.1.0 pydot==1.4.1 connexion==1.5.3 \
+    munkres==1.0.12 flask==1.0.2 opencv-contrib-python==3.2.0.8 pytest==4.6.3 \
+    pandas==0.23.4 psutil==5.2.2 scipy==0.19.0 matplotlib==2.0.2 h5py==2.7.0 \
+    jsonschema==2.6.0
     
 RUN cd / && git clone https://github.com/fchollet/keras.git && cd keras && git checkout 507374c8 && pip install . && cd .. && rm -r keras
 
-RUN pip install click==6.6 pudb==2018.1
-
-RUN apt-get update && apt-get install -y libavcodec-dev libavformat-dev libswscale-dev graphviz software-properties-common ffmpeg && \
-    apt-get clean
-
-#RUN mv /opt/conda/lib/libstdc++.so.6 /opt/conda/lib/libstdc++.so.6_bak && mv /opt/conda/lib/libgomp.so.1 /opt/conda/lib/libgomp.so.1_bak
-
-RUN pip install -I numpy==1.14.3 tqdm==4.26.0 imageio==2.3.0 line_profiler==2.1.2
-RUN echo 'alias prof="kernprof -l -v"' >> /etc/bashrc
-
-RUN pip install dask==1.1.0
-
-RUN pip install pydot==1.4.1 connexion==1.5.3  munkres==1.0.12 flask==1.0.2
-
-RUN add-apt-repository ppa:stebbins/handbrake-releases && apt-get update && apt-get install -y handbrake-cli && \
-    apt-get clean
+RUN echo 'alias prof="kernprof -l -v"' >> /etc/bash.bashrc
+RUN echo 'alias python="python3"' >> /etc/bash.bashrc
 
 ENV TF_CPP_MIN_LOG_LEVEL 2
 
@@ -67,4 +53,3 @@ ENV PYTHONPATH=/code
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
 CMD [ "python",  "server.py" ]
 
-RUN apt-get install -y libxtst6 && apt-get clean
