@@ -51,5 +51,5 @@ RUN mkdir /data
 
 ENV PYTHONPATH=/code
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
-CMD [ "python",  "server.py" ]
+CMD [ "python3",  "server.py" ]
 
