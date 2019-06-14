@@ -13,9 +13,9 @@ RUN apt-get update --fix-missing && apt-get install -y wget bzip2 ca-certificate
     apt-get clean
 
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh -O ~/anaconda.sh && \
-    /bin/bash ~/anaconda.sh -b -p /opt/conda && \
-    rm ~/anaconda.sh
+    wget --quiet https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh -O /tmp/anaconda.sh && \
+    /bin/bash /tmp/anaconda.sh -b -p /opt/conda && \
+    rm /tmp/anaconda.sh
 
 RUN apt-get install -y curl grep sed dpkg && \
     TINI_VERSION=`curl https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` && \
@@ -37,14 +37,13 @@ RUN cd / && git clone https://github.com/fchollet/keras.git && cd keras && git c
 
 RUN pip install click==6.6 pudb==2018.1
 
-RUN apt-get update && apt-get install -y libavcodec-dev libavformat-dev libswscale-dev graphviz software-properties-common && \
+RUN apt-get update && apt-get install -y libavcodec-dev libavformat-dev libswscale-dev graphviz software-properties-common ffmpeg && \
     apt-get clean
 
 #RUN mv /opt/conda/lib/libstdc++.so.6 /opt/conda/lib/libstdc++.so.6_bak && mv /opt/conda/lib/libgomp.so.1 /opt/conda/lib/libgomp.so.1_bak
 
 RUN pip install -I numpy==1.14.3 tqdm==4.26.0 imageio==2.3.0 line_profiler==2.1.2
-RUN echo "import imageio\nimageio.plugins.ffmpeg.download()" | python
-RUN echo 'alias prof="kernprof -l -v"' >> ~/.bashrc
+RUN echo 'alias prof="kernprof -l -v"' >> /etc/bashrc
 
 RUN pip install dask==1.1.0
 
@@ -62,11 +61,10 @@ COPY webui /code/webui
 COPY pdtv /code/pdtv
 COPY tests /code/tests
 COPY test_data /code/test_data
-RUN mkdir /code/data
+RUN mkdir /data
 
 ENV PYTHONPATH=/code
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
 CMD [ "python",  "server.py" ]
 
 RUN apt-get install -y libxtst6 && apt-get clean
-

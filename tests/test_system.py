@@ -14,7 +14,7 @@ client = make_app().app.test_client()
 def post_json(url, data):
     return client.post(url, data=json.dumps(data), content_type='application/json')
 
-def run_job(url, timeout=60):
+def run_job(url, timeout=120):
     r = client.post(url)
     assert r.status_code == 202
     jobid = r.json
@@ -143,7 +143,7 @@ class TestWorkflow:
         assert r.json == config
 
     def test_train(self):
-        res = run_job("/jobs/train_detector?dataset_name=test&run_name=testrun&epochs=5")
+        res = run_job("/jobs/train_detector?dataset_name=test&run_name=testrun&epochs=5", 600)
         assert res == 'success'
 
     def test_detect_objects(self):

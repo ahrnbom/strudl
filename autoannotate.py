@@ -26,7 +26,7 @@ from load_data import LoadDetections
 
 from apply_mask import Masker
 from util import parse_resolution, print_flush, pandas_loop
-from folder import runs_path, base_path, datasets_path
+from folder import runs_path, ssd_path, datasets_path
 
 from training_script import Generator, schedule, get_image_props, detections_add_ytrue
 
@@ -97,7 +97,7 @@ def autoannotate(dataset, import_datasets, input_shape, image_shape, batch_size,
 
     print_flush('Loading model...')
     model = SSD300((input_shape[1],input_shape[0],input_shape[2]), num_classes=num_classes)  
-    model.load_weights('{basepath}ssd/weights_SSD300.hdf5'.format(basepath=base_path), by_name=True)
+    model.load_weights(ssd_path+'weights_SSD300.hdf5', by_name=True)
     
     print_flush("Making priors...")    
     im_in = np.random.random((1,input_shape[1],input_shape[0],input_shape[2]))
