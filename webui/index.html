@@ -207,10 +207,13 @@ var get_activity = function() {
                 if ((d['result'] == 'queued') || (d['result'] == 'running')) {
                     var butt = document.createElement('button');
                     butt.innerHTML = "Cancel";
-                    butt.onclick = function() {
-                        rest_delete('/jobs/' + d['id'], function(err,data) {
+                    butt.monkey_patched_id = d['id']
+                    butt.onclick = function(e) {
+                        var id = e.target.monkey_patched_id;
+                        rest_delete('/jobs/' + id, function(err,data) {
                             if (err !== null) {
-                                set_info("Failed to delete " + d['id'] + ', result: ' + err + ', ' + data);
+                                set_info("Failed to delete " + id + ', result: ' + err + ', ' + data);
+                                get_activity();
                             } else {
                                 get_activity();
                             }
