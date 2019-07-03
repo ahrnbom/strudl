@@ -38,17 +38,21 @@ class Worker(threading.Thread):
             # server.py. As far as I know, there's no other problems related to this...
             # But it would be nice if there was some other way.
             e.wait(5) 
-                        
-            if self.jm.queue and self.jm.is_available():
-                job = self.jm.queue.pop(0)
+            
+            if self.jm.is_available():
+                job = None
+                with self.jm.queue_lock:     
+                    if self.jm.queue:
+                        job = self.jm.queue.pop(0)
                 
-                job_id, cmd, job_type = job
-                self.jm.actually_run(cmd, job_id, job_type)
+                if job is not None:
+                    job_id, cmd, job_type = job
+                    self.jm.actually_run(cmd, job_id, job_type)
                         
-
 class JobManager(object):
     current = None
     history = []
+    queue_lock = threading.RLock()
     queue = []
     worker = None
     
@@ -88,21 +92,25 @@ class JobManager(object):
             return True
             
         else:
-            to_remove = None
-            for q in self.queue:
-                if q[0] == job_id:
-                    to_remove = q
+            did_remove = False
+            with self.queue_lock:
+                to_remove = None
+                for q in self.queue:
+                    if q[0] == job_id:
+                        to_remove = q
+                        
+                if not (to_remove is None):
+                    self.queue.remove(to_remove)
+                    did_remove = True
                     
-            if not (to_remove is None):
-                self.queue.remove(to_remove)
-                return True
-                
-            return False
+            return did_remove
     
     def run(self, cmd, job_type=""):
         job_id = new_id(job_type)
         
-        self.queue.append( (job_id, cmd, job_type) )
+        with self.queue_lock:
+            self.queue.append( (job_id, cmd, job_type) )
+    
         self.start()
         
         return job_id
@@ -149,7 +157,9 @@ class JobManager(object):
                     
                 out.append({"id":job_id, "result":result})
             
-            queue_ids = [x[0] for x in self.queue]
+            with self.queue_lock:        
+                queue_ids = [x[0] for x in self.queue]
+                
             for queue_id in queue_ids:
                 out.append({"id":queue_id, "result":'queued'})
                 
@@ -160,7 +170,9 @@ class JobManager(object):
             job_ids = [x.split('/')[-1].strip('.log') for x in logs]
             job_ids.sort()
             
-            queue_ids = [x[0] for x in self.queue]
+            with self.queue_lock:
+                queue_ids = [x[0] for x in self.queue]
+                
             job_ids.extend(queue_ids)
             
             return job_ids
@@ -170,7 +182,9 @@ class JobManager(object):
             else:
                 return []
         elif job_type == 'queued':
-            return [x[0] for x in self.queue]
+            with self.queue_lock:
+                queued = [x[0] for x in self.queue]
+            return queued
         else:
             raise(ValueError())
     
