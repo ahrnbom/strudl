@@ -9,9 +9,6 @@ import imageio as io
 from itertools import count
 from time import monotonic as time
 import math
-
-import sys
-from glob import glob
 import pickle
 import click
 
@@ -166,12 +163,6 @@ def klt_save(vidpath, datpath, imsize, mask, outvidpath=None):
     print_flush("Saving...")
     save(tracks, datpath)
     
-#    with open(csvpath, 'w') as f:
-#        f.write("id,frame_number,x,y\n")
-#        for i, tr in enumerate(tracks):
-#            for t, x, y, _ in tr:
-#                f.write("{},{},{:.2f},{:.2f}\n".format(i, t, x, y))
-
 @click.command()
 @click.option("--cmd", default="findvids", help="Which command to run, either 'findvids' to search for videos, 'continue' to keep running a cancelled run")
 @click.option("--dataset", default="sweden2", help="Which dataset to run on")
@@ -183,21 +174,23 @@ def main(cmd, dataset, imsize, visualize):
     mask = Masker(dataset)
     
     if cmd == "findvids" or cmd=="continue":
-        vidfolder = "{}{}/videos/".format(datasets_path, dataset)
-        kltfolder = "{}{}/klt/".format(datasets_path, dataset)
+        vidfolder = datasets_path / dataset / "videos"
+        kltfolder = datasets_path / dataset / "klt"
         mkdir(kltfolder)
         
-        allvids = sorted(glob(vidfolder + "*.mkv"))
+        allvids = list(vidfolder.glob('*.mkv'))
+        allvids.sort()
         
         if cmd == "continue":
-            existing = sorted(glob(kltfolder + "*.pklz"))
-            existing = [right_remove(x.split('/')[-1], '.pklz') for x in existing]
-            allvids = [x for x in allvids if not right_remove(x.split('/')[-1], '.mkv') in existing]
+            existing = list(kltfolder.glob('*.pklz'))
+            existing.sort()
+            existing = [x.stem for x in existing]
+            allvids = [x for x in allvids if not x.stem in existing]
             
         for vidpath in allvids:
-            datpath = kltfolder + vidpath.split('/')[-1].replace('.mkv', '.pklz')
+            datpath = kltfolder / (vidpath.stem+'.pklz')
             if visualize:
-                outvidpath = datpath.replace('.pklz', '_klt.mp4')
+                outvidpath = datpath.with_name(datpath.stem + '_klt.mp4')
                 print_flush("{}   ->   {} & {}".format(vidpath, datpath, outvidpath))
             else:
                 outvidpath = None

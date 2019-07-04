@@ -2,12 +2,10 @@
 
 import click
 from random import random, shuffle
-from glob import glob
 import imageio as iio
 import numpy as np
 from scipy.misc import imsave
 from datetime import datetime
-from os.path import isfile
 
 from folder import mkdir, datasets_path
 from timestamps import Timestamps
@@ -48,18 +46,18 @@ def main(dataset, times, images_per_time, interval):
         if vid_name is None:
             raise(ValueError("This timestamp was incorrect: {} Could it be before the first video?".format(timestring)))
         
-        video_path = "{dsp}{ds}/videos/{v}.mkv".format(dsp=datasets_path, ds=dataset, v=vid_name)
+        video_path = datasets_path / dataset / "videos" / (vid_name+'.mkv')
         
-        annot_folder = "{dsp}{ds}/objects/train/{v}/".format(dsp=datasets_path, ds=dataset, v=vid_name)
-        log_path = annot_folder + 'frames.log'
-        if not isfile(log_path):
-            with open(log_path, 'w') as f:
+        annot_folder = datasets_path / dataset / "objects" / "train" / vid_name
+        log_path = annot_folder / 'frames.log'
+        if not log_path.is_file():
+            with log_path.open('w') as f:
                 f.write("{}.mkv\n".format(vid_name))
         
         # See which frames were already annotated, to start at the right index
-        already_ims = glob(annot_folder + '*.jpg')
+        already_ims = list(annot_folder.glob('*.jpg'))
         if already_ims:
-            already_nums = [int(right_remove(x.split('/')[-1], '.jpg')) for x in already_ims]
+            already_nums = [int(x.stem) for x in already_ims]
             i = max(already_nums) + 1
         else:
             i = 1
@@ -85,7 +83,7 @@ def main(dataset, times, images_per_time, interval):
                     
                     log.write("{} ".format(frame_num))
                     
-                    impath = annot_folder + "{}.jpg".format(i)
+                    impath = annot_folder / "{}.jpg".format(i)
                     imsave(impath, frame)
                     
                     i += 1

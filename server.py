@@ -9,8 +9,8 @@ import connexion
 from connexion import NoContent
 from shlex import quote
 from flask import send_from_directory, send_file
-from glob import glob, iglob
-from os.path import isdir, isfile
+from glob import glob
+from pathlib import Path
 import os
 import cv2
 from random import choice
@@ -41,48 +41,48 @@ def get_progress(dataset_name, run_name):
     dataset_name = quote(dataset_name)
     run_name = quote(run_name)
     
-    ds_path = "{dsp}{ds}/".format(dsp=datasets_path, ds=dataset_name)
+    ds_path = datasets_path / dataset_name
     
-    if isdir(ds_path):
+    if ds_path.is_dir():
         progress = dict()
         
-        progress['has_config'] = isfile(ds_path + 'config.txt')
+        progress['has_config'] = (ds_path / 'config.txt').is_file()
         if progress['has_config']: 
             dc = DatasetConfig(dataset_name)
             
-        progress['has_mask'] = isfile(ds_path + 'mask.png')
-        progress['has_classnames'] = isfile(ds_path + 'classes.txt')
-        progress['has_calibration'] = isfile(ds_path + 'calib.tacal')
+        progress['has_mask'] = (ds_path / 'mask.png').is_file()
+        progress['has_classnames'] = (ds_path / 'classes.txt').is_file()
+        progress['has_calibration'] = (ds_path / 'calib.tacal').is_file()
         
-        progress['number_of_timestamp_logs'] = len(glob(ds_path + 'logs/*.log'))
-        progress['number_of_videos'] = len(glob(ds_path + 'videos/*.mkv'))
-        progress['training_frames_to_annotate'] = len(glob(ds_path + 'objects/train/*/*.jpg'))
-        progress['training_frames_annotated'] = len(glob(ds_path + 'objects/train/*/*.txt'))
+        progress['number_of_timestamp_logs'] = len(list( (ds_path / "logs").glob('*.log') ))
+        progress['number_of_videos'] = len(list((ds_path / 'videos').glob('*.mkv')))
+        progress['training_frames_to_annotate'] = len(list( (ds_path / "objects" / "train").glob('*/*.jpg') ))
+        progress['training_frames_annotated'] = len(list( (ds_path / "objects" / "train").glob('*/*.txt') ))
         
-        progress['videos_with_point_tracks_computed'] = len(glob(ds_path + 'klt/*.pklz'))
-        progress['videos_with_point_tracks_visualized'] = len(glob(ds_path + 'klt/*.mp4'))
+        progress['videos_with_point_tracks_computed'] = len(list( (ds_path / "klt").glob('*.pklz') ))
+        progress['videos_with_point_tracks_visualized'] = len(list( (ds_path / "klt").glob('*.mp4') ))
         
-        progress['all_runs'] = [x.split('/')[-1].split('_')[-1] for x in glob("{rp}{ds}_*".format(rp=runs_path, ds=dataset_name))]
+        progress['all_runs'] = [x.stem.split('_')[-1] for x in runs_path.glob(dataset_name + '_*')]
         
-        run_path = "{rp}{ds}_{rn}/".format(rp=runs_path, ds=dataset_name, rn=run_name)
-        if isdir(run_path):
+        run_path = runs_path / (dataset_name + '_' + run_name)
+        if run_path.is_dir():
             progress['has_this_run'] = True
             
             rprogress = dict()
-            rprogress['has_pretrained_weights'] = isfile(ssd_path + '/weights_SSD300.hdf5')
-            rprogress['videos_with_detected_objects'] = len(glob(run_path + 'csv/*.csv'))
-            rprogress['videos_with_detected_objects_visualized'] = len(glob(run_path + 'detections/*.mp4'))
-            rprogress['videos_with_detected_objects_in_world_coordinates'] = len(glob(run_path + 'detections_world/*.csv'))
-            rprogress['videos_with_detected_objects_in_world_coordinates_visualized'] = len(glob(run_path + 'detections_world/*.mp4'))
-            rprogress['stored_weight_files'] = len(glob(run_path + 'checkpoints/*.hdf5'))
-            rprogress['videos_with_pixel_coordinate_tracks'] = len(glob(run_path + 'tracks/*.pklz'))
-            rprogress['videos_with_pixel_coordinate_tracks_visualized'] = len(glob(run_path + 'tracks/*.mp4'))
-            rprogress['videos_with_world_coordinate_tracks'] = len(glob(run_path + 'tracks_world/*.pklz'))
-            rprogress['videos_with_world_coordinate_tracks_visualized'] = len(glob(run_path + 'tracks_world/*.mp4'))
-            rprogress['has_optimized_world_tracking'] = isfile(run_path + 'world_tracking_optimization.pklz')
-            rprogress['has_visualized_optimized_world_tracking'] = isfile(run_path + 'world_tracking_optimization.mp4')
-            rprogress['has_world_tracking_ground_truth'] = isfile(run_path + 'world_trajectory_gt.csv')
-            rprogress['track_zips'] = [x.split('/')[-1] for x in glob(run_path + 'track_zips/*.zip')]
+            rprogress['has_pretrained_weights'] = (ssd_path / 'weights_SSD300.hdf5').is_file()
+            rprogress['videos_with_detected_objects'] = len(list( run_path.glob('csv/*.csv') ))
+            rprogress['videos_with_detected_objects_visualized'] = len(list(run_path.glob('detections/*.mp4')))
+            rprogress['videos_with_detected_objects_in_world_coordinates'] = len(list(run_path.glob('detections_world/*.csv')))
+            rprogress['videos_with_detected_objects_in_world_coordinates_visualized'] = len(list(run_path.glob('detections_world/*.mp4')))
+            rprogress['stored_weight_files'] = len(list(run_path.glob('checkpoints/*.hdf5')))
+            rprogress['videos_with_pixel_coordinate_tracks'] = len(list(run_path.glob('tracks/*.pklz')))
+            rprogress['videos_with_pixel_coordinate_tracks_visualized'] = len(list(run_path.glob('tracks/*.mp4')))
+            rprogress['videos_with_world_coordinate_tracks'] = len(list(run_path.glob('tracks_world/*.pklz')))
+            rprogress['videos_with_world_coordinate_tracks_visualized'] = len(list(run_path.glob('tracks_world/*.mp4')))
+            rprogress['has_optimized_world_tracking'] = (run_path / 'world_tracking_optimization.pklz').is_file()
+            rprogress['has_visualized_optimized_world_tracking'] = (run_path / 'world_tracking_optimization.mp4').is_file()
+            rprogress['has_world_tracking_ground_truth'] = (run_path / 'world_trajectory_gt.csv').is_file()
+            rprogress['track_zips'] = [x.name for x in run_path.glob('track_zips/*.zip')]
             
             all_progress = {'dataset': progress, 'run': rprogress}
         else:
@@ -159,7 +159,7 @@ def get_annotation(dataset_name, image_number, video_name, annotation_set, suffi
         if impath is None:
             return (NoContent, 404)
         else:
-            return send_file(impath, mimetype=mime)
+            return send_file(str(impath), mimetype=mime)
     else:
         return impath
 
@@ -169,28 +169,27 @@ def get_annotation_slideshow(dataset_name):
     
     if dc.exists:
         imsize = dc.get('video_resolution')
-        outpath = "{dsp}{dn}/slideshow.mp4".format(dsp=datasets_path, dn=dataset_name)
+        outpath = datasets_path / dataset_name / "slideshow.mp4"
         res = slideshow(dataset_name, outpath)
         
         if not res:
             return ("Failed to make slideshow", 404)
         else:
-            vid = send_file(outpath, mimetype='video/mp4')
+            vid = send_file(str(outpath), mimetype='video/mp4')
             return (vid, 200)
     else:
         return ("Dataset does not exist", 404)
     
-
 def post_annotation_annotation(dataset_name, image_number, video_name, annotation_set, annotation_text):
     dataset_name, video_name, annotation_set = map(quote, (dataset_name, video_name, annotation_set))
 
     annotation_text = annotation_text.decode('utf-8')
     if validate_annotation(annotation_text, dataset_name):   
-        folder_path = "{dsp}{dn}/objects/{ans}/{vn}/".format(dsp=datasets_path, dn=dataset_name, vn=video_name, ans=annotation_set)
-        if isdir(folder_path):
-            file_path = "{fp}{imnum}.txt".format(fp=folder_path, imnum=image_number)
+        folder_path = datasets_path / dataset_name / "objects" / annotation_set / video_name
+        if folder_path.is_dir():
+            file_path = folder_path / "{}.txt".format(image_number)
         
-            with open(file_path, 'w') as f:
+            with file_path.open('w') as f:
                 f.write(annotation_text)
         
             return (NoContent, 200)
@@ -215,9 +214,9 @@ def post_dataset(dataset_name, class_names, class_heights):
         return ("Spaces are not allowed in dataset names!", 500)
         
     dataset_name = quote(dataset_name)
-    path = "{}{}/".format(datasets_path, dataset_name)
+    path = datasets_path / dataset_name
     mkdir(path)
-    mkdir(path + 'videos')
+    mkdir(path / 'videos')
 
     class_names = [quote(x.lower()) for x in class_names.split(',')]
     class_heights = map(float, class_heights.split(','))
@@ -227,8 +226,7 @@ def post_dataset(dataset_name, class_names, class_heights):
     return (NoContent, 200)
     
 def get_datasets():
-    datasets = glob("{}*".format(datasets_path))
-    datasets = [x.split('/')[-1] for x in datasets if isdir(x)]
+    datasets = [x.name for x in datasets_path.glob('*') if x.is_dir()]
     datasets.sort()
     return (datasets, 200)
 
@@ -262,6 +260,9 @@ def post_run_config(dataset_name, run_name, run_config):
     if ' ' in run_name:
         return ("Spaces are not allowed in run names!", 500)
 
+    if '_' in run_name:
+        return ("Underscores are not allowed in run names!", 500)
+
     dataset_name = quote(dataset_name)
     run_name = quote(run_name)
     rc = RunConfig(dataset_name, run_name)
@@ -272,53 +273,53 @@ def post_run_config(dataset_name, run_name, run_config):
         return ("Could not interpret run configuration. Is some required parameter missing?", 500)
 
 def get_pretrained_weights():
-    path = ssd_path + '/weights_SSD300.hdf5'
-    if os.path.exists(path):
+    path = ssd_path / 'weights_SSD300.hdf5'
+    if path.is_file():
         return ("Already present", 200)
     else:
         url = 'https://github.com/hakanardo/weights/raw/d2243707493e2e5f94c465b6248558ee16c90be6/weights_SSD300.hdf5'
-        os.makedirs(ssd_path, exist_ok=True)
+        mkdir(ssd_path)
         os.system("wget -O %s '%s'" % (path, url))
-    if not os.path.exists(path):
+    if not path.is_file():
         return ("Download failed", 500)
     if validate_pretrained_md5(path):
         return ("Downloaded", 200)
     else:
-        os.remove(path)
+        path.unlink()
         return ("File rejected", 500)
 
 def post_pretrained_weights(weights_file):
-    path = ssd_path + '/weights_SSD300.hdf5'
-    weights_file.save(path)
+    path = ssd_path / 'weights_SSD300.hdf5'
+    weights_file.save(str(path))
     if validate_pretrained_md5(path):
         return (NoContent, 200)
     else:
-        os.remove(path)
+        path.unlink()
         return ("File rejected", 400)
     
 def post_mask(dataset_name, mask_image_file):
     dataset_name = quote(dataset_name)
-    mask_tmp_path = "{}{}/mask_tmp.png".format(datasets_path, dataset_name)
-    mask_path = "{}{}/mask.png".format(datasets_path, dataset_name)
-    mask_image_file.save(mask_tmp_path)
+    mask_tmp_path = datasets_path / dataset_name / "mask_tmp.png"
+    mask_path = datasets_path / dataset_name / "mask.png"
+    mask_image_file.save(str(mask_tmp_path))
     
     success = False
     try:
         # This is not really safe, but at least should protect from some completely broken image files
-        im = cv2.imread(mask_tmp_path, -1)
+        im = cv2.imread(str(mask_tmp_path), -1)
         assert(im.shape[2] == 4)
-        cv2.imwrite(mask_path, im)
+        cv2.imwrite(str(mask_path), im)
         success = True
     except:
         success = False
         
-    os.remove(mask_tmp_path)
+    mask_tmp_path.unlink()
     
     if success:
         return (NoContent, 200)
     else:
         try:
-            os.remove(mask_path)
+            mask_path.unlink()
         except:
             pass
             
@@ -326,9 +327,9 @@ def post_mask(dataset_name, mask_image_file):
     
 def get_mask(dataset_name):
     dataset_name = quote(dataset_name)
-    mask_path = "{}{}/mask.png".format(datasets_path, dataset_name)
-    if isfile(mask_path):
-        mask_file = send_file(mask_path, mimetype='image/png')
+    mask_path = datasets_path / dataset_name / "mask.png"
+    if mask_path.is_file():
+        mask_file = send_file(str(mask_path), mimetype='image/png')
         return (mask_file, 200)
     else:
         return (NoContent, 404)
@@ -387,6 +388,8 @@ def delete_job_by_id(job_id):
     
     
 def post_import_videos_job(dataset_name, path, method, logs_path=None, minutes=0):
+    # The paths in this function are just strings, not Path objects
+    
     dataset_name = quote(dataset_name)
 
     if logs_path is None:
@@ -517,7 +520,7 @@ def post_train_detector_job(dataset_name, run_name, epochs, import_datasets=""):
         "--name={}".format(dataset_name), 
         "--experiment={}".format(run_name), 
         "--input_shape={}".format(rc.get('detector_resolution')), 
-        "--train_data_dir=fjlfbwjefrlbwelrfb", 
+        "--train_data_dir=fjlfbwjefrlbwelrfb_man_we_need_a_better_detector_codebase", 
         "--batch_size={}".format(rc.get('detection_training_batch_size')), 
         "--image_shape={}".format(dc.get('video_resolution')),
         "--epochs={}".format(epochs)]
@@ -624,15 +627,15 @@ def post_optimize_tracking_world_coordinates_job(csv_ground_truth_file, dataset_
     rc = RunConfig(dataset_name, run_name)
     dc = DatasetConfig(dataset_name)
     if rc.exists and dc.exists:
-        this_run_path = "{rp}{dn}_{rn}/".format(rp=runs_path, dn=dataset_name, rn=run_name)
-        csv_path = "{trp}world_trajectory_gt.csv".format(trp=this_run_path)
+        this_run_path = runs_path / "{dn}_{rn}".format(dn=dataset_name, rn=run_name)
+        csv_path = this_run_path / "world_trajectory_gt.csv"
         
         try:
             gt = csv_ground_truth_file.decode('utf-8')
         except:
             return ("Could not parse .csv file as UTF-8", 400)
         else:
-            with open(csv_path, 'w') as f:
+            with csv_path.open('w') as f:
                 f.write(gt)
             
             cmd = [python_path, "tracking_world_optimization.py",
@@ -736,31 +739,32 @@ def post_summary_video_job(dataset_name, run_name, num_clips, clip_length):
     else:
         return (NoContent, 500)
 
-def get_visualization_list(dataset_name, run_name, visualization_type):
+def get_visualization_list(dataset_name, run_name, visualization_type):   
     dataset_name = quote(dataset_name)
     run_name = quote(run_name)
-    this_run_path = "{rp}{dn}_{rn}/".format(rp=runs_path, dn=dataset_name, rn=run_name)
+    this_run_path = runs_path / "{dn}_{rn}".format(dn=dataset_name, rn=run_name)
     
     if visualization_type == "summary":
-        video_path = "{trp}summary.mp4".format(trp=this_run_path)
+        videos = [this_run_path / "summary.mp4"]
     elif visualization_type == "detections_pixels":
-        video_path = "{trp}detections/*.mp4".format(trp=this_run_path)
+        videos = (this_run_path / "detections").glob('*.mp4')
     elif visualization_type == "detections_world":
-        video_path = "{trp}detections_world/*.mp4".format(trp=this_run_path)
+        videos = (this_run_path / "detections_world").glob('*.mp4')
     elif visualization_type == "tracks_pixels":
-        video_path = "{trp}tracks/*_tracks.mp4".format(trp=this_run_path)
+        videos = (this_run_path / "tracks").glob('*_tracks.mp4')
     elif visualization_type == "point_tracks":
-        video_path = "{dsp}{dn}/klt/*_klt.mp4".format(dsp=datasets_path, dn=dataset_name)
+        videos = (datasets_path / dataset_name / "klt").glob('*_klt.mp4')
     elif visualization_type == "world_tracking_optimization":
-        video_path = "{trp}world_tracking_optimization.mp4".format(trp=this_run_path)
+        videos = [this_run_path / "world_tracking_optimization.mp4"]
     elif visualization_type == "tracks_world":
-        video_path = "{trp}tracks_world/*_tracks.mp4".format(trp=this_run_path)
+        videos = (this_run_path / "tracks_world").glob("*_tracks.mp4")
     else:
         return (NoContent, 500)
     
-    videos = glob(video_path)
+    videos = list(videos)
+    videos = [x for x in videos if x.is_file()]
     videos.sort()
-    videos = [x.split('/')[-1][:-4] for x in videos]
+    videos = [x.stem for x in videos]
     
     to_remove = ['_tracks', '_klt']
     for i,v in enumerate(videos):
@@ -768,33 +772,32 @@ def get_visualization_list(dataset_name, run_name, visualization_type):
             if v.endswith(tr):
                 videos[i] = v[:-len(tr)]
     
-    
     return (videos, 200)
 
 def get_visualization(dataset_name, run_name, visualization_type, video_name):
     dataset_name = quote(dataset_name)
     run_name = quote(run_name)
     video_name = quote(video_name)
-    this_run_path = "{rp}{dn}_{rn}/".format(rp=runs_path, dn=dataset_name, rn=run_name)
+    this_run_path = runs_path / "{dn}_{rn}".format(dn=dataset_name, rn=run_name)
     if visualization_type == "summary":
-        video_path = "{trp}summary.mp4".format(trp=this_run_path)
+        video_path = this_run_path / "summary.mp4"
     elif visualization_type == "detections_pixels":
-        video_path = "{trp}detections/{vn}.mp4".format(trp=this_run_path, vn=video_name)
+        video_path = this_run_path / "detections" / (video_name + '.mp4')
     elif visualization_type == "detections_world":
-        video_path = "{trp}detections_world/{vn}.mp4".format(trp=this_run_path, vn=video_name)
+        video_path = this_run_path / "detections_world" / (video_name + '.mp4')
     elif visualization_type == "tracks_pixels":
-        video_path = "{trp}tracks/{vn}_tracks.mp4".format(trp=this_run_path, vn=video_name)
+        video_path = this_run_path / "tracks" / (video_name + '_tracks.mp4')
     elif visualization_type == "point_tracks":
-        video_path = "{dsp}{dn}/klt/{vn}_klt.mp4".format(dsp=datasets_path, dn=dataset_name, vn=video_name)
+        video_path = datasets_path / dataset_name / "klt" / (video_name + '_klt.mp4')
     elif visualization_type == "world_tracking_optimization":
-        video_path = "{trp}world_tracking_optimization.mp4".format(trp=this_run_path)
+        video_path = this_run_path / "world_tracking_optimization.mp4"
     elif visualization_type == "tracks_world":
-        video_path = "{trp}tracks_world/{vn}_tracks.mp4".format(trp=this_run_path, vn=video_name)
+        video_path = this_run_path / "tracks_world" / "{vn}_tracks.mp4".format(vn=video_name)
     else:
         return (NoContent, 500)
         
-    if isfile(video_path):
-        video_file = send_file(video_path, mimetype='video/mp4')
+    if video_path.is_file():
+        video_file = send_file(str(video_path), mimetype='video/mp4')
         return (video_file, 200)
     else:
         return (NoContent, 404)
@@ -817,13 +820,13 @@ def get_tracks(dataset_name, run_name, video_name, tracks_format, coords):
         
 def get_all_tracks(dataset_name, run_name, tracks_format, coords):
     dataset_name, run_name = map(quote, (dataset_name, run_name))
-    zip_path = "{rp}{dn}_{rn}/track_zips/{tf}.zip".format(rp=runs_path, dn=dataset_name, rn=run_name, tf=tracks_format)    
+    zip_path = runs_path / "{}_{}".format(dataset_name, run_name) / "track_zips" / (tracks_format+'.zip')
     
     if coords == 'world':
-        zip_path = zip_path.replace('.zip', '_world.zip')
+        zip_path = zip_path.with_name(zip_path.stem + '_world.zip')
     
-    if isfile(zip_path):
-        return (send_file(zip_path, mimetype='application/zip'), 200)
+    if zip_path.is_file():
+        return (send_file(str(zip_path), mimetype='application/zip'), 200)
     else:
         return (NoContent, 500)
 
@@ -834,24 +837,23 @@ def get_track_zip_list(dataset_name, run_name):
     
     for coords in ['pixels','world']:
         for tracks_format in all_track_formats:
-            zip_path = "{rp}{dn}_{rn}/track_zips/{tf}.zip".format(rp=runs_path, dn=dataset_name, rn=run_name, tf=tracks_format)
+            zip_path = runs_path / "{}_{}".format(dataset_name, run_name) / "track_zips" / (tracks_format+'.zip')
             if coords == 'world':
-                zip_path = zip_path.replace('.zip', '_world.zip')
+                zip_path = zip_path.with_name(zip_path.stem + '_world.zip')
             
-            if isfile(zip_path):
+            if zip_path.is_file():
                 found.append({'coords':coords, 'tracks_format':tracks_format})
     
     return (found, 200)
-    
 
 def get_list_of_runs(dataset_name):
     dataset_name = quote(dataset_name)
     
-    runs = glob("{rp}{dn}_*".format(rp=runs_path, dn=dataset_name))
+    runs = list(runs_path.glob(dataset_name + '_*'))
     runs.sort()
     
-    # Run names and dataset names can contain underscore characters (which is kinda dumb, but whatever)
-    runs = [left_remove(x.split('/')[-1], dataset_name + '_') for x in runs]
+    # Run names and dataset names shouldn't contain underscore characters, but just in case
+    runs = [left_remove(x.name, dataset_name + '_') for x in runs]
     
     if runs:
         return (runs, 200)
@@ -861,9 +863,8 @@ def get_list_of_runs(dataset_name):
 def get_list_of_videos(dataset_name):
     dataset_name = quote(dataset_name)
     
-    vids = glob("{dsp}{dn}/videos/*.mkv".format(dsp=datasets_path, dn=dataset_name))
+    vids = [x.stem for x in (datasets_path / dataset_name / "videos").glob('*.mkv')]
     vids.sort()
-    vids = [right_remove(x.split('/')[-1], '.mkv') for x in vids]
     
     if vids:
         return (vids, 200)
@@ -872,21 +873,21 @@ def get_list_of_videos(dataset_name):
         
 def post_world_tracking_config(dataset_name, run_name, world_tracking_config):
     dataset_name, run_name = map(quote, (dataset_name, run_name))
-    path = "{rp}{dn}_{r}/world_tracking_optimization.pklz".format(rp=runs_path, dn=dataset_name, r=run_name)
+    path = runs_path / "{}_{}".format(dataset_name, run_name) / "world_tracking_optimization.pklz"
     
     try:   
         wtc = WorldTrackingConfig(world_tracking_config)
     except ValueError:
         return (NoContent, 400)
     else:
-        save(wtc, path)
+        save(wtc, str(path))
         return (NoContent, 200)
     
 def get_world_tracking_config(dataset_name, run_name):
     dataset_name, run_name = map(quote, (dataset_name, run_name))
-    path = "{rp}{dn}_{r}/world_tracking_optimization.pklz".format(rp=runs_path, dn=dataset_name, r=run_name)
+    path = runs_path / "{}_{}".format(dataset_name, run_name) / "world_tracking_optimization.pklz"
 
-    if isfile(path):
+    if path.is_file():
         wtc = load(path)
         return (wtc.get_dict(), 200)
     else:
@@ -894,11 +895,10 @@ def get_world_tracking_config(dataset_name, run_name):
         
 def get_world_calibration(dataset_name):
     dataset_name = quote(dataset_name)
-    path = "{dsp}{ds}/calib.tacal".format(dsp=datasets_path, ds=dataset_name)
+    path = datasets_path / dataset_name / "calib.tacal"
 
-    if isfile(path):
-        with open(path, 'r') as f:
-            content = f.read()
+    if path.is_file():
+        content = path.read_text()
         
         return (content, 200)
     else:
@@ -907,7 +907,7 @@ def get_world_calibration(dataset_name):
 
 def post_world_calibration(dataset_name, calib_text):
     dataset_name = quote(dataset_name)
-    path = "{dsp}{ds}/calib.tacal".format(dsp=datasets_path, ds=dataset_name)
+    path = datasets_path / dataset_name / "calib.tacal"
     
     try:
         calib_text = calib_text.decode('utf-8')
@@ -917,7 +917,7 @@ def post_world_calibration(dataset_name, calib_text):
     
         if validate_calibration(calib_text):
             
-            with open(path, 'w') as f:
+            with path.open('w') as f:
                 f.write(calib_text)
             
             return (NoContent, 200)
@@ -927,14 +927,15 @@ def post_world_calibration(dataset_name, calib_text):
 def post_world_map(dataset_name, map_image, parameter_file):
     if map_image.content_type != 'image/png':
         return ("Map image has to be in png format.", 400)
-    path = "{dsp}{ds}/map.png".format(dsp=datasets_path, ds=dataset_name)
-    map_image.save(path)
-    path = "{dsp}{ds}/map.tamap".format(dsp=datasets_path, ds=dataset_name)
-    parameter_file.save(path)
+    path = datasets_path / dataset_name / "map.png"
+    map_image.save(str(path))
+    path = datasets_path / dataset_name / "map.tamap"
+    parameter_file.save(str(path))
 
 def get_usb():
-    if isdir('/usb/'):
-        gen = iglob('/usb/**',recursive=True)
+    usb = Path('/usb/')
+    if usb.is_dir():
+        gen = usb.glob('**')
         files = []
         
         for filepath in gen:
@@ -958,8 +959,8 @@ def make_app():
 @click.command()
 @click.option("--port", default=80, help="Port number. Note that if this is changed and run from within docker, the docker run command needs to be changed to forward the correct port.")
 def main(port):
+
     # Allows the host computer to remain responsive even while long-running and heavy processes are started by server
-    import os
     os.nice(10) # nice :)
     
     # Start server based on YAML specification

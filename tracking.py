@@ -477,21 +477,20 @@ def remove_short_tracks(tracks, minimum):
 def main(cmd, dataset, run, vidres, ssdres, kltres, conf, make_videos):
     from storage import load, save
     from folder import datasets_path, runs_path
+    from pathlib import Path
+    from folder import mkdir
     
     mask = Masker(dataset)
-    #v = '20170516_163607_4C86'
-    #v = '20170516_121024_A586'
     
     if cmd == "findvids":
-        from glob import glob
-        vidnames = glob('{}{}/videos/*.mkv'.format(datasets_path, dataset))
-        vidnames = [right_remove(x.split('/')[-1], '.mkv') for x in vidnames]
+        vidnames = (datasets_path / dataset / "videos").glob('*.mkv')
+        vidnames = [x.stem for x in vidnames]
         vidnames.sort()
         
-        outfolder = '{}{}_{}/tracks/'.format(runs_path, dataset, run)
+        outfolder = runs_path / '{}_{}'.format(dataset,run) /  'tracks'
     else:
         vidnames = [cmd]
-        outfolder = './'
+        outfolder = Path('./')
     
     vidres = parse_resolution(vidres)
     ssdres = parse_resolution(ssdres)
@@ -504,30 +503,30 @@ def main(cmd, dataset, run, vidres, ssdres, kltres, conf, make_videos):
     
     c = Config(vidres, kltres, conf)
     
-    from folder import mkdir
     mkdir(outfolder)
     
-    for v in vidnames:    
-        detections = pd.read_csv('{}{}_{}/csv/{}.csv'.format(runs_path, dataset, run, v))
+    for v in vidnames:   
+        det_path = runs_path / "{}_{}".format(dataset,run) / "csv" / (v+'.csv')
+        detections = pd.read_csv(det_path)
         for dim, factor in zip(det_dims, det_factors):
             detections[dim] = round(detections[dim]*factor).astype(int)
             
-        klt = load('{}{}/klt/{}.pklz'.format(datasets_path, dataset, v))
+        klt = load(datasets_path / dataset / "klt" / (v+'.pklz'))
         klt, klt_frames = convert_klt(klt, c)
         
         tracks = []
         if len(detections)>0:
             tracks = build_tracks(detections, klt, klt_frames, c)
             print_flush("{}  tracks done".format(v))
-            save(tracks, '{}{}_tracks.pklz'.format(outfolder, v))
+            save(tracks, outfolder / '{}_tracks.pklz'.format(v))
         else:
             print_flush("{}  skipping tracking, because there were no detections".format(v))
         
         if make_videos:
             if tracks:
                 from visualize_tracking import render_video
-                vidpath = "{}{}/videos/{}.mkv".format(datasets_path, dataset, v)
-                render_video(tracks, vidpath, "{}{}_tracks.mp4".format(outfolder, v), mask=mask)
+                vidpath = datasets_path / dataset / "videos" / (v+'.mkv')
+                render_video(tracks, vidpath, outfolder / (v+"_tracks.mp4"), mask=mask)
                 print_flush("{}  video done".format(v))
             else:
                 print_flush("{}  skipping video rendering, because there were no tracks".format(v))

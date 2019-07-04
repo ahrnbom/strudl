@@ -8,11 +8,11 @@ import gzip
 import pickle
 
 def save(data, path):
-    with gzip.open(path, 'wb') as f:
+    with gzip.open(str(path), 'wb') as f:
         pickle.dump(data, f)
 
 def load(path):
-    with gzip.open(path, 'rb') as f:
+    with gzip.open(str(path), 'rb') as f:
         data = pickle.load(f)
     
     return data

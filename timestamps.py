@@ -2,12 +2,9 @@
 
 from random import choice
 from datetime import datetime
-from glob import glob
 import numpy as np
-from os.path import isfile
 
 from folder import datasets_path
-from util import right_remove
 
 def line_to_datetime(line):
     splot = line.split(' ')
@@ -26,14 +23,14 @@ class Timestamps(object):
         self.file_cache = {}
         self.cache_limit = cache_limit # number of files to be kept in memory at once
         
-        self.logs_path = "{dsp}{d}/logs/".format(dsp=datasets_path, d=dataset)
+        self.logs_path = datasets_path / dataset / "logs"
         
         self.start_times = None # The times when each log file starts, built by get_frame_number
     
     def get_frame_number_given_vidname(self, t, vidname):
-        logpath = "{lp}{v}.log".format(lp=self.logs_path, v=vidname)
+        logpath = self.logs_path / (vidname+'.log')
         
-        if isfile(logpath):
+        if logpath.is_file():
             times = self.make_times(logpath)
             dts = [abs( (t-x).total_seconds() ) for x in times]
             return np.argmin(dts)
@@ -44,15 +41,15 @@ class Timestamps(object):
         """ Gets the video name and frame number from a datetime object (t). 
         """
         
-        all_logs = glob("{lp}*.log".format(lp=self.logs_path))
+        all_logs = list(self.logs_path.glob('*.log'))
         all_logs.sort()
         
-        video_names = [right_remove(x.split('/')[-1], '.log') for x in all_logs]
+        video_names = [x.stem for x in all_logs]
         
         if self.start_times is None:
             self.start_times = dict()
             for video_name, log in zip(video_names, all_logs):
-                with open(log, 'r') as f:
+                with log.open('r') as f:
                     first_line = f.readline().rstrip()
                 first_time, _ = line_to_datetime(first_line)
                 self.start_times[video_name] = first_time
@@ -78,7 +75,7 @@ class Timestamps(object):
             return None, None
         
     def get_times(self, video_name):
-        log_path = "{lp}{vn}.log".format(lp=self.logs_path, vn=video_name)
+        log_path = self.logs_path / "{vn}.log".format(vn=video_name)
         return self.make_times(log_path)
 
     def get(self, video_name, frame_number=0):
@@ -101,11 +98,13 @@ class Timestamps(object):
         return times
 
     def _make_times(self, log_path):
-        with open(log_path, 'r') as f:
-            lines = [x.strip('\n') for x in f.readlines()]
+        lines = log_path.read_text().split('\n')
         
         times = []
         for line in lines:
+            if not line:
+                continue
+        
             frame_time, frame_number = line_to_datetime(line)
             
             times.append(frame_time)

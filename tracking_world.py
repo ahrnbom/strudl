@@ -434,6 +434,8 @@ def make_tracks(dataset, video_name, dets, klts, munkres, ts, calib, config, sta
 @click.option("--conf", default=0.8, type=float, help="Confidence threshold")
 @click.option("--make_videos", default=True, type=bool, help="If true, videos are generated. Can be slow")
 def main(cmd, dataset, run, conf, make_videos):   
+    from pathlib import Path
+    
     if make_videos:
         from visualize_tracking import render_video
         from config import DatasetConfig
@@ -442,8 +444,8 @@ def main(cmd, dataset, run, conf, make_videos):
         mask = Masker(dataset)
         dc = DatasetConfig(dataset)
         
-    config_path = "{rp}{ds}_{rn}/world_tracking_optimization.pklz".format(rp=runs_path, ds=dataset, rn=run)
-    if isfile(config_path):
+    config_path = runs_path / "{}_{}".format(dataset,run) / "world_tracking_optimization.pklz"
+    if config_path.is_file():
         config = load(config_path)
     else:
         #raise(ValueError("No world tracking optimized configuration exists at {}".format(config_path)))
@@ -456,27 +458,26 @@ def main(cmd, dataset, run, conf, make_videos):
     start_stop = None
     
     if cmd == "findvids":
-        from glob import glob
-        vidnames = glob('{dsp}{ds}/videos/*.mkv'.format(dsp=datasets_path, ds=dataset))
-        vidnames = [right_remove(x.split('/')[-1], '.mkv') for x in vidnames]
+        vidnames = (datasets_path / dataset / "videos").glob('*.mkv')
+        vidnames = [x.stem for x in vidnames]
         vidnames.sort()
         
-        outfolder = '{}{}_{}/tracks_world/'.format(runs_path, dataset, run)
+        outfolder = runs_path / "{}_{}".format(dataset,run) / "tracks_world"
         mkdir(outfolder)
     else:
         vidnames = [cmd]
-        outfolder = './'
+        outfolder = Path('./')
         start_stop = (0,500)
             
     for v in vidnames:
-        print_flush(v)    
-        out_path = "{of}{v}_tracks.pklz".format(of=outfolder, v=v)
+        print_flush(v) 
+        out_path = outfolder / (v+'_tracks.pklz')   
         
         print_flush("Loading data...")
-        det_path = "{rp}{ds}_{rn}/detections_world/{v}_world.csv".format(rp=runs_path, ds=dataset, rn=run, v=v)
+        det_path = runs_path / "{}_{}".format(dataset,run) / "detections_world" / (v+'_world.csv')
         detections3D = pd.read_csv(det_path)
         
-        klt_path = det_path.replace('.csv', '_klt.pklz')
+        klt_path = det_path.with_name(det_path.stem + '_klt.pklz')
         klts = load(klt_path)
         
         print_flush("Tracking...")
@@ -485,11 +486,10 @@ def main(cmd, dataset, run, conf, make_videos):
         print_flush("Saving tracks...")
         save(tracks, out_path)
         
-        if make_videos:
-
-            vidpath = "{dsp}{ds}/videos/{v}.mkv".format(dsp=datasets_path, ds=dataset, v=v)
+        if make_videos:            
+            vidpath = datasets_path / dataset / "videos" / (v+'.mkv')
             print_flush("Rendering video...")
-            render_video(tracks, vidpath, out_path.replace('.pklz','.mp4'), calib=calib, mask=mask, fps=dc.get('video_fps'))
+            render_video(tracks, vidpath, out_path.with_suffix('.mp4'), calib=calib, mask=mask, fps=dc.get('video_fps'))
 
     print_flush("Done!")
     

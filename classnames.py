@@ -5,9 +5,9 @@ import json
 from folder import datasets_path
 
 def get_class_data(dataset):
-    path = '{}{}/classes.json'.format(datasets_path, dataset)
+    path = datasets_path / dataset / 'classes.json' 
     
-    with open(path, 'r') as f:
+    with path.open('r') as f:
         class_data = json.load(f)
     class_data.sort(key=lambda d: d['name'])
     return class_data
@@ -19,12 +19,12 @@ def get_classnames(dataset):
 
 def set_class_data(dataset, class_data):
     class_data.sort(key=lambda d: d['name'])
-    path = '{}{}/classes.json'.format(datasets_path, dataset)
-    with open(path, 'w') as f:
+    path = datasets_path / dataset / 'classes.json'
+    with path.open('w') as f:
         json.dump(class_data, f)
 
     
 if __name__ == '__main__':
-    print(get_classnames('sweden2'))
+    print(get_classnames('test'))
 
 

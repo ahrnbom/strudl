@@ -14,10 +14,12 @@ class Calibration(object):
         
         self.vals = {}
         
-        with open("{dsp}{ds}/calib.tacal".format(dsp=datasets_path, ds=dataset), 'r') as f:
-            lines = [x.strip('\n') for x in f.readlines()]
+        lines = (datasets_path / dataset / "calib.tacal").read_text().split('\n')
         
         for line in lines:
+            if not line:
+                continue
+        
             splot = line.split(' ')
             splot = [x for x in splot if x]
             
@@ -25,7 +27,6 @@ class Calibration(object):
             assert(param in params)
             
             val = float(splot[1])
-            #setattr(self.tsai, param, val)
             self.vals[param] = val
         
         self.tsai = pdtv.TsaiCamera(**self.vals)

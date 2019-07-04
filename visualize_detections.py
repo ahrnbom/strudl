@@ -5,10 +5,10 @@
 import cv2
 import imageio as io
 import numpy as np
-from glob import glob
 import pandas as pd
 import click
 from math import ceil
+from pathlib import Path
 
 from visualize import draw, class_colors
 from apply_mask import Masker
@@ -91,11 +91,11 @@ def main(cmd, res, dataset, run, conf, fps, coords):
     csvs = []
     if cmd == "findvids":
         if coords == "pixels":
-            query = "{rp}{ds}_{r}/csv/*.csv".format(rp=runs_path, ds=dataset, r=run)
+            found = (runs_path / "{}_{}".format(dataset,run) / "csv").glob('*.csv')
         elif coords == "world":
-            query = "{rp}{ds}_{r}/detections_world/*.csv".format(rp=runs_path, ds=dataset, r=run)
+            found = (runs_path / "{}_{}".format(dataset,run) / "detections_world").glob('*.csv')
             
-        found = glob(query)
+        found = list(found)
         found.sort()
         csvs.extend(found)
     else:
@@ -103,23 +103,23 @@ def main(cmd, res, dataset, run, conf, fps, coords):
         local_output = True
     
     if coords == "pixels":
-        out_folder = '{rp}{ds}_{r}/detections/'.format(rp=runs_path, ds=dataset, r=run)
+        out_folder = runs_path / "{}_{}".format(dataset,run) / "detections"
     elif coords == "world":
-        out_folder = '{rp}{ds}_{r}/detections_world/'.format(rp=runs_path, ds=dataset, r=run)
+        out_folder = runs_path / "{}_{}".format(dataset,run) / "detections_world"
         
     mkdir(out_folder)
     
     for csv_path in csvs:
-        vidname = right_remove(csv_path.split('/')[-1], '.csv')
+        vidname = csv_path.stem
         if coords == "world":
             vidname = right_remove(vidname, '_world')
-            
-        vid_path = "{dsp}{ds}/videos/{v}.mkv".format(dsp=datasets_path, ds=dataset, v=vidname)
+        
+        vid_path = datasets_path / dataset / "videos" / (vidname+'.mkv')    
 
         if local_output:
-            outvid_path = '{}.mp4'.format(vidname)
+            outvid_path = Path('.') / '{}.mp4'.format(vidname)
         else:
-            outvid_path = '{}{}.mp4'.format(out_folder, vidname)        
+            outvid_path = out_folder / '{}.mp4'.format(vidname)        
         
         detections = pd.read_csv(csv_path)
         detections_video(detections, vid_path, outvid_path, classnames, dataset, res, fps=fps, conf_thresh=conf, coords=coords)

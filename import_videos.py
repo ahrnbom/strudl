@@ -6,11 +6,11 @@
 
 import click
 import imageio as iio
-from glob import glob
 import cv2
 import subprocess
 from shutil import copy, rmtree
-from os.path import isdir
+from pathlib import Path
+from glob import glob
 import random
 import string
 
@@ -38,13 +38,12 @@ def generate_paths(time, target, logs_target, suffix):
     s = fill(time.second, 2)
     vidname = "{y}{mo}{d}_{h}{mi}{s}_{r}".format(y=y, mo=mo, d=d, h=h, mi=mi, s=s, r=randstring)
     
-    vidpath = "{t}{vn}{sx}".format(t=target, vn=vidname, sx=suffix)
-    logpath = "{lt}{vn}.log".format(lt=logs_target, vn=vidname)
+    vidpath = target / (vidname + suffix)
+    logpath = logs_target / (vidname + ".log")
     return vidpath, logpath
     
 def read_log(logpath):
-    with open(logpath, 'r') as f:
-        lines = [x.rstrip() for x in f.readlines()]
+    lines = logpath.read_text().split('\n')
     return lines
 
 def recode_minutes_imageio(files, logs_basepath, minutes, width, height, fps, target, logs_target, suffix):
@@ -59,10 +58,10 @@ def recode_minutes_imageio(files, logs_basepath, minutes, width, height, fps, ta
     print_flush("Structuring...")
     vids = []
     for vid_path in files:
-        video_name = '.'.join(vid_path.split('/')[-1].split('.')[0:-1])
-        log_path = "{l}{vn}.log".format(l=logs_basepath, vn=video_name)
+        video_name = vid_path.stem
+        log_path = logs_basepath / (video_name + '.log')
         
-        with open(log_path, 'r') as f:
+        with log_path.open('r') as f:
             first_line = f.readline().rstrip()
         
         first_time, frame_num = line_to_datetime(first_line)
@@ -139,7 +138,7 @@ def recode_minutes_imageio(files, logs_basepath, minutes, width, height, fps, ta
         # Close current output video/log
         outvid.close()
         
-        with open(logpath, 'w') as f:
+        with logpath.open('w') as f:
             for line in outlog:
                 f.write("{}\n".format(line))
 
@@ -168,7 +167,7 @@ def encode_handbrake(path, target_path, width, height, fps):
     cmd = ['HandBrakeCLI', '--width', str(width), 
            '--height', str(height), '--rate', str(fps),
            '--crop', '0:0:0:0',
-           '-i', path, '-o', target_path]
+           '-i', str(path), '-o', str(target_path)]
         
     print_flush(' '.join(cmd))       
     output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, universal_newlines=True)
@@ -188,6 +187,9 @@ def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes
     
     assert(suffix == '.mkv')
     
+    logs = Path(logs)
+    assert(logs.is_dir())
+    
     if method == "imageio":
         encode = encode_imageio
     elif method == "handbrake":
@@ -198,21 +200,22 @@ def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes
     resolution = parse_resolution(resolution)
     width, height = resolution[0:2]
     
-    target = "{dp}{ds}/videos/".format(dp=datasets_path, ds=dataset)
+    target = datasets_path / dataset / "videos"
     mkdir(target)
     
-    logs_target = "{dp}{ds}/logs/".format(dp=datasets_path, ds=dataset)
+    logs_target = datasets_path / dataset / "logs"
     mkdir(logs_target)
     
     files = glob(query)
     files.sort()
+    files = [Path(x) for x in files]
 
     if minutes == 0:
         for path in files:
-            video_name = '.'.join(path.split('/')[-1].split('.')[0:-1])
+            video_name = path.stem
             
-            src_log_path = "{l}{vn}.log".format(l=logs, vn=video_name)
-            with open(src_log_path, 'r') as f:
+            src_log_path = logs / (video_name + '.log')
+            with src_log_path.open('r') as f:
                 first = f.readline().rstrip()
             first_time, _ = line_to_datetime(first)
             target_path, target_log_path = generate_paths(first_time, target, logs_target, suffix)
@@ -222,7 +225,7 @@ def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes
             encode(path, target_path, width, height, fps)
             
             if validate_logfile(src_log_path):
-                copy(src_log_path, target_log_path)
+                copy(str(src_log_path), str(target_log_path)) # python 3.5 and earlier compatability
                 print_flush("Log file OK! {}".format(src_log_path))
             else:
                 raise(ValueError("Incorrect log file {}".format(src_log_path)))
@@ -232,27 +235,27 @@ def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes
             # would be cumbersome to implement. Therefore, we instead first recode every video with
             # handbrake and then use imageio to recode the videos again into the desired length. This
             # should still provide handbrake's robustness to strange videos, even though this solution is slow.
-            tmp_folder = "/data/tmp_import/"
-            if isdir(tmp_folder):
-                rmtree(tmp_folder)
+            tmp_folder = Path("/data/tmp_import/")
+            if tmp_folder.is_dir():
+                rmtree(str(tmp_folder))
             mkdir(tmp_folder)
             
             for i,path in enumerate(files):
                 print_flush("Handbraking {} ...".format(path))
-                video_name = '.'.join(path.split('/')[-1].split('.')[0:-1])
-                src_log_path = "{l}{vn}.log".format(l=logs, vn=video_name)
+                video_name = path.stem
+                src_log_path = logs / (video_name + '.log')
                 
-                target_path = "{tmp}{i}{sx}".format(tmp=tmp_folder, i=i, sx=suffix)
-                target_log_path = "{tmp}{i}.log".format(tmp=tmp_folder, i=i)
+                target_path = tmp_folder / (i + suffix)
+                target_log_path = tmp_folder / (i + '.log')
                 
                 if validate_logfile(src_log_path):
-                    copy(src_log_path, target_log_path)
+                    copy(str(src_log_path), str(target_log_path))
                 else:
                     raise(ValueError("Incorrect log file {}".format(src_log_path)))
                 
                 encode(path, target_path, width, height, fps)
             
-            files = glob("{tmp}*{sfx}".format(tmp=tmp_folder, sfx=suffix))
+            files = list(tmp_folder.glob('*' + suffix))
             files.sort()
             logs = tmp_folder
             print_flush("Handbrake section complete")
@@ -260,11 +263,10 @@ def import_videos(query, dataset, resolution, fps, suffix, method, logs, minutes
         recode_minutes_imageio(files, logs, minutes, width, height, fps, target, logs_target, suffix)
         
         if method == "handbrake":
-            rmtree(tmp_folder)
+            rmtree(str(tmp_folder))
                     
     print_flush("Done!")       
     
 if __name__ == '__main__':
     import_videos()
-
 

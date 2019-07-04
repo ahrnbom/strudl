@@ -2,8 +2,7 @@
     for the annotation Web UI.
 """
 
-from glob import glob
-from os.path import isfile, isdir
+from pathlib import Path
 
 from folder import mkdir, datasets_path, runs_path
 from classnames import get_classnames
@@ -15,9 +14,9 @@ def get_annotation_stats(dataset_name, annotation_set):
     
     annot_folder = get_annotation_path(dataset_name, annotation_set)
     
-    images = glob(annot_folder + '*/*.jpg')
-    annots = glob(annot_folder + '*/*.txt')
-    autos = glob(annot_folder + '*/*.auto')
+    images = list(annot_folder.glob('*/*.jpg'))
+    annots = list(annot_folder.glob('*/*.txt'))
+    autos = list(annot_folder.glob('*/*.auto'))
     
     return (len(images), len(annots), len(autos))
     
@@ -26,19 +25,19 @@ def get_annotation_path(dataset_name, annotation_set, video_name=None, image_num
     # This function is called from server.py as well as from this module
     # It can give more or less detailed paths depending on options
     
-    annot_folder = "{dsp}{dn}/objects/{ans}/".format(dsp=datasets_path, dn=dataset_name, ans=annotation_set)
+    annot_folder = Path(datasets_path) / dataset_name / "objects" / annotation_set
     
     if video_name is None:
         return annot_folder
     else:
-        annot_folder += "{vn}/".format(vn=video_name)
+        annot_folder = annot_folder / video_name
         
         if image_number is None:
             return annot_folder
         else:
-            file_path = annot_folder + "{imnum}{sfx}".format(imnum=image_number, sfx=suffix)
+            file_path = annot_folder / "{imnum}{sfx}".format(imnum=image_number, sfx=suffix)
             
-            if isfile(file_path):
+            if file_path.is_file():
                 return file_path
             else:
                 return None
@@ -47,28 +46,26 @@ def get_annotation_path(dataset_name, annotation_set, video_name=None, image_num
 def annotation_image_list(dataset_name, annotation_set):
     ds_path = get_annotation_path(dataset_name, annotation_set)
     
-    vids = glob(ds_path + '*')
+    vids = list(ds_path.glob('*'))
     if vids:
-        vids = [x.split('/')[-1] for x in vids if isdir(x)]
+        vids = [x.name for x in vids if x.is_dir()]
         vids.sort()
         out = []
         
         for vid in vids:
-            ims_path = "{ds_path}{vid}/*.jpg".format(ds_path=ds_path, vid=vid)
-
-            ims = glob(ims_path)
-            ims.sort(key=lambda x: int(right_remove(x.split('/')[-1], '.jpg')))
+            ims = list((ds_path / vid).glob('*.jpg'))
+            ims.sort(key=lambda x: int(x.stem))
             for im in ims:
-                imnum = right_remove(im.split('/')[-1], '.jpg')
-                txt = im.replace('.jpg', '.txt')
+                imnum = im.stem
+                txt = im.with_suffix('.txt')
                 
                 # Depending on the 'annotated' variable, the images show up in different colors in the web UI
                 annotated = "not_annotated"
-                if isfile(txt):
+                if txt.is_file():
                     annotated = "already_annotated"
                 else:
-                    auto = im.replace('.jpg','.auto')
-                    if isfile(auto):
+                    auto = im.with_suffix('.auto')
+                    if auto.is_file():
                         annotated = "automatically_annotated"
                     
                 out.append( (vid, imnum, annotated) )
@@ -82,11 +79,13 @@ def get_annotation_object(annots_path):
         in an annotation file. Used when sending annotations to the Web UI.
     """
 
-    with open(annots_path, 'r') as f:
-        lines = [x.strip('\n') for x in f.readlines()]
+    lines = annots_path.read_text().split('\n')
     
     annots = []
     for line in lines:
+        if not line:
+            continue
+    
         annot = {}
         splot = line.split(' ')
         annot['class_id'] = int(splot[0])

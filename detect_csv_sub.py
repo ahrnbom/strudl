@@ -11,7 +11,6 @@ from math import floor, ceil
 from keras.applications.imagenet_utils import preprocess_input
 
 from video_imageio import get_model
-from folder import mkdir, datasets_path, runs_path
 from util import parse_resolution, print_flush
 from apply_mask import Masker
 from classnames import get_classnames

@@ -8,6 +8,7 @@ from glob import glob
 query = sys.argv[1]
 
 files = glob('*.py')
+files.sort()
 for filepath in files:
     with open(filepath, 'r') as f:
         lines = [x.strip('\n') for x in f.readlines()]

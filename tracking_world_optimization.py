@@ -51,7 +51,7 @@ def visualize_tracks(outvidpath, dataset, gts, tracks=None, stack_axis='v'):
     mask = Masker(dataset)
     
     with iio.get_writer(outvidpath, fps=dc.get('video_fps')) as outvid:
-        with iio.get_reader("{dsp}{ds}/videos/{v}.mkv".format(dsp=datasets_path, ds=dataset, v=vid)) as invid:
+        with iio.get_reader(datasets_path / dataset / "videos" / (vid+'.mkv')) as invid:
             
             gt_by_frame = split_lambda(gts, lambda x: x[1])
             fns = list(gt_by_frame.keys())
@@ -200,10 +200,10 @@ def score_tracking(dataset, run, gt, tracking_config, gt_class_name_conversion):
         gt_tracks = split_lambda(gt_list, lambda x: x[5], as_list=True)
         
         print_flush("  Loading data...")
-        det_path = "{rp}{ds}_{rn}/detections_world/{v}_world.csv".format(rp=runs_path, ds=dataset, rn=run, v=vid)
+        det_path = runs_path / "{}_{}".format(dataset,run) / "detections_world" / (v+'_world.csv')
         detections3D = pd.read_csv(det_path)
         
-        klt_path = det_path.replace('.csv', '_klt.pklz')
+        klt_path = det_path.with_name(det_path.stem + '_klt.pklz')
         klts = load(klt_path)
         
         print_flush("  Tracking...")
@@ -391,18 +391,18 @@ def main(dataset, run, date, gt_csv, det_id, gt_class_name_conversion, visualize
                      
     config_min, config_max = map(WorldTrackingConfig, (config_min, config_max))
     
-    base_path = "{rp}{ds}_{r}/world_tracking_optimization".format(rp=runs_path, ds=dataset, r=run)
-    plot_path = base_path + '.png'
+    base_path = runs_path / "{}_{}".format(dataset,run)
+    plot_path = base_path / 'world_tracking_optimization.png'
     
     config, tracks = optimize_tracking(config_min, config_max, dataset, run, gt, 
                                        gt_class_name_conversion, plot_path=plot_path, 
                                        patience=patience, n=per_iteration)
                                        
-    save(config, base_path + '.pklz')
+    save(config, base_path / 'world_tracking_optimization.pklz')
     
     if visualize:
         print_flush("Visualizing...")
-        visualize_tracks(base_path + '.mp4', dataset, gt, tracks, stack_axis=stack_axis)
+        visualize_tracks(base_path / 'world_tracking_optimization.mp4', dataset, gt, tracks, stack_axis=stack_axis)
         
     print_flush("Done!")
 

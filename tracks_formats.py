@@ -1,6 +1,5 @@
 """ A module for loading tracks .pklz files and converting them to some formats """
 
-from os.path import isfile
 from zipfile import ZipFile, ZIP_DEFLATED
 from os import remove
 from glob import glob
@@ -24,24 +23,25 @@ def generate_tracks_in_zip(dataset, run, tf, coords):
     
     tracks_format = tf
     if coords == 'pixels':
-        tracks = glob("{rp}{dn}_{rn}/tracks/*.pklz".format(rp=runs_path, dn=dataset, rn = run))
+        tracks = (runs_path / "{}_{}".format(dataset,run) / "tracks").glob('*.pklz')
     elif coords == 'world':
-        tracks = glob("{rp}{dn}_{rn}/tracks_world/*.pklz".format(rp=runs_path, dn=dataset, rn = run))
+        tracks = (runs_path / "{}_{}".format(dataset,run) / "tracks_world").glob('*.pklz')
     else:
         raise(ValueError("Incorrect coordinate system: {}".format(coords)))
-        
+    
+    tracks = list(tracks)        
     tracks.sort()
     
-    zips_folder = "{rp}{dn}_{rn}/track_zips/".format(rp=runs_path, dn=dataset, rn=run)
+    zips_folder = runs_path / "{}_{}".format(dataset,run) / "track_zips"
     mkdir(zips_folder)
     
-    zip_path = "{zf}{tf}.zip".format(zf=zips_folder, tf=tracks_format)
+    zip_path = zips_folder / (tracks_format+'.zip')
     if coords == 'world':
-        zip_path = zip_path.replace('.zip', '_world.zip')
+        zip_path = zip_path.with_name(zip_path.stem + '_world.zip')
     
-    with ZipFile(zip_path, mode='w', compression=ZIP_DEFLATED) as z:
+    with ZipFile(str(zip_path), mode='w', compression=ZIP_DEFLATED) as z:
         for t in tracks:
-            tname = t.split('/')[-1]
+            tname = t.name
             print_flush(tname)
             
             text = format_tracks_from_file(t, tracks_format, coords)
@@ -58,8 +58,8 @@ def format_tracks(dataset, run, video, tracks_format, coords='pixels'):
     t_foldername = "tracks"
     if coords == 'world':
         t_foldername = "tracks_world"
-        
-    tpath = "{rp}{d}_{r}/{tfn}/{v}_tracks.pklz".format(rp=runs_path, d=dataset, r=run, tfn=t_foldername, v=video)
+    
+    tpath = runs_path / "{}_{}".format(dataset,run) / t_foldername / (video+'_tracks.pklz')    
     
     return format_tracks_from_file(tpath, tracks_format, coords)
 
@@ -71,7 +71,7 @@ def format_tracks_from_file(tpath, tracks_format, coords='pixels'):
     else:
         raise(ValueError('Tracks format {} is invalid'.format(tracks_format)))
         
-    if isfile(tpath):
+    if tpath.is_file():
         tracks = load(tpath)
         text = ""
         

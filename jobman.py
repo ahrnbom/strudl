@@ -12,8 +12,6 @@ import threading
 from uuid import uuid4
 from time import time
 from datetime import datetime
-from os.path import isfile
-from glob import glob
 
 from folder import mkdir, jobs_path
 
@@ -118,9 +116,9 @@ class JobManager(object):
     def actually_run(self, cmd, job_id, job_type=""):
         self.history.append((job_id, ' '.join(cmd)))
         
-        logfile = "{}{}.log".format(jobs_path, job_id)
+        logfile = jobs_path / (job_id + '.log')
 
-        with open(logfile, 'w') as out:
+        with logfile.open('w') as out:
             out.write("Command: {}\n".format(cmd))
             out.write("{}\n".format(timestamp()))
             self.current = subprocess.Popen(cmd, stdout=out, stderr=out, bufsize=0)
@@ -143,10 +141,9 @@ class JobManager(object):
                 if (not self.is_available()) and (self.history[-1][0] == job_id):
                     result = "running"
                 else:
-                    log_path = "{}{}.log".format(jobs_path, job_id)
-                    if isfile(log_path):
-                        with open(log_path, 'r') as f:
-                            lines = [x.strip('\n') for x in f.readlines()]
+                    log_path = jobs_path / (job_id + '.log')
+                    if log_path.is_file():
+                        lines = log_path.read_text().split('\n')
                         
                         result = "failure"
                         for line in lines:
@@ -166,8 +163,8 @@ class JobManager(object):
             return out
                 
         elif job_type == 'all':
-            logs = glob("{}*.log".format(jobs_path))
-            job_ids = [x.split('/')[-1].strip('.log') for x in logs]
+            logs = list(jobs_path.glob('*.log'))
+            job_ids = [x.stem for x in logs]
             job_ids.sort()
             
             with self.queue_lock:
@@ -189,11 +186,8 @@ class JobManager(object):
             raise(ValueError())
     
     def get_log(self, job_id):
-        logfile = "{}{}.log".format(jobs_path, job_id)
-        if isfile(logfile):
-            with open(logfile, 'r') as f:
-                text = f.read()
-            
-            return text
+        logfile = jobs_path / (job_id + '.log')
+        if logfile.is_file():
+            return logfile.read_text()
         else:
             return None

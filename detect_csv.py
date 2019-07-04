@@ -1,8 +1,6 @@
 """ A module for running a trained SSD on videos, saving the results as .csv files """
 
-import os
 from time import monotonic as time
-from glob import glob
 import click
 import numpy as np
 import imageio as io
@@ -91,21 +89,20 @@ def run_detector(dataset, run, videopath, outname, input_shape, conf_thresh, bat
 @click.option("--bs", default=32, type=int, help="Batch size, the number of frames to feed into SSD in a batch, must fit on the GPU VRAM")
 @click.option("--clean", default=True, help="If True, all csv files are made from scratch. If False, any existing ones are kept")
 def detect(dataset, run, res, conf, bs, clean):
+    vids = list((datasets_path / dataset / "videos").glob('*.mkv'))
+    vids.sort()
 
-    vids = sorted(glob("{}{}/videos/*.mkv".format(datasets_path, dataset)))
-
-    outfolder = "{}{}_{}/csv/".format(runs_path, dataset, run)
+    outfolder = runs_path / "{}_{}".format(dataset,run) / "csv"
     mkdir(outfolder)
 
     nvids = len(vids)
 
     for i, vid in enumerate(vids):
-        vname = vid.split('/')[-1]
-        vsplit = vname.split('.')
-        outname = outfolder + vsplit[0] + '.csv'
+        vname = vid.stem
+        outname = outfolder / (vname+'.csv')
         
         if not clean:
-            if os.path.isfile(outname):
+            if outname.is_file():
                 print_flush("Skipping {}".format(outname))
                 continue
         

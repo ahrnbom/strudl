@@ -1,12 +1,10 @@
 """ A module for loading annotations to be fed into object detector training.
 """
 
-import os
 import pandas as pd
 import json
 import numpy as np
 from pathlib import Path
-from glob import glob
 
 from classnames import get_classnames
 from folder import datasets_path
@@ -49,20 +47,22 @@ class LoadDetections():
             else:
                 trainval = 'val'
             
-            all_gts = glob('{dsp}{ds}/objects/{t}/*/*.txt'.format(dsp=datasets_path, ds=dataset, t=trainval))
+            all_gts = list((datasets_path / dataset / "objects" / trainval).glob('*/*.txt'))
             
             if len(all_gts) == 0:
                 raise(ValueError("Dataset '{}' doesn't have any grount truth files. Is it a correct dataset? Is there an extra space or something?".format(dataset)))
             
             for gt_txt in all_gts:
-                imfile = gt_txt.replace('.txt', '.jpg')
+                imfile = gt_txt.with_suffix('.jpg')
                 
-                with open(gt_txt, 'r') as f:
-                    lines = [x.strip('\n') for x in f.readlines()]
+                lines = gt_txt.read_text().split('\n')
                     
                 for line in lines:
+                    if not line:
+                        continue
+                
                     splot = line.split(' ')
-                    imfiles.append(imfile)        
+                    imfiles.append(str(imfile))
                     
                     # Since we can import from different datasets, the class name needs to be
                     # checked, and marked as 'other' (the last class) if it doesn't exist

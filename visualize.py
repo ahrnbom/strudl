@@ -4,14 +4,13 @@
 
 import cv2 
 import pandas as pd
-import os
 import numpy as np
-import sys
-from glob import glob
 import click
+from pathlib import Path
 
 from apply_mask import Masker
 from util import parse_resolution, pandas_loop
+from folder import runs_path, mkdir
 
 def class_colors(num_classes=10):
     """Generates num_classes many distinct colors"""
@@ -166,16 +165,16 @@ def parse(basepath, dataset, resolution):
     colors = class_colors()
     masker = Masker(dataset)
 
-    csvpath = basepath + 'detections_0.csv'
+    csvpath = basepath / 'detections_0.csv'
     res = pd.read_csv(csvpath)
     
-    outpath = basepath + 'visualize/'
-    if not os.path.exists(outpath):
-        os.makedirs(outpath)
+    outpath = basepath / 'visualize/'
+    if not outpath.is_dir():
+        mkdir(outpath)
     else:
-        old_files = glob(outpath + '*')
+        old_files = list(outpath.glob('*'))
         for old in old_files:
-            os.remove(old)
+            old.unlink()
     
     files = res['filename'].unique()
     for i, filename in enumerate(files):
@@ -185,7 +184,7 @@ def parse(basepath, dataset, resolution):
         im = cv2.resize(im, (resolution[0], resolution[1]))
         im = masker.mask(im)
         im = draw(im, df, colors)
-        outfilepath = "{}{}".format(outpath, '{}_{}'.format(1+i, filename.split('/')[-1]))
+        outfilepath = outpath / '{}_{}'.format(1+i, Path(filename).name)
         cv2.imwrite(outfilepath, im)
         print(outfilepath)
     
@@ -195,7 +194,7 @@ def parse(basepath, dataset, resolution):
 @click.option("--res", default="(640,480,3)", help="Resolution that SSD is trained for, as a string like '(width,height,channels)'")
 def main(dataset, run, res):
     res = parse_resolution(res)
-    parse('/data/dl/{}_{}/results/'.format(dataset, run), dataset, res)
+    parse(runs_path / "{}_{}".format(dataset,run) / "results", dataset, res)
     
 if __name__ == "__main__":
     main()

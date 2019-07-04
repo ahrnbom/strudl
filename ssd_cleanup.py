@@ -4,7 +4,6 @@
 
 from glob import glob
 import os.path
-from os import remove
 import numpy as np
 import click
 
@@ -17,13 +16,13 @@ def main(dataset, run):
     cleanup(dataset, run)
 
 def cleanup(dataset, run):
-    weights_files = glob(os.path.join(runs_path, '{dataset}_{run}'.format(dataset=dataset,run=run), 'checkpoints', '*.hdf5'))
-    weights_files_loss = np.array([float(wf.split('-')[-1].replace('.hdf5', '')) for wf in weights_files])
+    weights_files = list((runs_path / "{}_{}".format(dataset,run) / "checkpoints").glob('*.hdf5'))
+    weights_files_loss = np.array([float(wf.stem.split('-')[-1]) for wf in weights_files])
     weights_file = weights_files[np.argmin(weights_files_loss)]
     
     for wf in weights_files:
         if not (wf == weights_file):
-            remove(wf)
+            wf.unlink()
             
 if __name__ == '__main__':
     main()

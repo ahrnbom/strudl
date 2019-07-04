@@ -6,9 +6,7 @@
 """
     
 import click
-from glob import glob
 from random import choice, randint
-from os.path import isfile
 import imageio as iio
 import pandas as pd
 import numpy as np
@@ -94,23 +92,22 @@ def worldtracks_frame(data, frame, i_frame):
     return frame
 
 def get_klt_path(dataset_path, vid):
-    return "{dsp}klt/{v}.pklz".format(dsp=dataset_path, v=vid)
+    return dataset_path / "klt" / (vid+'.pklz')
     
 def get_pixeldet_path(run_path, vid):
-    return "{rp}csv/{v}.csv".format(rp=run_path, v=vid)
+    return run_path / "csv" / (vid+'.csv')
     
 def get_worlddet_path(run_path, vid):
-    return "{rp}detections_world/{v}_world.csv".format(rp=run_path, v=vid)
+    return run_path / "detections_world" / (vid+'_world.csv')
 
 def get_worldtracks_path(run_path, vid):
-    return "{rp}tracks_world/{v}_tracks.pklz".format(rp=run_path, v=vid)
+    return run_path / "tracks_world" / (vid+'_tracks.pklz')
 
 def make_clip(vid, clip_length, dataset_path):
-    log = "{dsp}logs/{v}.log".format(dsp=dataset_path, v=vid)
+    log = dataset_path / "logs" / (vid+'.log')
     
-    with open(log, 'r') as f:
-        lines = f.readlines()
-    
+    lines = log.read_text().split('\n')
+    lines = [x for x in lines if x] # Remove empty strings
     l = len(lines)
     del lines
     
@@ -141,13 +138,11 @@ def main(dataset, run, n_clips, clip_length):
     num_classes = len(classes)+1
     calib = Calibration(dataset)
     
-    dataset_path = "{dsp}{ds}/".format(dsp=datasets_path, ds=dataset)
-    run_path = "{rp}{ds}_{r}/".format(rp=runs_path, ds=dataset, r=run)
+    dataset_path = datasets_path / dataset
+    run_path = runs_path / "{}_{}".format(dataset,run)
     
     # Grab a bunch of videos
-    vids_query = "{dsp}videos/*.mkv".format(dsp=dataset_path)
-    all_vids = glob(vids_query)
-    all_vids = [right_remove(x.split('/')[-1], '.mkv') for x in all_vids]
+    all_vids = [x.stem for x in (dataset_path / "videos").glob('*.mkv')]
     
     all_vids.sort()
     
@@ -197,7 +192,7 @@ def main(dataset, run, n_clips, clip_length):
        
     for vid in vids:
         f = get_klt_path(dataset_path, vid)
-        if not isfile(f):
+        if not f.is_file():
             include_klt = False
         else:
             klt = load(f)
@@ -206,7 +201,7 @@ def main(dataset, run, n_clips, clip_length):
             klts.append(pts)
         
         f = get_pixeldet_path(run_path, vid)
-        if not isfile(f):
+        if not f.is_file():
             include_pixeldets = False
         else:
             dets = pd.read_csv(f)
@@ -214,7 +209,7 @@ def main(dataset, run, n_clips, clip_length):
             pixeldets.append( (dets, colors, x_scale, y_scale) )
         
         f = get_worlddet_path(run_path, vid)
-        if not isfile(f):
+        if not f.is_file():
             include_worlddets = False
         else:
             dets = pd.read_csv(f)
@@ -222,7 +217,7 @@ def main(dataset, run, n_clips, clip_length):
             worlddets.append( (dets, colors, calib) )
 
         f = get_worldtracks_path(run_path, vid)
-        if not isfile(f):
+        if not f.is_file():
             include_worldtracks = False
         else:
             tracks = load(f)
@@ -250,12 +245,12 @@ def main(dataset, run, n_clips, clip_length):
     
     print_flush(clips)
         
-    with iio.get_writer("{trp}summary.mp4".format(trp=run_path), fps=dc.get('video_fps')) as outvid:
+    with iio.get_writer(run_path / "summary.mp4", fps=dc.get('video_fps')) as outvid:
         for i_vid, vid in enumerate(vids):
             print_flush(vid)
             old_prog = 0
             
-            with iio.get_reader("{dsp}videos/{v}.mkv".format(dsp=dataset_path, v=vid)) as invid:
+            with iio.get_reader(dataset_path / "videos" / (vid+'.mkv')) as invid:
                 start, stop = clips[i_vid]
                 for i_frame in range(start, stop):
                     frame = invid.get_data(i_frame)

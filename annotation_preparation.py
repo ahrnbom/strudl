@@ -3,7 +3,7 @@
 """
 
 from random import random, shuffle
-from glob import glob
+from pathlib import Path
 import imageio as io
 import numpy as np
 from scipy.misc import imsave
@@ -31,7 +31,7 @@ def filtering(vidnames, nvids, ts, night):
     """ Gets nvids many random videos, possibly with lower probability of night """
     filtered = []
     for vid in vidnames:
-        vidname = right_remove(vid.split('/')[-1], '.mkv')
+        vidname = vid.stem
         if night:
             if random() < vidname_is_interesting(vidname, ts):
                 filtered.append(vid)
@@ -42,14 +42,12 @@ def filtering(vidnames, nvids, ts, night):
     return filtered[0:nvids]
     
 def get_vidnames(dataset):
-    search = "{}{}/videos/*.mkv".format(datasets_path, dataset)
-    vidnames = glob(search)
-    return vidnames
+    return list((datasets_path / dataset / "videos").glob('*.mkv'))
     
 def gen_images(outbasepath, vidpath, n):
     """ Pick n images evenly spread out over the video """
     
-    folder = outbasepath + right_remove(vidpath.split('/')[-1], '.mkv') + '/'
+    folder = outbasepath / vidpath.stem
     mkdir(folder)
     
     with io.get_reader(vidpath) as vid:
@@ -61,14 +59,14 @@ def gen_images(outbasepath, vidpath, n):
         
         # Log files allow these to be recreated, if necessary.
         # At the time of writing this, these logs are unused.
-        with open(folder + "frames.log", 'w') as f:
-            f.write(vidpath.split('/')[-1] + "\n")
+        with (folder / "frames.log").open('w') as f:
+            f.write(vidpath.stem + "\n")
             for fn in fnums:
                 f.write("{} ".format(fn))
         
         for i, fn in enumerate(fnums):
             frame = vid.get_data(fn)
-            imsave(folder + "{}.jpg".format(i+1), frame)
+            imsave(folder / "{}.jpg".format(i+1), frame)
             
 def train_test_split(vidnames, train_amount):
     """ Splits the dataset into train and test set.
@@ -90,9 +88,9 @@ def train_test_split(vidnames, train_amount):
 @click.option("--train_amount", default=1.0, help="How many of the images that should be part of the training and validation sets, as a float between 0 and 1. The rest will be in a test set")
 @click.option("--night", default=True, type=bool, help="If True, fewer night videos will be included. If False, all videos are treated equally")
 def main(dataset, num_ims, ims_per_vid, train_amount, night):
-    outbasepath = "{}{}/objects/".format(datasets_path, dataset)
-    trainpath = outbasepath + "train/"
-    testpath = outbasepath + "test/"
+    outbasepath = datasets_path / dataset / "objects"
+    trainpath = outbasepath / "train"
+    testpath = outbasepath / "test"
     
     ts = Timestamps(dataset)
     vidnames = filtering(get_vidnames(dataset), num_ims//ims_per_vid, ts, night)
@@ -102,7 +100,6 @@ def main(dataset, num_ims, ims_per_vid, train_amount, night):
     for v in train:
         print_flush(v)
         gen_images(trainpath, v, ims_per_vid)
-        
     
     print_flush("Test:")
     for v in test:

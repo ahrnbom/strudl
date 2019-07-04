@@ -6,7 +6,7 @@
     string format.
 """
 
-from os.path import isfile
+from pathlib import Path
 
 from util import parse_resolution
 from folder import datasets_path, runs_path, mkdir
@@ -17,18 +17,20 @@ class BaseConfig(object):
     exists = False
     filepath = None
     
-    def __init__(self, filename):
+    def __init__(self, fp):
         """ Loads a dataset config object from a file """
         self.data = {}
         
-        if (not filename is None) and isfile(filename):
-            with open(filename, 'r') as f:
-                lines = [x.strip('\n') for x in f.readlines()]
+        if (fp is not None) and fp.is_file():
+            lines = fp.read_text().split('\n')
             
             for line in lines:
                 if line.isspace():
                     continue
-                    
+                
+                if not line:
+                    continue
+                
                 key, val = line.split(':')
                 found = False
                 for c in self.contents:
@@ -75,7 +77,7 @@ class BaseConfig(object):
         assert(len(self.data) == len(self.contents))
         assert(not self.filepath is None)
         
-        with open(self.filepath, 'w') as f:
+        with self.filepath.open('w') as f:
             for key, val in self.data.items():
                 line = "{}:{}\n".format(key, val)
                 f.write(line)
@@ -120,7 +122,7 @@ class DatasetConfig(BaseConfig):
                 ('video_fps', int), ('video_resolution', 'res3')]
     
     def __init__(self, dataset):
-        self.filepath = "{}{}/config.txt".format(datasets_path, dataset)
+        self.filepath = datasets_path / dataset / "config.txt"
         super().__init__(self.filepath)
 
 class RunConfig(BaseConfig):
@@ -128,14 +130,14 @@ class RunConfig(BaseConfig):
                 ('detection_training_batch_size', int), ('detector_resolution', 'res3')]
     
     def __init__(self, dataset=None, run=None):
-        run_path = "{}{}_{}/".format(runs_path, dataset, run)
+        run_path = runs_path / "{}_{}".format(dataset,run)
         mkdir(run_path)
-        self.filepath = "{}config.txt".format(run_path)
+        self.filepath = run_path / "config.txt"
         super().__init__(self.filepath)
         
 if __name__ == '__main__':
     # Simple test
-    rc = RunConfig('sweden2', '420p2')
+    rc = RunConfig('test', 'testrun')
     print(rc.get('detector_resolution'))
 
 

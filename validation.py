@@ -9,7 +9,7 @@ from folder import ssd_path
 def validate_pretrained_md5(filepath):
     expected_hash = '9ae4b93e679ea30134ce37e3096f34fa'
 
-    with open(filepath, 'rb') as f:
+    with filepath.open('rb') as f:
         data = f.read()
         if md5(data).hexdigest() == expected_hash:
             return True
@@ -36,10 +36,12 @@ def validate_calibration(text):
 
 def validate_logfile(path):
     try:
-        with open(path, 'r') as f:
-            lines = [x.strip('\n') for x in f.readlines()]
-
+        lines = path.read_text().split('\n')
+        
         for i, line in enumerate(lines):
+            if not line:
+                continue
+        
             splot = line.split(' ')
             
             assert(i == int(splot[0]))
@@ -98,7 +100,7 @@ def validate_annotation(text, dataset):
     return True
         
 if __name__ == '__main__':
-    # readme.md suggests running this, so don't any other tests here.
+    # Test the validity of SSD weights
     if validate_pretrained_md5(ssd_path + '/weights_SSD300.hdf5'):
         print("Weights file found and is OK!")
     else:

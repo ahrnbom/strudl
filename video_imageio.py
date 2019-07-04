@@ -6,8 +6,6 @@
 import cv2
 import imageio as io
 import numpy as np
-from glob import glob
-import os
 import pandas as pd
 import click
 
@@ -39,8 +37,8 @@ def get_model(name, experiment, input_shape, num_classes=6, verbose=True):
         num_classes -- the number of different object classes (including background)
     """
     model = SSD300((input_shape[1],input_shape[0],input_shape[2]), num_classes=num_classes)
-    weights_files = glob(os.path.join(runs_path, '{name}_{experiment}'.format(name=name,experiment=experiment), 'checkpoints', '*.hdf5'))
-    weights_files_loss = np.array([float(wf.split('-')[-1].replace('.hdf5', '')) for wf in weights_files])
+    weights_files = list((runs_path / "{}_{}".format(name,experiment) / "checkpoints").glob('*.hdf5'))
+    weights_files_loss = np.array([float(wf.stem.split('-')[-1]) for wf in weights_files])
     weights_file = weights_files[np.argmin(weights_files_loss)]
     model.load_weights(weights_file, by_name=True)
     if verbose:

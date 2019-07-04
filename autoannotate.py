@@ -12,7 +12,7 @@ import click
 import numpy as np
 from random import shuffle
 from os.path import isfile
-from glob import glob
+from pathlib import Path
 import imageio as iio
 import pandas as pd
 import cv2
@@ -41,13 +41,13 @@ def rep_last(some_list, n):
     return some_list
 
 def get_images_to_autoannotate(dataset):
-    train_path = "{dsp}{ds}/objects/train/".format(dsp=datasets_path, ds=dataset)
-    images = glob("{tp}/*/*.jpg".format(tp=train_path))
+    train_path = datasets_path / dataset / "objects" / "train"
+    images = list(train_path.glob('*/*.jpg'))
     
     good_images = []
     for image in images:
-        gtpath = image.replace('.jpg','.txt')
-        if not isfile(gtpath):
+        gtpath = image.with_suffix('.txt')
+        if not gtpath.is_file():
             good_images.append(image)
     
     good_images.sort()
@@ -97,7 +97,7 @@ def autoannotate(dataset, import_datasets, input_shape, image_shape, batch_size,
 
     print_flush('Loading model...')
     model = SSD300((input_shape[1],input_shape[0],input_shape[2]), num_classes=num_classes)  
-    model.load_weights(ssd_path+'weights_SSD300.hdf5', by_name=True)
+    model.load_weights(ssd_path / 'weights_SSD300.hdf5', by_name=True)
     
     print_flush("Making priors...")    
     im_in = np.random.random((1,input_shape[1],input_shape[0],input_shape[2]))
@@ -170,7 +170,7 @@ def autoannotate(dataset, import_datasets, input_shape, image_shape, batch_size,
                 result = [r if len(r) > 0 else np.zeros((1, 6)) for r in result]
                 raw_detections = pd.DataFrame(np.vstack(result), columns=['class_index', 'confidence', 'xmin', 'ymin', 'xmax', 'ymax'])
                 
-                auto_path = res_path.replace('.jpg','.auto')
+                auto_path = res_path.with_suffix('.auto')
                 
                 # Sort detections by confidence, keeping the top ones
                 # This seems to be more robust than a hard-coded confidence threshold
@@ -181,7 +181,7 @@ def autoannotate(dataset, import_datasets, input_shape, image_shape, batch_size,
                 if len(dets) > n:
                     dets = dets[:n]
                 
-                with open(auto_path, 'w') as f:
+                with auto_path.open('w') as f:
                     for det in dets:
                         conf = round(det['confidence'],4)
                         line = "{index} {cx} {cy} {w} {h} conf:{conf} {cn}\n".format(index=int(det['class_index']),

@@ -6,9 +6,9 @@
 """
 
 import cv2
-import os
 import numpy as np
 from random import choice
+from pathlib import Path
 
 from folder import datasets_path
 
@@ -21,9 +21,9 @@ class Masker(object):
         self.alpha_cache_limit = 4
 
     def get_mask(self, dataset):
-        mask_path = "{}{}/mask.png".format(datasets_path, dataset)
-        if os.path.isfile(mask_path):
-            mask = cv2.imread(mask_path, -1)           
+        mask_path = datasets_path / dataset / 'mask.png'
+        if mask_path.is_file():
+            mask = cv2.imread(str(mask_path), -1)           
         else:
             mask = None
             
@@ -75,7 +75,14 @@ class Masker(object):
         return im2
     
 if __name__ == "__main__":
-    im = cv2.imread('/data/datasets/sweden2/objects/train/4E40/12.jpg')
-    masker = Masker("sweden2")
+    test = Path('test_data')
+    
+    import imageio as iio
+    with iio.get_reader(test / 'vid0.mp4') as v:
+        im = v.get_data(0)
+    
+    masker = Masker("test")
     masked = masker.mask(im)
-    cv2.imwrite("applied_mask.png", masked)
+    
+    cv2.imwrite(str(test / "applied_mask.png"), masked)
+    

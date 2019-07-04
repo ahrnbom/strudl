@@ -8,6 +8,7 @@ from itertools import count
 from world import Calibration
 from util import parse_resolution, print_flush, pandas_loop, normalize, right_remove
 from storage import load, save
+from pathlib import Path
 from folder import datasets_path, runs_path, mkdir
 from timestamps import Timestamps
 from tracking import convert_klt, find_klt_for_frame
@@ -204,16 +205,15 @@ def main(cmd, dataset, run, vidres, ssdres, kltres, make_videos):
     klt_config.klt_y_factor = vidres[1]/kltres[1]
     
     if cmd == "findvids":
-        from glob import glob
-        vidnames = glob('{dsp}{ds}/videos/*.mkv'.format(dsp=datasets_path, ds=dataset))
-        vidnames = [right_remove(x.split('/')[-1], '.mkv') for x in vidnames]
+        vidnames = list((datasets_path / dataset / "videos").glob('*.mkv'))
+        vidnames = [x.stem for x in vidnames]
         vidnames.sort()
         
-        outfolder = '{}{}_{}/detections_world/'.format(runs_path, dataset, run)
+        outfolder = runs_path / '{}_{}'.format(dataset,run) / 'detections_world'
         mkdir(outfolder)
     else:
         vidnames = [cmd]
-        outfolder = './'
+        outfolder = Path('.')
         
     mkdir(outfolder)
 
@@ -224,7 +224,7 @@ def main(cmd, dataset, run, vidres, ssdres, kltres, make_videos):
     
     for v in vidnames:
         print_flush(v) 
-        detections = pd.read_csv('{}{}_{}/csv/{}.csv'.format(runs_path, dataset, run, v))
+        detections = pd.read_csv(runs_path / '{}_{}'.format(dataset,run) / 'csv' / (v+'.csv'))
             
         # Convert pixel coordinate positions from SSD resolution to video resolution
         # because Calibration assumes video resolution coordinates
@@ -232,25 +232,25 @@ def main(cmd, dataset, run, vidres, ssdres, kltres, make_videos):
             detections[dim] = round(detections[dim]*factor).astype(int)
         
         print_flush("Converting point tracks...")    
-        klt = load('{}{}/klt/{}.pklz'.format(datasets_path, dataset, v))
+        klt = load(datasets_path / dataset / 'klt' / (v+'.pklz'))
         klt, klt_frames = convert_klt(klt, klt_config)
         pts = PointTrackStructure(klt, klt_frames, vidres[0], vidres[1])
         
-        outpath = '{of}{v}_world.csv'.format(of=outfolder, v=v)
+        outpath = outfolder / '{v}_world.csv'.format(v=v)
         
         print_flush("Converting to world coordinates...")
         detections3D = detections_to_3D(detections, pts, calib, ts, v,
-                                        klt_save_path=outpath.replace('.csv', '_klt.pklz'),
+                                        klt_save_path=outpath.with_name(outpath.stem + '_klt.pklz'),
                                         class_heights=class_heights)
         
         detections3D.to_csv(outpath, float_format='%.4f')
         
         if make_videos:
             from visualize_detections import detections_video
-            vidpath = "{dsp}{ds}/videos/{v}.mkv".format(dsp=datasets_path, ds=dataset, v=v)
+            vidpath = datasets_path / dataset / "videos" / "{}.mkv".format(v)
             
             print_flush("Rendering video...")
-            detections_video(detections3D, vidpath, outpath.replace('.csv', '.mp4'), classnames, dataset, vidres, fps=fps, conf_thresh=0.0, coords='world')
+            detections_video(detections3D, vidpath, outpath.with_suffix('.mp4'), classnames, dataset, vidres, fps=fps, conf_thresh=0.0, coords='world')
     
     print_flush("Done!")
             

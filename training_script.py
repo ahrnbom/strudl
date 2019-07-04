@@ -31,7 +31,7 @@ import subprocess
 
 from apply_mask import Masker
 from util import parse_resolution, print_flush, pandas_loop
-from folder import runs_path, base_path, ssd_path
+from folder import runs_path, base_path, ssd_path, mkdir
 from ssd_cleanup import cleanup
 from classnames import get_classnames
 from plot import multi_plot
@@ -280,7 +280,9 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
     config = tf.ConfigProto()
     config.gpu_options.per_process_gpu_memory_fraction = memory_fraction
     set_session(tf.Session(config=config))
-
+    
+    run_name = "{}_{}".format(name,experiment)
+    
     input_shape = parse_resolution(input_shape)
     image_shape = parse_resolution(image_shape)
 
@@ -289,10 +291,10 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
     K.set_session(session)
     log('Started TensorFlow session')
     log('Chosen input_shape is {}'.format(input_shape))
-    detections_file = '{runspath}{name}_{experiment}/detections.pickle'.format(runspath=runs_path, name=name, experiment=experiment)
-    os.makedirs('{runspath}{name}_{experiment}'.format(runspath=runs_path, name=name, experiment=experiment), exist_ok=True)
-
-    logging.basicConfig(filename='{runspath}{name}_{experiment}/trainlog.log'.format(runspath=runs_path, name=name, experiment=experiment), level=logging.INFO)
+    detections_file = runs_path / run_name / "detections.pickle"
+    mkdir(runs_path / run_name)
+    
+    logging.basicConfig(filename=str(runs_path / run_name / "trainlog.log"), level=logging.INFO)
 
     try:
         githash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()[0:6].decode('utf-8')
@@ -338,16 +340,16 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
         num_train -= 1
     train_keys = keys[:num_train]
     val_keys = keys[num_train:]
-    train_keys_file = '{runspath}{name}_{experiment}/train_keys.pickle'.format(runspath=runs_path, name=name, experiment=experiment)
+    train_keys_file = runs_path / run_name / "train_keys.pickle"
     log('Saving training keys to: {}'.format(train_keys_file))
-    pickle.dump(train_keys, open(train_keys_file, 'wb'))
-    val_keys_file = '{runspath}{name}_{experiment}/val_keys.pickle'.format(runspath=runs_path, name=name, experiment=experiment)
+    pickle.dump(str(train_keys), train_keys_file.open('wb'))
+    val_keys_file = runs_path / run_name / "val_keys.pickle"
     log('Saving validation keys to: {}'.format(val_keys_file))
-    pickle.dump(val_keys, open(val_keys_file, 'wb'))
+    pickle.dump(str(val_keys), val_keys_file.open('wb'))
 
     log('Loading model')
     model = SSD300((input_shape[1],input_shape[0],input_shape[2]), num_classes=num_classes)
-    model.load_weights('{ssdpath}/weights_SSD300.hdf5'.format(ssdpath=ssd_path), by_name=True)
+    model.load_weights(ssd_path / "weights_SSD300.hdf5", by_name=True)
 
     log('Generating priors')
     im_in = np.random.random((1,input_shape[1],input_shape[0],input_shape[2]))
@@ -384,13 +386,13 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
     for L in model.layers:
         if L.name in freeze:
             L.trainable = False
-    os.makedirs('{runspath}{name}_{experiment}/checkpoints'.format(runspath=runs_path, name=name, experiment=experiment), exist_ok=True)
-    shutil.rmtree('{runspath}{name}_{experiment}/logs'.format(runspath=runs_path, name=name, experiment=experiment), ignore_errors=True)
-    os.makedirs('{runspath}{name}_{experiment}/logs'.format(runspath=runs_path, name=name, experiment=experiment), exist_ok=True)
+    mkdir(runs_path / run_name / "checkpoints")
+    shutil.rmtree( str(runs_path / run_name / "logs"), ignore_errors=True )
+    mkdir(runs_path / run_name / "logs")
 
-    callbacks = [ModelCheckpoint('{runspath}{name}_{experiment}'.format(runspath=runs_path, name=name, experiment=experiment) + '/checkpoints/weights.{epoch:02d}-{val_loss:.2f}.hdf5',
+    callbacks = [ModelCheckpoint(str(runs_path / run_name / 'checkpoints') + '/weights.{epoch:02d}-{val_loss:.2f}.hdf5',
                                  verbose=2, save_weights_only=True),
-                 TensorBoard(log_dir='{runspath}{name}_{experiment}/logs'.format(runspath=runs_path, name=name, experiment=experiment), write_graph=False),
+                 TensorBoard(log_dir=str(runs_path / run_name / "logs"), write_graph=False),
                  LearningRateScheduler(schedule)]
 
     optim = keras.optimizers.Adam(lr=BASE_LR / 10)
@@ -418,11 +420,11 @@ def main(batch_size, max_images, epochs, name, import_datasets, frozen_layers, e
         elif row['type'] == 'val_loss':
             x2.append(row['_'])
             y2.append(row['value'])
-            
-    plot_path = '{runspath}{name}_{experiment}/training.png'.format(runspath=runs_path, name=name, experiment=experiment)
+    
+    plot_path = runs_path / run_name / "training.png"
     multi_plot([x1,x2], [y1,y2], plot_path, xlabel='epochs', ylabel='loss', title='Training', legend=['loss', 'validation loss'])
     
-    results.to_csv('{runspath}{name}_{experiment}/results.csv'.format(runspath=runs_path, name=name, experiment=experiment))
+    results.to_csv(runs_path / run_name / "results.csv")    
 
     log('Cleaning up non-optimal weights...')
     cleanup(name, experiment)

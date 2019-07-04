@@ -42,7 +42,7 @@ def multi_plot(xs, ys, filepath, xlabel=None, ylabel=None, linewidth=2, xlim=Non
     if not (legend is None):
         plt.legend(lines, legend)
             
-    plt.savefig(filepath, dpi=300) # dpi sets the size of the output image
+    plt.savefig(str(filepath), dpi=300) # dpi sets the size of the output image
     plt.close(fig)
 
 def simple_plot(x, y, filepath, xlabel=None, ylabel=None, linewidth=2, xlim=None, ylim=None):
