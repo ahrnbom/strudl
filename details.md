@@ -57,7 +57,7 @@ A `.pklz` file containing a list of `WorldTrack` objects (from the `tracking_wor
 
 #### Export track formats
 
-When tracks are exported, they are stored in text formats. Currently there is one format available called "custom_text" which has the following format:
+When tracks are exported, they are stored in text formats. Currently there are two formats. One is called "custom_text" which has the following format:
 
 ```
 Track ID: _TRACKID_, class: _CLASSNAME_
@@ -73,4 +73,7 @@ Track ID: _TRACKID_, class: _CLASSNAME_
 
 There is also a csv format which is similar, but csv. This means that track ID and class is repeated for every line in a track.
 
-If some other format is desired, modify `tracks_format.py` (add a new function similar to `convert_track_custom_text` and make sure it is used in `format_tracks_from_file`, while also changing the `all_track_formats` list) and `strudl.yaml` (change the `tracksFormat` parameter to have your new format in the enum).
+If some other format is desired, modify `tracks_format.py` 
+(add a new function similar to `convert_track_custom_text` and make sure it is used in 
+`format_tracks_from_file`, while also changing the `all_track_formats` list) and `strudl.yaml`
+ (change the `tracksFormat` parameter to have your new format in the enum).

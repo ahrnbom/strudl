@@ -1,6 +1,11 @@
 # STRUDL: Surveillance Tracking Using Deep Learning
 
-STRUDL is an open-source and free framework for tracking objects in videos filmed by **static surveillance cameras**. It uses a deep learining object detector, camera calibration and tracking to create trajectories of e.g. road users, in world coordinates. It was designed to faciliate traffic safety analysis, using modern computer vision and deep learning, rather than the traditional methods commonly used despite their many flaws. By creating trajectories in world coordinates, truly meaningful metrics and safety measures can be computed. The paper behind this research will hopefully be released soon! It is currently under review.
+STRUDL is an open-source and free framework for tracking objects in videos filmed by **static surveillance cameras**. It uses a deep learining object detector, 
+camera calibration and tracking to create trajectories of e.g. road users, in world coordinates. It was designed to faciliate traffic safety analysis, 
+using modern computer vision and deep learning, rather than the traditional methods commonly used despite their many flaws. 
+By creating trajectories in world coordinates, truly meaningful metrics and safety measures can be computed. 
+The paper behind this research is [available here](http://amonline.trb.org/68387-trb-1.4353651/t0005-1.4505752/1299-1.4506216/19-01902-1.4501979/19-01902-1.4506295?qr=1).
+Note that the development of STRUDL has continued after the publication; most notably, STRUDL now does tracking in world coordinates rather than pixel coordinates.
 
 STRUDL was developed as a part of the [InDeV project](https://www.indev-project.eu). 
 
@@ -66,14 +71,14 @@ If you want to upgrade to the latest version before starting add the -u option:
 /path/of/your/choosing/strudl/start_strudl.sh -u
 ```
 
-It is also possible to run a specific version, say for example version 0.2, using
+It is also possible to run a specific version, say for example version 0.3, using
 ```
-/path/of/your/choosing/strudl/start_strudl.sh -v 0.2
+/path/of/your/choosing/strudl/start_strudl.sh -v 0.3
 ```
 
 If you have a recent NVidia GPU, there is also CUDA 10 versions, which can be started with for example,
 ```
-/path/of/your/choosing/strudl/start_strudl.sh -v 0.2-CUDA10
+/path/of/your/choosing/strudl/start_strudl.sh -v 0.3-CUDA10
 ```
 
 A list of all availble version can be found at [https://cloud.docker.com/repository/docker/ahrnbom/strudl/tags](https://cloud.docker.com/repository/docker/ahrnbom/strudl/tags)
@@ -81,8 +86,33 @@ A list of all availble version can be found at [https://cloud.docker.com/reposit
 
 Visit the host computer via a web browser to see the Web UI and interact with it. For example, if you're using the web browser on the same computer, visit `localhost` in a web browser like Firefox.
 
+### Local installation
+If for some reason, you do not want to download STRUDL from Docker Hub and prefer to build the container yourself,
+you can do so yourself locally. In addition to the previously mentioned requirements, you also need to install `git`.
+Clone the repo, enter the folder, make a data folder, and then build and run the container with the following commands
+
+```bash
+git clone https://github.com/ahrnbom/strudl.git
+cd strudl
+mkdir data
+sudo ./run_docker.sh
+```
+
+If everything works as intended, you will be inside a `bash` session inside the docker container. From there you can test STRUDL with
+```py.test -v```
+or start the STRUDL server with 
+```python server.py```
+
+To leave the container, press `Ctrl` + `D`. To run start STRUDL's docker container again, only the command `sudo ./run_docker.sh` needs to be used (inside the right folder of course).
+
 ### Security notice
-This software has not been designed with maximum security in mind. It is recommended to run it in a local network behind a firewall. While docker does provide some sandboxing, this code is not "battle tested" and it should not be assumed to be safe. Leaving the port open to the internet could compromise your computer. One possible security flaw is that your computer's `/media` folder is being made available in the docker container, to simplify importing videos via e.g. USB. This can be changed by modifying `run_docker.sh`.
+This software has not been designed with maximum security in mind. 
+It is recommended to run it in a local network behind a firewall. 
+While docker does provide some sandboxing, this code is not "battle tested" and it should not be assumed to be safe. 
+Leaving the port open to the internet could compromise your computer. 
+One possible security flaw is that your computer's `/media` folder is being made available in the docker container, 
+to simplify importing videos via e.g. USB. This can be changed by modifying `start_strudl.sh` (or `run_docker.sh` if running on a local docker image).
+
 
 ### Future work
 There's always more to do! On our to-do list contains, among other things, the following:
