@@ -124,6 +124,13 @@ def normalize(dx, dy):
     else:
         return dx/l, dy/l
         
+def rep_last(some_list, n):
+    """ Makes a list have a number of elements divisible by n, by repeating the last entry """
+    while not (len(some_list)%n == 0):
+        some_list.append(some_list[-1])
+    
+    return some_list
+        
 if __name__ == '__main__':
     print(parse_resolution('(640, 480,3)', 3))
     
