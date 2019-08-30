@@ -58,11 +58,11 @@ def gen_images(outbasepath, vidpath, n):
         fnums = [int(x) for x in fnums[1:n+1]]
         
         # Log files allow these to be recreated, if necessary.
-        # At the time of writing this, these logs are unused.
+        # These logs are used when mining rare classes, to avoid annotating to close to existing annotations
         with (folder / "frames.log").open('w') as f:
             f.write(vidpath.stem + "\n")
             for fn in fnums:
-                f.write("{} ".format(fn))
+                f.write("{}\n".format(fn))
         
         for i, fn in enumerate(fnums):
             frame = vid.get_data(fn)

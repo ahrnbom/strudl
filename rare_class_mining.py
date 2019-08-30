@@ -9,6 +9,7 @@ from datetime import timedelta
 import imageio as iio
 import cv2
 from keras.applications.imagenet_utils import preprocess_input
+import numpy as np
 
 from folder import datasets_path
 from timestamps import Timestamps
@@ -29,7 +30,8 @@ from train import train
 @click.option('--batch_size2', default=32, help='The batch size of the testing.')
 @click.option('--epochs', default=75, help='The number of epochs used to run the training.')
 @click.option('--frozen_layers', default=3, help='The number of frozen layers, max 5.')
-def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_datasets, input_shape, image_shape, batch_size, batch_size2, epochs, frozen_layers):
+@click.option('--confidence', default=0.01, help='The minimum confidence of a detected object of the given class (can be 0)')
+def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_datasets, input_shape, image_shape, batch_size, batch_size2, epochs, frozen_layers, confidence):
     soft = False
     classes = get_classnames(dataset)
     
@@ -41,17 +43,26 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
     all_found = []
     
     for v in vidnames:
+        log_file = (datasets_path / dataset / "logs" / v.with_suffix('.log').name).read_text().split('\n')
+        last = -1
+        while not log_file[last]:
+            last -= 1
+        last_line = log_file[last]
+        v_len = int(last_line.split(' ')[0])
+        
+        print_flush("{} of length {}".format(v, v_len))
+        
         # Find existing annotations
         frames_log = (datasets_path / dataset / "objects" / "train" / v.stem / "frames.log").read_text().split('\n')
         frames_log = [x for x in frames_log[1:] if x] # Remove first line, which is video name, and any empty lines
         annotated = [int(x) for x in frames_log]
         
         curr_time = ts.get(v.stem, 0)
-        prev_frame = 0
-        
+
         annotated_times = [ts.get(v.stem, x) for x in annotated]
         
         found = []
+        found_times = []
         done = False
         
         while not done:
@@ -59,38 +70,48 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
             curr_time += timedelta(seconds=sampling_rate)            
             curr_frame = ts.get_frame_number_given_vidname(curr_time, v.stem)
 
-            if curr_frame == prev_frame:
+            if curr_frame >= v_len:
                 # We have reached the end of the video
                 done = True
                 continue
-                
-            prev_frame = curr_frame
             
             # Check if we are too close to existing annotations
             dists = [abs((curr_time-x).total_seconds()) for x in annotated_times]
             if any([(x <= time_dist) for x in dists]):
                 continue
             
+            # Check if we are too close to any previously chosen interesting frames
+            dists = [abs((curr_time-x).total_seconds()) for x in found_times]
+            if any([(x <= time_dist) for x in dists]):
+                continue
+            
             # This is a frame we could work with
             found.append(curr_frame)
-        
-        all_found.append( (v.stem, found) )
+            found_times.append(curr_time)
+                    
+        all_found.append( (v, found) )
     
-    print_flush("Found the following frames worth checking out:")
+    print_flush("Candidate frames:")
+    found_some = False
     for f in all_found:
         v,l = f
-        print_flush(v + ":")
-        print_flush(",".join([str(x) for x in l]))
-        print_flush("")
+        print("{} : {}".format(v, l))
+        if l:
+            found_some = True
     
+    if not found_some:
+        print_flush("Found no interesting frames. Quitting...")
+        import sys
+        sys.exit(1)
+        
     print_flush("Starting to train object detector with existing annotations...")
     
     input_shape = parse_resolution(input_shape)
     image_shape = parse_resolution(image_shape)
     
-    model = train(dataset, import_datasets, input_shape, batch_size, epochs, frozen_layers)
+    model, bbox_util = train(dataset, import_datasets, input_shape, batch_size, epochs, frozen_layers)
     
-    print_flush("Applying the model to the images to find objects of type", class_name)
+    print_flush("Applying the model to the images to find objects of type '{}'".format(class_name))
     
     masker = Masker(dataset)
     inputs = []
@@ -119,10 +140,11 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
                     for result, res_path in zip(results, impaths):
                         result = [r if len(r) > 0 else np.zeros((1, 6)) for r in result]
                         for r in result:
-                            this_class_name = classes[r[0]]
-                            if this_class_name == class_name:
-                                found_frames.append( (v.stem, frame_number, im_orig) )
-                                print_flush("Found an object of class",class_name,"in frame", frame_number, "in video", v.stem)
+                            if r[1] > confidence:
+                                this_class_name = classes[r[0]]
+                                if this_class_name == class_name:
+                                    found_frames.append( (v.stem, frame_number, im_orig) )
+                                    print_flush("Found an object of class {} in frame {} in video {}".format(class_name,frame_number,v.stem))
     
     print_flush("Writing images...")
     for x in found_frames:
@@ -133,7 +155,7 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
         im_path = im_folder / "{}.jpg".format(im_num)
         
         iio.imwrite(im_path, im)
-        print_flush("Written",im_path)
+        print_flush("Written {}".format(im_path))
                 
 if __name__ == '__main__':
     rare_class_mining()
