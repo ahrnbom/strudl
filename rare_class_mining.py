@@ -18,6 +18,29 @@ from apply_mask import Masker
 from classnames import get_classnames
 from train import train
 
+def process(inputs, frame_nums, im_origs, vids, confidence, class_name, soft, batch_size2, model, bbox_util, classes):
+    found_data = []
+    
+    inputs = np.array(inputs).astype(np.float64)
+    inputs = preprocess_input(inputs)
+    
+    preds = model.predict(inputs, batch_size=batch_size2, verbose=0)
+    results = bbox_util.detection_out(preds, soft=soft)
+    
+    for result, frame_num, im_res, v in zip(results, frame_nums, im_origs, vids):
+        result = [r if len(r) > 0 else np.zeros((1, 6)) for r in result]
+        for r in result:
+            if r[1] > confidence:
+                this_class_name = classes[int(r[0])-1]
+                if this_class_name == class_name:
+                    found_data.append( (v, frame_num, im_res) )
+                    print_flush("Found an object of class {} in frame {} in video {}".format(class_name,frame_num,v.stem))
+
+                    # Once we've found an object of the right class, we don't care about this image any more
+                    break
+                        
+    return found_data
+
 @click.command()
 @click.option("--dataset", default="default", help="Name of dataset")
 @click.option("--class_name", default="bus", help="Name of object class to look for")
@@ -43,6 +66,8 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
     all_found = []
     
     for v in vidnames:
+        
+        # Find video length from log file (computing this from the video file is too slow)
         log_file = (datasets_path / dataset / "logs" / v.with_suffix('.log').name).read_text().split('\n')
         last = -1
         while not log_file[last]:
@@ -64,27 +89,30 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
         found = []
         found_times = []
         done = False
-        
+                
         while not done:
             # Sample in time
             curr_time += timedelta(seconds=sampling_rate)            
             curr_frame = ts.get_frame_number_given_vidname(curr_time, v.stem)
-
+            
             if curr_frame >= v_len:
                 # We have reached the end of the video
                 done = True
                 continue
             
+            if curr_frame in annotated:
+                continue
+                
             # Check if we are too close to existing annotations
             dists = [abs((curr_time-x).total_seconds()) for x in annotated_times]
             if any([(x <= time_dist) for x in dists]):
                 continue
-            
+                        
             # Check if we are too close to any previously chosen interesting frames
             dists = [abs((curr_time-x).total_seconds()) for x in found_times]
             if any([(x <= time_dist) for x in dists]):
                 continue
-            
+                                
             # This is a frame we could work with
             found.append(curr_frame)
             found_times.append(curr_time)
@@ -120,11 +148,10 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
     vids = []
     
     found_data = []
-    found_frames = set()
     
     for f in all_found:
         v,l = f
-        print_flush("Looking in {}, frame {}...".format(v.stem, l))
+
         with iio.get_reader(v) as vid:
             for frame_number in l:
                 im_orig = vid.get_data(frame_number)
@@ -138,33 +165,23 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
                 vids.append(v)
         
                 if len(inputs) == batch_size2:
-                    inputs = np.array(inputs).astype(np.float64)
-                    inputs = preprocess_input(inputs)
-                    
-                    preds = model.predict(inputs, batch_size=batch_size2, verbose=0)
-                    results = bbox_util.detection_out(preds, soft=soft)
-                    
-                    for result, frame_num, im_res, v in zip(results, frame_nums, im_origs, vids):
-                        # If we've already picked this frame, don't look again. We only want each frame at most once.
-                        if not frame_num in found_frames:
-                            result = [r if len(r) > 0 else np.zeros((1, 6)) for r in result]
-                            for r in result:
-                                if r[1] > confidence:
-                                    this_class_name = classes[int(r[0])-1]
-                                    if this_class_name == class_name:
-                                        found_data.append( (v, frame_num, im_res) )
-                                        print_flush("Found an object of class {} in frame {} in video {}".format(class_name,frame_num,v.stem))
-                                        found_frames.add(frame_num)
- 
-                                        # Once we've found an object of the right class, we don't care about the rest of the objects
-                                        break
+                    tmp = process(inputs, frame_nums, im_origs, vids, confidence, 
+                                  class_name, soft, batch_size2, model, 
+                                  bbox_util, classes)
+                                  
+                    found_data.extend(tmp)
                                     
                     inputs = []
                     frame_nums = []
                     im_origs = []
                     vids = []
     
-    # TODO leftovers?!
+    if inputs:
+        # There are still some leftovers
+        tmp = process(inputs, frame_nums, im_origs, vids, confidence, 
+                      class_name, soft, len(inputs), model, bbox_util, classes)
+                      
+        found_data.extend(tmp)
     
     print_flush("Writing images...")
     for x in found_data:
