@@ -647,6 +647,56 @@ paths:
         404:
           description: A dataset configuration does not exist
   
+  /jobs/rare_class_mining:
+    post:
+      operationId: server.post_rare_class_mining_job
+      summary: Uses existing annotations to create a temporary detector which is applied to many images to try to find more images containing a given class, for annotation
+      description: Make sure annotations are prepared, and some annotations are already made (the more the better). If number of epohcs is not provided, 75 will be used. 
+      parameters:
+        - $ref: "#/parameters/datasetName"
+        - name: class_name
+          in: query
+          type: string
+          required: true
+          description: Must be one of the classes that exist for this dataset. The class which we are looking for in the images
+        - name: confidence
+          in: query
+          type: number
+          description: The confidence threshold, over which we believe the image actually contains the class we are looking for. This can be tricky to set, as setting it too low will add lots of stupid images to annotate which are non-trivial to remove. Setting it too high will yield nothing.
+          required: true
+        - name: time_distance
+          in: query
+          type: number
+          description: The minimal number of seconds between any frame and previously chosen frames for annotations, that we consider looking at. For example, setting it to 1.5 means that any frame must be 1.5 seconds away from any previous annotated image to be considered.
+          required: true
+        - name: time_sampling
+          in: query
+          type: number
+          description: The distance in seconds in which we sample the videos when looking for the given object type. Setting this too high will increase the risk of missing the object, setting it too low will make it run slowly.
+          required: true
+        - name: import_datasets
+          in: query
+          type: string
+          required: false
+          description: If additional datasets should be included during training, include them here separated by commas, without spaces.
+        - name: epochs
+          in: query
+          type: integer
+          required: false
+        - name: resolution
+          in: query
+          type: string
+          required: false
+          default: (300,300,3)
+          description: Resolution the detector will be trained for. A compromise between quality and speed/memory usage.
+      responses:
+        202:
+          description: Job accepted and will start soon. A job ID is returned. 
+        503:
+          description: Device is busy
+        404:
+          description: Dataset wasn't found, or lacks configuration
+                
   /jobs/train_detector:
     post:
       operationId: server.post_train_detector_job

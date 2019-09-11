@@ -198,6 +198,8 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
         flog = im_folder / "frames.log"
         with flog.open('a') as log:
             log.write(str(f) + '\n')
+    
+    print_flush("Done!")
                 
 if __name__ == '__main__':
     rare_class_mining()

@@ -28,7 +28,14 @@ def parse_resolution(s, expected_length=None):
         Takes a string on the format '(WIDTH,HEIGHT,CHANNELS)' and 
         evaluates to a tuple with ints. Unlike literal_eval in ast, 
         this should be a bit more safe against unsanitized input.
+        It also accept strings with quote characters (' or ")
+        at the start and end, which is good to prevent injections.
     """
+    
+    # Remove quote characters
+    s = s.lstrip("'\"")
+    s = s.rstrip("'\"")
+    
     tup = tuple([int(x.strip()) for x in (s.strip('(').strip(')').split(','))])
     if expected_length is None:
         return tup

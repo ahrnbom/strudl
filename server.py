@@ -489,6 +489,7 @@ def post_prepare_extra_annotations_job(dataset_name, times, images_per_time, int
         
 def post_autoannotate_job(dataset_name, import_datasets="", epochs=75, resolution="(640,480,3)"):
     dataset_name = quote(dataset_name)
+    resolution = quote(resolution)
     
     dc = DatasetConfig(dataset_name)
     if dc.exists:
@@ -509,6 +510,37 @@ def post_autoannotate_job(dataset_name, import_datasets="", epochs=75, resolutio
             return (NoContent, 503)
     else:
         return (NoContent, 404)
+
+def post_rare_class_mining_job(dataset_name, class_name, confidence, time_distance, 
+                               time_sampling, import_datasets="", epochs=75, 
+                               resolution="(300,300,3)"):
+    dataset_name = quote(dataset_name)
+    class_name = quote(class_name)
+    resolution = quote(resolution)
+    
+    dc = DatasetConfig(dataset_name)
+    if dc.exists:
+        cmd = [python_path, "rare_class_mining.py",
+               "--dataset={}".format(dataset_name),
+               "--class_name={}".format(class_name),
+               "--confidence={}".format(confidence),
+               "--time_dist={}".format(time_distance),
+               "--sampling_rate={}".format(time_sampling),
+               "--epochs={}".format(epochs),
+               "--input_shape={}".format(resolution),
+               "--image_shape={}".format(dc.get('video_resolution'))]
+        
+        if import_datasets:
+            import_datasets = quote(import_datasets)
+            cmd.append("--import_datasets={}".format(import_datasets))
+        
+        job_id = jm.run(cmd, "rare_class_mining")
+        if job_id:
+            return (job_id, 202)
+        else:
+            return (NoContent, 503)
+    else:
+        return ("Dataset does not exists or is not configured", 404)
     
 def post_train_detector_job(dataset_name, run_name, epochs, import_datasets=""):
     dataset_name = quote(dataset_name)
