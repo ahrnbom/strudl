@@ -30,7 +30,7 @@ from train import train
 @click.option('--batch_size2', default=32, help='The batch size of the testing.')
 @click.option('--epochs', default=75, help='The number of epochs used to run the training.')
 @click.option('--frozen_layers', default=3, help='The number of frozen layers, max 5.')
-@click.option('--confidence', default=0.01, help='The minimum confidence of a detected object of the given class (can be 0)')
+@click.option('--confidence', default=0.3, help='The minimum confidence of a detected object of the given class (can be 0)')
 def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_datasets, input_shape, image_shape, batch_size, batch_size2, epochs, frozen_layers, confidence):
     soft = False
     classes = get_classnames(dataset)
@@ -109,18 +109,22 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
     input_shape = parse_resolution(input_shape)
     image_shape = parse_resolution(image_shape)
     
-    model, bbox_util = train(dataset, import_datasets, input_shape, batch_size, epochs, frozen_layers)
+    model, bbox_util = train(dataset, import_datasets, input_shape, batch_size, epochs, frozen_layers, train_amount=1.0)
     
     print_flush("Applying the model to the images to find objects of type '{}'".format(class_name))
     
     masker = Masker(dataset)
     inputs = []
+    frame_nums = []
+    im_origs = []
+    vids = []
     
-    found_frames = []
+    found_data = []
+    found_frames = set()
     
-    # rep_last needed since we use large batches, for speed, to make sure we run on all images
     for f in all_found:
         v,l = f
+        print_flush("Looking in {}, frame {}...".format(v.stem, l))
         with iio.get_reader(v) as vid:
             for frame_number in l:
                 im_orig = vid.get_data(frame_number)
@@ -129,6 +133,9 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
                 
                 resized = cv2.resize(im, (input_shape[0], input_shape[1]))
                 inputs.append(resized)
+                frame_nums.append(frame_number)
+                im_origs.append(im_orig)
+                vids.append(v)
         
                 if len(inputs) == batch_size2:
                     inputs = np.array(inputs).astype(np.float64)
@@ -137,25 +144,43 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
                     preds = model.predict(inputs, batch_size=batch_size2, verbose=0)
                     results = bbox_util.detection_out(preds, soft=soft)
                     
-                    for result, res_path in zip(results, impaths):
-                        result = [r if len(r) > 0 else np.zeros((1, 6)) for r in result]
-                        for r in result:
-                            if r[1] > confidence:
-                                this_class_name = classes[r[0]]
-                                if this_class_name == class_name:
-                                    found_frames.append( (v.stem, frame_number, im_orig) )
-                                    print_flush("Found an object of class {} in frame {} in video {}".format(class_name,frame_number,v.stem))
+                    for result, frame_num, im_res, v in zip(results, frame_nums, im_origs, vids):
+                        # If we've already picked this frame, don't look again. We only want each frame at most once.
+                        if not frame_num in found_frames:
+                            result = [r if len(r) > 0 else np.zeros((1, 6)) for r in result]
+                            for r in result:
+                                if r[1] > confidence:
+                                    this_class_name = classes[int(r[0])-1]
+                                    if this_class_name == class_name:
+                                        found_data.append( (v, frame_num, im_res) )
+                                        print_flush("Found an object of class {} in frame {} in video {}".format(class_name,frame_num,v.stem))
+                                        found_frames.add(frame_num)
+ 
+                                        # Once we've found an object of the right class, we don't care about the rest of the objects
+                                        break
+                                    
+                    inputs = []
+                    frame_nums = []
+                    im_origs = []
+                    vids = []
+    
+    # TODO leftovers?!
     
     print_flush("Writing images...")
-    for x in found_frames:
+    for x in found_data:
         v,f,im = x
         
-        im_folder = datasets_path / dataset / "objects" / "train" / v.stem 
+        im_folder = datasets_path / dataset / "objects" / "train" / v.stem
         im_num = max([int(x.stem) for x in im_folder.glob('*.jpg')]) + 1
         im_path = im_folder / "{}.jpg".format(im_num)
         
         iio.imwrite(im_path, im)
         print_flush("Written {}".format(im_path))
+        
+        # Add the new frame numbers to frames.log for this video
+        flog = im_folder / "frames.log"
+        with flog.open('a') as log:
+            log.write(str(f) + '\n')
                 
 if __name__ == '__main__':
     rare_class_mining()

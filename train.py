@@ -26,7 +26,7 @@ from training_script import Generator, schedule, get_image_props, detections_add
 # some constants
 BASE_LR = 3e-4
 
-def train(dataset, import_datasets, input_shape, batch_size, epochs, frozen_layers):
+def train(dataset, import_datasets, input_shape, batch_size, epochs, frozen_layers, train_amount=0.9):
     
     print_flush("Loading ground truth...")
     load_detections = LoadDetections()
@@ -51,9 +51,17 @@ def train(dataset, import_datasets, input_shape, batch_size, epochs, frozen_laye
     keys = sorted(detections.image_file.unique())
     shuffle(keys)
     
-    num_train = int(round(0.9 * len(keys)))
-    train_keys = keys[:num_train]
-    val_keys = keys[num_train:]
+    if train_amount < 1.0:
+        num_train = int(round(train_amount * len(keys)))
+        train_keys = keys[:num_train]
+        val_keys = keys[num_train:]
+    else:
+        train_keys = keys
+        
+        # Not a very good validation set, but whatever.
+        # The ability to train on all the images is important when annotations are sparse, 
+        # like when doing autoannotation
+        val_keys = [keys[0]] 
 
     print_flush('Loading model...')
     model = SSD300((input_shape[1],input_shape[0],input_shape[2]), num_classes=num_classes)  

@@ -52,7 +52,7 @@ def autoannotate(dataset, import_datasets, input_shape, image_shape, batch_size,
     input_shape = parse_resolution(input_shape)
     image_shape = parse_resolution(image_shape)
     
-    model, bbox_util = train(dataset, import_datasets, input_shape, batch_size, epochs, frozen_layers)
+    model, bbox_util = train(dataset, import_datasets, input_shape, batch_size, epochs, frozen_layers, train_amount=1.0)
     
     print_flush("Auto-annotating...")
     masker = Masker(dataset)
