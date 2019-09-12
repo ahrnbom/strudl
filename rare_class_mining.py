@@ -78,9 +78,11 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
         print_flush("{} of length {}".format(v, v_len))
         
         # Find existing annotations
-        frames_log = (datasets_path / dataset / "objects" / "train" / v.stem / "frames.log").read_text().split('\n')
+        frames_log = (datasets_path / dataset / "objects" / "train" / v.stem / "frames.log").read_text().split()
         frames_log = [x for x in frames_log[1:] if x] # Remove first line, which is video name, and any empty lines
         annotated = [int(x) for x in frames_log]
+        print_flush("Avoiding the following existing frames: ")
+        print_flush(str(annotated))
         
         curr_time = ts.get(v.stem, 0)
 
@@ -197,7 +199,7 @@ def rare_class_mining(dataset, class_name, time_dist, sampling_rate, import_data
         # Add the new frame numbers to frames.log for this video
         flog = im_folder / "frames.log"
         with flog.open('a') as log:
-            log.write(str(f) + '\n')
+            log.write(str(f) + ' ')
     
     print_flush("Done!")
                 

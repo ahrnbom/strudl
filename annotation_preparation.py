@@ -62,7 +62,7 @@ def gen_images(outbasepath, vidpath, n):
         with (folder / "frames.log").open('w') as f:
             f.write(vidpath.stem + "\n")
             for fn in fnums:
-                f.write("{}\n".format(fn))
+                f.write("{} ".format(fn))
         
         for i, fn in enumerate(fnums):
             frame = vid.get_data(fn)
