@@ -31,7 +31,7 @@ RUN pip3 install --upgrade pip && pip install tensorflow-gpu==1.4.1 && \
     line_profiler==2.1.2 dask==1.1.0 pydot==1.4.1 connexion==1.5.3 \
     munkres==1.0.12 flask==1.0.2 opencv-contrib-python==3.2.0.8 pytest==4.6.3 \
     pandas==0.23.4 psutil==5.2.2 scipy==0.19.0 matplotlib==2.0.2 h5py==2.7.0 \
-    jsonschema==2.6.0
+    jsonschema==2.6.0 werkzeug==0.16.0
     
 RUN cd / && git clone https://github.com/fchollet/keras.git && cd keras && git checkout 507374c8 && pip install . && cd .. && rm -r keras
 
