@@ -7,7 +7,7 @@ By creating trajectories in world coordinates, truly meaningful metrics and safe
 The paper behind this research is [available here](http://amonline.trb.org/68387-trb-1.4353651/t0005-1.4505752/1299-1.4506216/19-01902-1.4501979/19-01902-1.4506295?qr=1).
 Note that the development of STRUDL has continued after the publication; most notably, STRUDL now does tracking in world coordinates rather than pixel coordinates.
 
-STRUDL was developed as a part of the [InDeV project](www.bast.de/indev). 
+STRUDL was developed as a part of the [InDeV project](https://www.bast.de/indev). 
 
 ![InDeV Logo](https://www.bast.de/SharedDocs/Bilder/DE/FB-U/InDeV-Kopf.jpg?__blob=normal&v=4)
 
