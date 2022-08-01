@@ -989,7 +989,7 @@ def make_app():
     return app
 
 @click.command()
-@click.option("--port", default=80, help="Port number. Note that if this is changed and run from within docker, the docker run command needs to be changed to forward the correct port.")
+@click.option("--port", default=8000, help="Port number. Note that if this is changed and run from within docker, the docker run command needs to be changed to forward the correct port.")
 def main(port):
 
     # Allows the host computer to remain responsive even while long-running and heavy processes are started by server

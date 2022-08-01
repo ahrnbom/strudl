@@ -1,0 +1,54 @@
+Bootstrap: docker
+From: nvidia/cuda:11.4.1-cudnn8-devel-ubuntu18.04
+
+%environment
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-11.4/lib64
+    export TF_CPP_MIN_LOG_LEVEL=2
+
+%post
+    cat /etc/apt/sources.list | grep multiverse | sed 's/\# //g' >> /etc/apt/sources.list
+
+    apt-get update --fix-missing && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata && \
+    apt-get install -y software-properties-common && \
+    apt-get install -y wget bzip2 ca-certificates \
+    libglib2.0-0 libxext6 libsm6 libxrender1 \
+    git \
+    python3-dev python3-pip python3-tk \
+    fonts-freefont-ttf fonts-ubuntu-font-family-console ttf-ubuntu-font-family \
+    edubuntu-fonts fonts-ubuntu-title fonts-liberation \
+    font-manager cifs-utils ffmpeg \
+    handbrake-cli libavcodec-dev libavformat-dev libswscale-dev graphviz libxtst6 && \
+    apt-get clean
+
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install tensorflow-gpu==1.4.1 && \
+    python3 -m pip install -I numpy==1.14.3 && \
+    python3 -m pip install click==6.6 pudb==2018.1 tqdm==4.26.0 imageio==2.3.0 \
+    line_profiler==2.1.2 dask==1.1.0 pydot==1.4.1 connexion==1.5.3 \
+    munkres==1.0.12 flask==1.0.2 opencv-contrib-python==3.2.0.7 pytest==4.6.3 \
+    pandas==0.23.4 psutil==5.2.2 scipy==0.19.0 matplotlib==2.0.2 h5py==2.7.0 \
+    jsonschema==2.6.0 werkzeug==0.16.0
+
+    cd / && git clone https://github.com/fchollet/keras.git && cd keras && git checkout 507374c8 && pip install . && cd .. && rm -r keras
+
+    echo 'alias prof="kernprof -l -v"' >> /etc/bash.bashrc
+    echo 'alias python="python3"' >> /etc/bash.bashrc
+    echo 'LC_ALL=C.UTF-8' >> /etc/bash.bashrc
+    echo 'LANG=C.UTF-8' >> /etc/bash.bashrc
+
+    mkdir /data
+    ln -s /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcublas.so.11.5.4.8 /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcublas.so.8.0
+    ln -s /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcusolver.so.11.2.0.120 /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcusolver.so.8.0
+    ln -s /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcudart.so.11.4.108 /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcudart.so.8.0
+    ln -s /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcufft.so.10.5.2.100 /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcufft.so.8.0
+    ln -s /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcurand.so.10.2.5.120 /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcurand.so.8.0
+    ln -s /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcufile.so.1.0.2 /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcufile.so.8.0
+    ln -s /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcupti.so.2021.2.2 /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcupti.so.8.0
+    ln -s /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcusparse.so.11.6.0.100 /usr/local/cuda-11.4/targets/x86_64-linux/lib/libcusparse.so.8.0
+    ln -s /usr/lib/x86_64-linux-gnu/libcudnn.so.8.2.4 /usr/lib/x86_64-linux-gnu/libcudnn.so.6
+%runscript
+    echo "> Inside Singularity now!"
+    exec ./start_in_singularity.sh "$@"
